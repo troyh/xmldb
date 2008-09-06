@@ -44,7 +44,7 @@ const char* getNodeValue(const DOMNode* node,const char* tag)
 
 int main(int argc, char *argv[]) {
 	
-	path idxfile=argv[1] + ".index";
+	path idxfile=(argv[1]);
 	
 	boost::progress_timer timer;
 	
@@ -82,7 +82,7 @@ int main(int argc, char *argv[]) {
 	        // StdOutFormatTarget target;
 
 	        // Iterate over the results, printing them
-			map< string, vector<string> > idx;
+			map< string, vector<uint32_t> > idx;
 	        while(result->iterateNext()) {
                 // writer->writeNode(&target, *(result->asNode()));
                 // std::cout << std::endl;
@@ -91,20 +91,22 @@ int main(int argc, char *argv[]) {
 					if (XMLString::equals(kid->getNodeName(),X("entry")))
 					{
 						string key=getNodeValue(kid,"key");
-						string file=getNodeValue(kid,"file");
+						path file=getNodeValue(kid,"file");
+						string fname=boost::filesystem::basename(file);
+						uint32_t docno=strtol(fname.c_str(),NULL,10);
 						
 						// cout << key << ':' << file << endl;
 						
-						map< string, vector<string> >::iterator itr=idx.find(key);
+						map< string, vector<uint32_t> >::iterator itr=idx.find(key);
 						if (itr==idx.end()) // Doesn't exist
 						{
-							vector<string> files(1,file);
-							idx.insert(make_pair(key,files));
+							vector<uint32_t> docs(1,docno);
+							idx.insert(make_pair(key,docs));
 						}
 						else // Exists, add file to vector
 						{
-							vector<string>& files=idx[key];
-							files.push_back(file);
+							vector<uint32_t>& docs=idx[key];
+							docs.push_back(docno);
 						}
 					}
 				}
@@ -115,21 +117,29 @@ int main(int argc, char *argv[]) {
 	        result->release();
 	        ((XQillaExpression*)expression)->release();
 	
-			std::ofstream ofs(idxfile);
-			boost::archive::text_oarchive ar(ofs);
-			boost::serialization::save(ar,idx,0);
-			
-			cout << "Indexed " << idx.size() << " items" << endl;
-			for (map< string, vector<string> >::iterator itr=idx.begin(); itr!=idx.end(); ++itr)
+			std::ofstream ofs(idxfile.string().c_str());
+			try
 			{
-				cout << itr->first << ':';
-				vector<string> items=itr->second;
-				for (size_t i=0;i < items.size();++i)
+				boost::archive::text_oarchive ar(ofs);
+				boost::serialization::save(ar,idx,0);
+				
+				cout << "Indexed " << idx.size() << " items" << endl;
+				for (map< string, vector<uint32_t> >::iterator itr=idx.begin(); itr!=idx.end(); ++itr)
 				{
-					cout << items[i] << ',';
+					cout << itr->first << ':';
+					vector<uint32_t>& items=itr->second;
+					for (size_t i=0;i < items.size();++i)
+					{
+						cout << items[i] << ',';
+					}
+					cout << endl;
 				}
-				cout << endl;
 			}
+			catch (boost::archive::archive_exception& x)
+			{
+				cout << "Archive exception: " << x.what() << endl;
+			}
+			
 
 	}
 	catch(XQillaException &e) {

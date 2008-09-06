@@ -4,6 +4,7 @@
 #include <xqilla/xqilla-simple.hpp>
 #include <boost/filesystem.hpp>
 #include "XMLDoc.hpp"
+// #include <xercesc/util/XMLException.hpp>
 
 using namespace boost::filesystem;
 using namespace std;
@@ -21,13 +22,24 @@ int main(int argc, char *argv[]) {
 				continue;
 				
 			path xmlfile=itr->path();
-			XMLDoc doc(xmlfile);
-			XQueryResult result=doc.xquery(querystr);
-
-	        while (Item::Ptr item = result.next())
+			try
 			{
-				cout << "<entry><key type=\"text\">" << UTF8(item->asString(result.getContext())) << "</key><file>" << xmlfile << "</file></entry>" << endl;
-	        }
+				XMLDoc doc(xmlfile);
+				XQueryResult result=doc.xquery(querystr);
+
+		        while (Item::Ptr item = result.next())
+				{
+					cout << "<entry><key type=\"text\">" << UTF8(item->asString(result.getContext())) << "</key><file>" << xmlfile << "</file></entry>" << endl;
+		        }
+			}
+			catch (xercesc::XMLException& x)
+			{
+				cerr << "XMLException:" << x.getMessage() << endl;
+			}
+			catch (...)
+			{
+				cerr << "Caught unknown exception" << endl;
+			}
 		}
 
 		cout << "</entries>" << endl;
