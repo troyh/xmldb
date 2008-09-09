@@ -10,8 +10,10 @@
 #include <boost/archive/text_iarchive.hpp>
 #include <boost/dynamic_bitset.hpp>
 #include <boost/progress.hpp>
+#include <boost/spirit/core.hpp>
 
 using namespace std;
+using namespace boost::spirit;
 namespace bfs=boost::filesystem;
 
 
@@ -216,6 +218,28 @@ namespace optionalcorp
 	
 }
 
+struct querygrammar : public grammar<querygrammar>
+{
+	template <typename ScannerT>
+	struct definition
+	{
+		definition(querygrammar const&)
+		{
+			query = clause_group >>  *( boolop >> clause_group );
+			clause_group = '(' >> clause >> *( boolop >> clause ) >> ')'
+						 | clause >> *( boolop >> clause );
+			clause  = key >> '=' >> val;
+			boolop = ch_p('|') | ch_p('&') | ch_p('^');
+			key = alpha_p >> *alpha_p;
+			val = alpha_p >> *alpha_p;
+		}
+		
+		rule<ScannerT> query,clause_group,clause,boolop,key,val;
+		rule<ScannerT> const& start() const { return query; }
+	};
+};
+
+
 int main(int argc,char* argv[])
 {
 	boost::progress_timer query_timer;
@@ -227,6 +251,18 @@ int main(int argc,char* argv[])
 	{
 		terms.push_back(argv[i]);
 	}
+	
+	querygrammar query;
+	parse_info<> info=parse(argv[1],query,space_p);
+	if (info.full)
+	{
+		cout << "Successful parse" << endl;
+	}
+	else
+	{
+		cout << "Failed parse:" << info.stop << endl;
+	}
+	return 0;
 
 	// Load index
 	optionalcorp::Index idx(idxfile);
