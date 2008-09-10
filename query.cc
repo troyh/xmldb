@@ -11,6 +11,8 @@
 #include <boost/dynamic_bitset.hpp>
 #include <boost/progress.hpp>
 #include <boost/spirit/core.hpp>
+#include <boost/spirit/actor/insert_at_actor.hpp>
+
 
 using namespace std;
 using namespace boost::spirit;
@@ -24,6 +26,7 @@ namespace optionalcorp
 		typedef map< string, vector<uint32_t> > index_type;
 		
 		index_type m_idx;
+		bfs::path m_filename;
 		
 	public:
 		Index(bfs::path index_file);
@@ -34,23 +37,29 @@ namespace optionalcorp
 		}
 		
 		size_t documentCount() const;
+		
+		const bfs::path& filename() const { return m_filename; }
 	};
 	
 	
 	class QueryNode
 	{
 	protected:
+		QueryNode* m_parent;
 		QueryNode* m_left;
 		QueryNode* m_right;
 	public:
-		QueryNode() : m_left(0), m_right(0) {}
+		QueryNode() : m_parent(0), m_left(0), m_right(0) {}
 		virtual ~QueryNode() { delete m_left; delete m_right; }
 		
-		virtual void left(QueryNode* p){m_left=p;}
+		virtual void left(QueryNode* p){m_left=p;if (p) p->m_parent=this;}
 		virtual QueryNode* left(){return m_left;}
 		
-		virtual void right(QueryNode* p){m_right=p;}
+		virtual void right(QueryNode* p){m_right=p;if (p) p->m_parent=this;}
 		virtual QueryNode* right(){return m_right;}
+		
+		virtual void parent(QueryNode* p) { m_parent=p; }
+		virtual QueryNode* parent() { return m_parent; }
 		
 		virtual bool isTermNode() const=0;
 		virtual bool isOperNode() const=0;
@@ -62,22 +71,25 @@ namespace optionalcorp
 	class BooleanQueryNode: public QueryNode
 	{
 	public:
-		typedef enum { OR, AND, NOT } boolean_type;
+		typedef enum { OR, AND, NOT, UNDEF } boolean_type;
 	protected:
 		boolean_type m_type;
 	public:
-		BooleanQueryNode(boolean_type type) : m_type(type) {}
+		BooleanQueryNode(boolean_type type=UNDEF) : m_type(type) {}
 		
 		bool isTermNode() const { return false; }
 		bool isOperNode() const { return true; }
 
 		void getResult(boost::dynamic_bitset<>& result);
+		
+		void oper(boolean_type type) { m_type=type; }
+		boolean_type oper() const { return m_type; }
 	};
 	
 	class TermQueryNode : public QueryNode
 	{
 		string m_term;
-		Index& m_idx;
+		Index m_idx;
 	public:
 		TermQueryNode(string& str, Index& idx) : m_term(str), m_idx(idx) {}
 		
@@ -85,32 +97,13 @@ namespace optionalcorp
 		bool isOperNode() const { return false; }
 
 		void getResult(boost::dynamic_bitset<>& result);
-	};
-
-	class IndexQuery
-	{
-	public:
 		
-		typedef enum { OR, AND, NOT } boolean_type;
-		
-	private:
-		
- 		vector<string> m_terms;
-		boolean_type m_boolop;
-		
-	public:	
-		typedef vector<string>::size_type size_type;
-		
-		IndexQuery(boolean_type type);
-		
-		IndexQuery& add(const string& term);
-		IndexQuery& add(const vector<string>& terms);
-		
-		const string& term(size_type n) const;
-		
-		size_type termCount() const;
+		const string& term() const { return m_term; }
+		const Index& index() const { return m_idx; }
 	};
 	
+	ostream& operator<<(ostream& os, QueryNode*);
+
 }
 
 namespace optionalcorp
@@ -173,49 +166,149 @@ namespace optionalcorp
 		
 	}
 
-	
-	IndexQuery::IndexQuery(boolean_type type)
-		: m_boolop(type)
-	{
-	}
-	
-	IndexQuery& IndexQuery::add(const string& term)
-	{
-		m_terms.push_back(term);
-		return *this;
-	}
-	
-	IndexQuery& IndexQuery::add(const vector<string>& terms)
-	{
-		for(vector<string>::size_type i = 0; i < terms.size(); ++i)
-		{
-			add(terms[i]);
-		}
-		return *this;
-	}
-	
-	const string& IndexQuery::term(size_type n) const
-	{
-		return m_terms[n];
-	}
-	
-	IndexQuery::size_type IndexQuery::termCount() const
-	{
-		return m_terms.size();
-	}
-	
 	Index::Index(bfs::path index_file)
+		: m_filename(index_file)
 	{
-		std::ifstream ifs(index_file.string().c_str());
-		boost::archive::text_iarchive ar(ifs);
-		boost::serialization::load(ar,m_idx,0);
+		// TODO: Don't load the same index multiple times!
+		m_filename=change_extension(index_file,".index");
+		// std::ifstream ifs(index_file.string().c_str());
+		// boost::archive::text_iarchive ar(ifs);
+		// boost::serialization::load(ar,m_idx,0);
 	}
 	
 	size_t Index::documentCount() const
 	{
 		return 30000; // TODO: figure out actual value
 	}
+
+	ostream& operator<<(ostream& os, QueryNode* node)
+	{
+		if (node->left())
+		{
+			os << '(';
+			os << node->left();
+			os << ')';
+		}
+		
+		if (node->isTermNode())
+		{
+			os << dynamic_cast<optionalcorp::TermQueryNode*>(node)->index().filename() 
+				<< ':';
+			os << dynamic_cast<optionalcorp::TermQueryNode*>(node)->term();
+		}
+		else
+		{
+			switch (dynamic_cast<optionalcorp::BooleanQueryNode*>(node)->oper())
+			{
+			case optionalcorp::BooleanQueryNode::OR:
+				os << '|';
+				break;
+			case optionalcorp::BooleanQueryNode::AND:
+				os << '&';
+				break;
+			case optionalcorp::BooleanQueryNode::NOT:
+				os << '^';
+				break;
+			}
+		}
+		
+		if (node->right())
+		{
+			os << '(';
+			os << node->right();
+			os << ')';
+		}
+		
+		return os;
+	}
 	
+}
+
+namespace {
+	string g_key;
+	optionalcorp::BooleanQueryNode query_root;
+	optionalcorp::QueryNode* query_iter=&query_root;
+	size_t g_groupdepth=0;
+	
+void do_key(char const* str, char const* end)
+{
+	string s(str,end);
+	// cout << "key:" << s << endl;
+	g_key=s;
+}
+void do_val(char const* str, char const* end)
+{
+	string s(str,end);
+	// cout << g_key << "=" << s << endl;
+	optionalcorp::Index idx(g_key);
+	optionalcorp::TermQueryNode* pNode=new optionalcorp::TermQueryNode(s,idx);
+	if (!query_iter->left())
+		query_iter->left(pNode);
+	else
+		query_iter->right(pNode);
+	query_iter=pNode;
+}
+
+void do_bool(char c)
+{
+	if (!query_iter->parent()) // At root already
+	{
+		// Push the entire tree down a level
+		optionalcorp::BooleanQueryNode* pNewNode=new optionalcorp::BooleanQueryNode;
+		pNewNode->oper(((optionalcorp::BooleanQueryNode*)query_iter)->oper());
+		pNewNode->left(query_iter->left());
+		pNewNode->right(query_iter->right());
+		
+		query_iter->left(pNewNode);
+		query_iter->right(0);
+	}
+	else
+	{
+		query_iter=query_iter->parent();
+		
+		if (!query_iter->isOperNode())
+			throw new exception();
+		
+		if (query_iter->left() && query_iter->right())
+		{ // This node is full, add a new node on the right side
+			optionalcorp::BooleanQueryNode* pNewNode=new optionalcorp::BooleanQueryNode;
+			pNewNode->left(query_iter->right());
+			query_iter->right(pNewNode);
+			query_iter=pNewNode;
+		}
+	}
+	
+	switch (c)
+	{
+	case '|':
+		// cout << "OR" << endl;
+		((optionalcorp::BooleanQueryNode*)query_iter)->oper(optionalcorp::BooleanQueryNode::OR);
+		break;
+	case '&':
+		// cout << "AND" << endl;
+		((optionalcorp::BooleanQueryNode*)query_iter)->oper(optionalcorp::BooleanQueryNode::AND);
+		break;
+	case '^':
+		// cout << "NOT" << endl;
+		((optionalcorp::BooleanQueryNode*)query_iter)->oper(optionalcorp::BooleanQueryNode::NOT);
+		break;
+	default:
+		break;
+	}
+
+	++g_groupdepth;
+}
+
+void do_group(char const* str,char const* end)
+{
+	// cout << "()" << endl;
+	while (g_groupdepth--)
+	{
+		if (query_iter->parent())
+			query_iter=query_iter->parent();
+	}
+}
+
 }
 
 struct querygrammar : public grammar<querygrammar>
@@ -226,10 +319,10 @@ struct querygrammar : public grammar<querygrammar>
 		definition(querygrammar const&)
 		{
 			query = clause_group >>  *( boolop >> clause_group );
-			clause_group = '(' >> clause >> *( boolop >> clause ) >> ')'
-						 | clause >> *( boolop >> clause );
-			clause  = key >> '=' >> val;
-			boolop = ch_p('|') | ch_p('&') | ch_p('^');
+			clause_group = '(' >> (clause >> *( boolop >> clause ))[&do_group] >> ')'
+						 | (clause >> *( boolop >> clause ))[&do_group];
+			clause  = (key[&do_key] >> '=' >> val[&do_val]);
+			boolop = ch_p('|')[&do_bool] | ch_p('&')[&do_bool] | ch_p('^')[&do_bool];
 			key = alpha_p >> *alpha_p;
 			val = alpha_p >> *alpha_p;
 		}
@@ -256,7 +349,7 @@ int main(int argc,char* argv[])
 	parse_info<> info=parse(argv[1],query,space_p);
 	if (info.full)
 	{
-		cout << "Successful parse" << endl;
+		cout << "Query:" << &query_root << endl;
 	}
 	else
 	{
