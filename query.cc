@@ -39,6 +39,8 @@ namespace optionalcorp
 		size_t documentCount() const;
 		
 		const bfs::path& filename() const { return m_filename; }
+		
+		void load();
 	};
 	
 	
@@ -66,6 +68,8 @@ namespace optionalcorp
 		
 		virtual size_t countOfTermNodes() const;
 		virtual void getResult(boost::dynamic_bitset<>& result)=0;
+		
+		virtual size_t documentCount() const;
 	};
 	
 	class BooleanQueryNode: public QueryNode
@@ -91,7 +95,7 @@ namespace optionalcorp
 		string m_term;
 		Index m_idx;
 	public:
-		TermQueryNode(string& str, Index& idx) : m_term(str), m_idx(idx) {}
+		TermQueryNode(string& str,string& key) : m_term(str), m_idx(key) {}
 		
 		bool isTermNode() const { return true; }
 		bool isOperNode() const { return false; }
@@ -100,6 +104,8 @@ namespace optionalcorp
 		
 		const string& term() const { return m_term; }
 		const Index& index() const { return m_idx; }
+
+		size_t documentCount() const;
 	};
 	
 	ostream& operator<<(ostream& os, QueryNode*);
@@ -128,8 +134,20 @@ namespace optionalcorp
 		return n;
 	}
 	
+	size_t QueryNode::documentCount() const
+	{
+		size_t left=0,right=0;
+		if (m_left)
+			left=m_left->documentCount();
+		if (m_right)
+			right=m_right->documentCount();
+		return max(left,right);
+	}
+	
 	void TermQueryNode::getResult(boost::dynamic_bitset<>& result)
 	{
+		m_idx.load();
+		
 		result.reset();
 		
 		for(size_t j = 0, jj=m_idx[m_term].size(); j < jj; ++j)
@@ -139,15 +157,23 @@ namespace optionalcorp
 		}
 		
 	}
+	
+	size_t TermQueryNode::documentCount() const
+	{
+		return m_idx.documentCount();
+	}
+	
 
 	void BooleanQueryNode::getResult(boost::dynamic_bitset<>& result)
 	{
 		// we have 2 children, get query results from both children
 		boost::dynamic_bitset<> leftresult(result.size());
-		m_left->getResult(leftresult);
+		if (m_left)
+			m_left->getResult(leftresult);
 		
 		boost::dynamic_bitset<> rightresult(result.size());
-		m_right->getResult(rightresult);
+		if (m_right)
+			m_right->getResult(rightresult);
 		
 		switch (m_type)
 		{
@@ -167,13 +193,16 @@ namespace optionalcorp
 	}
 
 	Index::Index(bfs::path index_file)
-		: m_filename(index_file)
+		: m_filename(change_extension(index_file,".index"))
 	{
+	}
+
+	void Index::load() {
 		// TODO: Don't load the same index multiple times!
-		m_filename=change_extension(index_file,".index");
-		// std::ifstream ifs(index_file.string().c_str());
-		// boost::archive::text_iarchive ar(ifs);
-		// boost::serialization::load(ar,m_idx,0);
+		cout << "Loading index:" << m_filename << endl;
+		std::ifstream ifs(m_filename.string().c_str());
+		boost::archive::text_iarchive ar(ifs);
+		boost::serialization::load(ar,m_idx,0);
 	}
 	
 	size_t Index::documentCount() const
@@ -240,8 +269,7 @@ void do_val(char const* str, char const* end)
 {
 	string s(str,end);
 	// cout << g_key << "=" << s << endl;
-	optionalcorp::Index idx(g_key);
-	optionalcorp::TermQueryNode* pNode=new optionalcorp::TermQueryNode(s,idx);
+	optionalcorp::TermQueryNode* pNode=new optionalcorp::TermQueryNode(s,g_key);
 	if (!query_iter->left())
 		query_iter->left(pNode);
 	else
@@ -337,7 +365,7 @@ int main(int argc,char* argv[])
 {
 	boost::progress_timer query_timer;
 
-	bfs::path idxfile(argv[1]);
+	// bfs::path idxfile(argv[1]);
 
 	vector<string> terms;
 	for (int i=2;i<argc;++i)
@@ -354,32 +382,11 @@ int main(int argc,char* argv[])
 	else
 	{
 		cout << "Failed parse:" << info.stop << endl;
-	}
-	return 0;
-
-	// Load index
-	optionalcorp::Index idx(idxfile);
-	
-	// Build query
-	optionalcorp::BooleanQueryNode qroot(optionalcorp::BooleanQueryNode::OR); // Root
-	optionalcorp::QueryNode* p=&qroot;
-	for(vector<string>::size_type i = 0; i < terms.size(); ++i)
-	{
-		p->left(new optionalcorp::TermQueryNode(terms[i],idx));
-		if ((i+2)<terms.size())
-		{
-			p->right(new optionalcorp::BooleanQueryNode(optionalcorp::BooleanQueryNode::OR));
-			p=p->right();
-		}
-		else // last term
-		{
-			p->right(new optionalcorp::TermQueryNode(terms[i+1],idx));
-			break;
-		}
+		return -1;
 	}
 
-	boost::dynamic_bitset<> results(idx.documentCount());
-	qroot.getResult(results);
+	boost::dynamic_bitset<> results(query_root.documentCount());
+	query_root.getResult(results);
 	
 	// Output bitmap bit numbers
 	size_t hits=0;
@@ -406,7 +413,7 @@ int main(int argc,char* argv[])
 	}
 	cout << endl;
 	
-	cout << hits << " hit" << (hits>1?"s":" ") << endl;
+	cout << hits << " hit" << (hits==1?"":"s") << endl;
 	
 	return 0;
 }
