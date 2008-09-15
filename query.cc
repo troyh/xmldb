@@ -23,9 +23,12 @@ namespace optionalcorp
 {
 	class Index
 	{
+	public:
 		typedef map< string, vector<uint32_t> > index_type;
+		typedef map< string, vector<uint32_t> >::iterator iterator_type;
+	private:
 		
-		index_type m_idx;
+		static map<string, index_type> m_indexes;
 		bfs::path m_filename;
 		
 	public:
@@ -33,8 +36,10 @@ namespace optionalcorp
 		
 		inline vector<uint32_t>& operator[](string key) 
 		{
-			return m_idx[key];
+			return m_indexes[m_filename.string()][key];
 		}
+		inline iterator_type begin() { return m_indexes[m_filename.string()].begin(); }
+		inline iterator_type end() { return m_indexes[m_filename.string()].end(); }
 		
 		size_t documentCount() const;
 		
@@ -92,10 +97,14 @@ namespace optionalcorp
 	
 	class TermQueryNode : public QueryNode
 	{
+	public:
+		typedef enum {eq,ne,lt,lte,gt,gte} equality_op;
+	private:
 		string m_term;
+		equality_op m_eqop;
 		Index m_idx;
 	public:
-		TermQueryNode(string& str,string& key) : m_term(str), m_idx(key) {}
+		TermQueryNode(string& str,string& key,equality_op eqop) : m_term(str), m_eqop(eqop), m_idx(key) {}
 		
 		bool isTermNode() const { return true; }
 		bool isOperNode() const { return false; }
@@ -103,17 +112,21 @@ namespace optionalcorp
 		void getResult(boost::dynamic_bitset<>& result);
 		
 		const string& term() const { return m_term; }
+		equality_op eqop() const { return m_eqop; }
 		const Index& index() const { return m_idx; }
 
 		size_t documentCount() const;
 	};
 	
 	ostream& operator<<(ostream& os, QueryNode*);
+	ostream& operator<<(ostream& os, optionalcorp::TermQueryNode::equality_op op);
 
 }
 
 namespace optionalcorp
 {
+	map<string, Index::index_type> Index::m_indexes;
+	
 	size_t QueryNode::countOfTermNodes() const
 	{
 		size_t n=0;
@@ -150,10 +163,47 @@ namespace optionalcorp
 		
 		result.reset();
 		
-		for(size_t j = 0, jj=m_idx[m_term].size(); j < jj; ++j)
+		if (m_eqop==eq || m_eqop==ne || m_eqop==lte || m_eqop==gte)
 		{
-			boost::dynamic_bitset<>::size_type bitno=(m_idx[m_term])[j]-1;
-			result.set(bitno);
+			for(size_t j = 0, jj=m_idx[m_term].size(); j < jj; ++j)
+			{
+				boost::dynamic_bitset<>::size_type bitno=(m_idx[m_term])[j]-1;
+				result.set(bitno);
+			}
+		}
+		
+		if (m_eqop==ne) // Reverse all the bits from the bits turned on above
+		{
+			result.flip();
+		}
+		
+		if (m_eqop==lt || m_eqop==lte) // Add in bits for all the terms less-than
+		{
+			for (Index::iterator_type iter=m_idx.begin(); iter!=m_idx.end(); ++iter) 
+			{
+				if (iter->first < m_term)
+				{
+					for(size_t j = 0, jj=m_idx[iter->first].size(); j < jj; ++j)
+					{
+						boost::dynamic_bitset<>::size_type bitno=(m_idx[iter->first])[j]-1;
+						result.set(bitno);
+					}
+				}
+			}
+		}
+		else if (m_eqop==gt || m_eqop==gte) // Add in bits for all the terms greater-than
+		{
+			for (Index::iterator_type iter=m_idx.begin(); iter!=m_idx.end(); ++iter) 
+			{
+				if (iter->first > m_term)
+				{
+					for(size_t j = 0, jj=m_idx[iter->first].size(); j < jj; ++j)
+					{
+						boost::dynamic_bitset<>::size_type bitno=(m_idx[iter->first])[j]-1;
+						result.set(bitno);
+					}
+				}
+			}
 		}
 		
 	}
@@ -186,6 +236,14 @@ namespace optionalcorp
 			case NOT:
 				result=leftresult ^ rightresult;
 				break;
+			case UNDEF:
+				if (m_left && m_right)
+					throw new exception(); // UNDEF should only happen when the query contains only a single term
+				if (m_left)
+					result=leftresult;
+				else
+					result=rightresult;
+				break;
 			default:
 				break;
 		}
@@ -198,11 +256,17 @@ namespace optionalcorp
 	}
 
 	void Index::load() {
-		// TODO: Don't load the same index multiple times!
-		cout << "Loading index:" << m_filename << endl;
-		std::ifstream ifs(m_filename.string().c_str());
-		boost::archive::text_iarchive ar(ifs);
-		boost::serialization::load(ar,m_idx,0);
+		if (m_indexes.find(m_filename.string())!=m_indexes.end())
+		{
+			// Already opened
+		}
+		else
+		{
+			cout << "Loading index:" << m_filename << endl;
+			std::ifstream ifs(m_filename.string().c_str());
+			boost::archive::text_iarchive ar(ifs);
+			boost::serialization::load(ar,m_indexes[m_filename.string()],0);
+		}
 	}
 	
 	size_t Index::documentCount() const
@@ -222,7 +286,7 @@ namespace optionalcorp
 		if (node->isTermNode())
 		{
 			os << dynamic_cast<optionalcorp::TermQueryNode*>(node)->index().filename() 
-				<< ':';
+				<< dynamic_cast<optionalcorp::TermQueryNode*>(node)->eqop();
 			os << dynamic_cast<optionalcorp::TermQueryNode*>(node)->term();
 		}
 		else
@@ -240,7 +304,7 @@ namespace optionalcorp
 				break;
 			}
 		}
-		
+
 		if (node->right())
 		{
 			os << '(';
@@ -250,11 +314,26 @@ namespace optionalcorp
 		
 		return os;
 	}
+
+	ostream& operator<<(ostream& os, optionalcorp::TermQueryNode::equality_op op)
+	{
+		switch (op)
+		{
+			case optionalcorp::TermQueryNode::eq : os << '=' ; break;
+			case optionalcorp::TermQueryNode::ne : os << "!="; break;
+			case optionalcorp::TermQueryNode::lt : os << '<' ; break;
+			case optionalcorp::TermQueryNode::lte: os << "<="; break;
+			case optionalcorp::TermQueryNode::gt : os << '>' ; break;
+			case optionalcorp::TermQueryNode::gte: os << ">="; break;
+		}
+		return os;
+	}
 	
 }
 
 namespace {
 	string g_key;
+	optionalcorp::TermQueryNode::equality_op g_eqop;
 	optionalcorp::BooleanQueryNode query_root;
 	optionalcorp::QueryNode* query_iter=&query_root;
 	size_t g_groupdepth=0;
@@ -268,8 +347,8 @@ void do_key(char const* str, char const* end)
 void do_val(char const* str, char const* end)
 {
 	string s(str,end);
-	// cout << g_key << "=" << s << endl;
-	optionalcorp::TermQueryNode* pNode=new optionalcorp::TermQueryNode(s,g_key);
+	// cout << g_key << g_eqop << s << endl;
+	optionalcorp::TermQueryNode* pNode=new optionalcorp::TermQueryNode(s,g_key,g_eqop);
 	if (!query_iter->left())
 		query_iter->left(pNode);
 	else
@@ -327,6 +406,21 @@ void do_bool(char c)
 	++g_groupdepth;
 }
 
+void do_eqop(const char* str,const char* end)
+{
+	string op(str,end);
+	
+	// cout << op << endl;
+	
+	if (op=="=") 		{g_eqop=optionalcorp::TermQueryNode::eq;}
+	else if (op=="!=")	{g_eqop=optionalcorp::TermQueryNode::ne;}
+	else if (op=="<")	{g_eqop=optionalcorp::TermQueryNode::lt;}
+	else if (op=="<=")	{g_eqop=optionalcorp::TermQueryNode::lte;}
+	else if (op==">=")	{g_eqop=optionalcorp::TermQueryNode::gt;}
+	else if (op==">")	{g_eqop=optionalcorp::TermQueryNode::gte;}
+
+}
+
 void do_group(char const* str,char const* end)
 {
 	// cout << "()" << endl;
@@ -349,13 +443,14 @@ struct querygrammar : public grammar<querygrammar>
 			query = clause_group >>  *( boolop >> clause_group );
 			clause_group = '(' >> (clause >> *( boolop >> clause ))[&do_group] >> ')'
 						 | (clause >> *( boolop >> clause ))[&do_group];
-			clause  = (key[&do_key] >> '=' >> val[&do_val]);
+			clause  = (key[&do_key] >> eqop >> val[&do_val]);
 			boolop = ch_p('|')[&do_bool] | ch_p('&')[&do_bool] | ch_p('^')[&do_bool];
-			key = alpha_p >> *alpha_p;
-			val = alpha_p >> *alpha_p;
+			eqop = (str_p("=") | str_p("!=") | str_p("<=") | str_p(">=") | str_p(">") | str_p("<"))[&do_eqop];
+			key = alpha_p >> *alnum_p;
+			val = alnum_p >> *alnum_p;
 		}
 		
-		rule<ScannerT> query,clause_group,clause,boolop,key,val;
+		rule<ScannerT> query,clause_group,clause,boolop,eqop,key,val;
 		rule<ScannerT> const& start() const { return query; }
 	};
 };
@@ -384,7 +479,7 @@ int main(int argc,char* argv[])
 		cout << "Failed parse:" << info.stop << endl;
 		return -1;
 	}
-
+	
 	boost::dynamic_bitset<> results(query_root.documentCount());
 	query_root.getResult(results);
 	
