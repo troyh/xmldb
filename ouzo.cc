@@ -7,6 +7,8 @@ int main(int argc,char* argv[])
 		Ouzo::Ouzo ouzo("ouzo.conf");
 
 		ouzo.addDocument(argv[1]);
+		
+		std::cout << "After:" << std::endl << ouzo << std::endl;
 	}
 	catch (Ouzo::Exception& x)
 	{

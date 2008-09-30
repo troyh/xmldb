@@ -23,7 +23,7 @@ index.o: index.cc XMLDoc.hpp
 
 OuzoDB.o: OuzoDB.cc
 
-ouzo.o: ouzo.cc
+ouzo.o: ouzo.cc OuzoDB.hpp
 
 clean:
 	rm -f index kvpairs split ouzo OuzoDB *.o
