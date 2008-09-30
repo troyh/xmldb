@@ -215,11 +215,17 @@ namespace Ouzo
 		switch (ds.m_type)
 		{
 			case DocSet::arr:
+			{
+				bool first=true;
 				for (vector<docid_t>::const_iterator itr=ds.m_docs_arr->begin(); itr!=ds.m_docs_arr->end(); ++itr)
 				{
-					os << *itr << ',';
+					if (!first)
+						os << ',';
+					os << *itr;
+					first=false;
 				}
-			break;
+				break;
+			}
 			case DocSet::bitmap:
 			break;
 		}
@@ -302,6 +308,17 @@ namespace Ouzo
 		return itr->second;
 	}
 	
+	void UIntIndex::del(docid_t docid)
+	{
+		// Iterate the keys
+		map<uint32_t,DocSet>::iterator itr_end=m_map.end();
+		for(map<uint32_t,DocSet>::iterator itr=m_map.begin(); itr!=itr_end; ++itr)
+		{
+			// Remove the docid from the DocSet
+			itr->second.clr(docid);
+		}
+	}
+	
 	void UIntIndex::load()
 	{
 		// Clear out m_map
@@ -330,7 +347,6 @@ namespace Ouzo
 	
 	void UIntIndex::save() const
 	{
-		cout << "Saving index:" << m_filename << "..." << endl;
 		std::ofstream ofs(m_filename.string().c_str());
 		
 		map<uint32_t,DocSet>::const_iterator itr_end=m_map.end();
@@ -345,7 +361,6 @@ namespace Ouzo
 			itr->second.save(ofs);
 			++ckeys;
 		}
-		cout << "Wrote " << ckeys << " keys" << endl;
 	}
 
 	void StringIndex::put(const char* key, docid_t docid)
@@ -368,6 +383,17 @@ namespace Ouzo
 	{
 		map<std::string,DocSet>::const_iterator itr=m_map.find(key);
 		return itr->second;
+	}
+	
+	void StringIndex::del(docid_t docid)
+	{
+		// Iterate the keys
+		map<std::string,DocSet>::iterator itr_end=m_map.end();
+		for(map<std::string,DocSet>::iterator itr=m_map.begin(); itr!=itr_end; ++itr)
+		{
+			// Remove the docid from the DocSet
+			itr->second.clr(docid);
+		}
 	}
 	
 	void StringIndex::load()
@@ -500,7 +526,7 @@ namespace Ouzo
 				return XMLString::transcode(kid->getTextContent());
 			}
 		}
-		return "NOTFOUND";
+		return "NOTFOUND"; // TODO: return an appropriate error
 	}
 
 	void Ouzo::addXMLDocument(bfs::path docfile, docid_t docid)
@@ -521,7 +547,8 @@ namespace Ouzo
 
 			// Parse a DOMDocument
 			DOMDocument *document = builder->parseURI(X(docfile.string().c_str()));
-			if(document == 0) {
+			if(document == 0)
+			{
 		        std::cerr << "Document not found." << std::endl;
 				throw new exception();
 			}
@@ -534,11 +561,12 @@ namespace Ouzo
 			{
 				Index* idx=m_indexes[i];
 				
-				cout << "Index:" << idx->filename() << ", keyspec=" << idx->keyspec() << endl;
 				Semaphore sem=idx->lock();
 				
 				idx->load();
-				cout << idx->filename() << " before:" << (UIntIndex&)*idx << endl;
+				
+				// First remove any existing data in the index for this docid
+				idx->del(docid);
 				
 				// Parse an XPath 2 expression
 		        const DOMXPathExpression* expression = document->createExpression(X(idx->keyspec().c_str()), 0);
@@ -547,7 +575,8 @@ namespace Ouzo
 		        XPath2Result* result = (XPath2Result*)expression->evaluate(document, XPath2Result::ITERATOR_RESULT, 0);
 
 		        // Iterate over the results
-		        while(result->iterateNext()) {
+		        while(result->iterateNext())
+				{
 					const char* val=XMLString::transcode(result->asNode()->getTextContent());
 					idx->put(val,docid);
 					XMLString::release((char**)&val);
@@ -560,7 +589,6 @@ namespace Ouzo
 				// idx->merge(idx2);
 				
 				idx->save();
-				cout << idx->filename() << " after:" << (UIntIndex&)*idx << endl;
 				
 				idx->unlock(sem);
 			}
@@ -652,18 +680,71 @@ namespace Ouzo
 	{
 		bool changed=false;
 		
-		// TODO: remove all references to this doc in m_docidmap and in indexes
-
 		// Find out if we already know about this document
 		if (m_docidmap.find(docfile)!=m_docidmap.end())
 		{
 			docid_t docid=m_docidmap[docfile];
 			m_avail_docids.set(docid-1,true);
+			
+			// Iterate the indexes
+			for (vector<Index*>::size_type i=0; i< m_indexes.size(); ++i)
+			{
+				Index* idx=m_indexes[i];
+			
+				Semaphore sem=idx->lock();
+			
+				idx->load();
+				idx->del(docid);
+				idx->save();
+			
+				idx->unlock(sem);
+			}
+			
 			changed=true;
 		}
 		
 		if (changed)
 			persist();
+	}
+
+	std::ostream& operator<<(std::ostream& os, const Ouzo& ouzo)
+	{
+		dynamic_bitset<>::size_type nextdocid=ouzo.m_avail_docids.find_first()+1;
+		
+		os << "Config file     :" << ouzo.m_config_file << std::endl
+		   << "Doc dir         :" << ouzo.m_cfg_docdir << std::endl
+		   << "Data dir        :" << ouzo.m_cfg_datadir << std::endl
+		   << "Doc capacity    :" << ouzo.m_cfg_doccapacity << std::endl
+		   << "Next avail docid:" << nextdocid << std::endl
+  		   << "Doc-ID map      :" << std::endl;
+
+		map<bfs::path,docid_t>::const_iterator itr_end=ouzo.m_docidmap.end();
+		for (map<bfs::path,docid_t>::const_iterator itr=ouzo.m_docidmap.begin(); itr!=itr_end; ++itr)
+		{
+			os << itr->second << '\t' << itr->first << std::endl;
+		}
+		os << std::endl;
+
+		os << "Indexes:" << std::endl;
+		for (vector<Index*>::size_type i=0; i< ouzo.m_indexes.size(); ++i)
+		{
+			Index* idx=ouzo.m_indexes[i];
+			os << "------------------" << std::endl
+			   << idx->filename() << std::endl
+			   << "------------------" << std::endl;
+			
+			UIntIndex* uiidx=dynamic_cast<UIntIndex*>(idx);
+			if (uiidx)
+				os << *uiidx << std::endl;
+			else
+			{
+				StringIndex* sidx=dynamic_cast<StringIndex*>(idx);
+				if (sidx)
+					os << *sidx << std::endl;
+			}
+		}
+		
+		return os;
 	}
 	
 }
