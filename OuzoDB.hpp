@@ -134,7 +134,7 @@ namespace Ouzo
 		virtual void load()=0;
 		
 		virtual Semaphore lock();
-		virtual void      unlock(const Semaphore& sem);
+		virtual void unlock(const Semaphore& sem);
 		
 		virtual void save() const=0;
 		
@@ -142,6 +142,8 @@ namespace Ouzo
 		
 		virtual void put(const char* key,docid_t docid)=0;
 		virtual const DocSet& get(const char* key) const=0;
+		virtual void del(docid_t docid)=0;
+		
 	};
 	
 	class StringIndex : public Index
@@ -158,6 +160,7 @@ namespace Ouzo
 	
 		void put(const char* key,docid_t docid);
 		const DocSet& get(const char* key) const;
+		void del(docid_t docid);
 		
 		void load();
 		void save() const;
@@ -182,6 +185,7 @@ namespace Ouzo
 		void put(const char* key,docid_t docid);
 		const DocSet& get(const char* key) const { return get(strtoul(key,0,10)); }
 		const DocSet& get(uint32_t key) const;
+		void del(docid_t docid);
 
 		void load();
 		void save() const;
@@ -202,8 +206,9 @@ namespace Ouzo
 
 	class Ouzo
 	{
+		friend ostream& operator<<(ostream& os, const Ouzo& ouzo);
 	public:
-		typedef enum { XML } doctype;
+		typedef enum { XML } doctype; // Supported document types
 	private:
 		map<bfs::path,docid_t> m_docidmap;
 		dynamic_bitset<> m_avail_docids;
@@ -227,4 +232,7 @@ namespace Ouzo
 	
 		// Results fetch(const Query& q) const;
 	};
+	
+	ostream& operator<<(ostream& os, const Ouzo& ouzo);
+	
 }
