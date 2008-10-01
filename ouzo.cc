@@ -1,14 +1,88 @@
+#include <boost/algorithm/string/case_conv.hpp>
 #include "OuzoDB.hpp"
+
+using namespace std;
+using namespace boost::algorithm;
+
+void usage()
+{
+	cout << "ouzo <command> [arguments]" << endl
+		 << endl
+		<< "where <command> is one of the following:" << endl
+		<< "add\tAdd document(s) to Ouzo" << endl
+		<< "del\tDelete document from Ouzo" << endl
+		<< "info\tOuzo info report" << endl
+		<< endl;
+}
 
 int main(int argc,char* argv[])
 {
+	if (argc<2)
+	{
+		usage();
+		return -1;
+	}
+	
 	try
 	{
-		Ouzo::Ouzo ouzo("ouzo.conf");
+		string cmd(argv[1]);
+		to_lower(cmd);
+	
+		if (cmd=="add")
+		{
+			if (argc<3)
+			{
+				usage();
+				return -1;
+			}
+			
+			try
+			{
+				Ouzo::Ouzo ouzo("ouzo.conf");
 
-		ouzo.addDocument(argv[1]);
-		
-		std::cout << "After:" << std::endl << ouzo << std::endl;
+				std::cout << "Before:" << std::endl << ouzo << std::endl;
+				ouzo.addDocument(argv[2]);
+				std::cout << "After:" << std::endl << ouzo << std::endl;
+			}
+			catch (...)
+			{
+				throw;
+			}
+		}
+		else if (cmd=="del")
+		{
+			try
+			{
+				Ouzo::Ouzo ouzo("ouzo.conf");
+
+				std::cout << "Before:" << std::endl << ouzo << std::endl;
+				ouzo.delDocument(argv[2]);
+				std::cout << "After:" << std::endl << ouzo << std::endl;
+			}
+			catch (...)
+			{
+				throw;
+			}
+		}
+		else if (cmd=="info")
+		{
+			try
+			{
+				Ouzo::Ouzo ouzo("ouzo.conf");
+
+				std::cout << ouzo << std::endl;
+			}
+			catch (...)
+			{
+				throw;
+			}
+		}
+		else
+		{
+			usage();
+			return -1;
+		}
+	
 	}
 	catch (Ouzo::Exception& x)
 	{
