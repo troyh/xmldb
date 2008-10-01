@@ -1,4 +1,5 @@
 #include <boost/algorithm/string/case_conv.hpp>
+#include <glob.h>
 #include "OuzoDB.hpp"
 
 using namespace std;
@@ -41,7 +42,21 @@ int main(int argc,char* argv[])
 				Ouzo::Ouzo ouzo("ouzo.conf");
 
 				std::cout << "Before:" << std::endl << ouzo << std::endl;
-				ouzo.addDocument(argv[2]);
+				
+				for(size_t arg = 2; arg < argc; ++arg)
+				{
+					// Do file-globbing
+					glob_t globbuf;
+					if (!glob(argv[arg],GLOB_TILDE_CHECK,NULL,&globbuf))
+					{
+						for (size_t i=0;i<globbuf.gl_pathc;++i)
+						{
+							std::cout << globbuf.gl_pathv[i] << endl;
+							ouzo.addDocument(globbuf.gl_pathv[i]);
+						}
+						globfree(&globbuf);
+					}
+				}
 				std::cout << "After:" << std::endl << ouzo << std::endl;
 			}
 			catch (...)
