@@ -90,9 +90,18 @@ namespace Ouzo
 		{
 			m_docs_bitmap->reset(docno);
 		}
-		else
+		else // Array type
 		{
-			// TODO: remove from vector
+			// Remove from vector
+			vector<docid_t>::iterator itr_end=m_docs_arr->end();
+			for (vector<docid_t>::iterator itr=m_docs_arr->begin(); itr!=itr_end; ++itr)
+			{
+				if (*itr==docno)
+				{
+					m_docs_arr->erase(itr);
+					break;
+				}
+			}
 		}
 	}
 	
@@ -684,6 +693,7 @@ namespace Ouzo
 		if (m_docidmap.find(docfile)!=m_docidmap.end())
 		{
 			docid_t docid=m_docidmap[docfile];
+			m_docidmap.erase(docfile);
 			m_avail_docids.set(docid-1,true);
 			
 			// Iterate the indexes
