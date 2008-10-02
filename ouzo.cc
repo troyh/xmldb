@@ -1,4 +1,5 @@
 #include <boost/algorithm/string/case_conv.hpp>
+#include <boost/filesystem.hpp>
 #include <glob.h>
 #include "OuzoDB.hpp"
 
@@ -7,6 +8,7 @@
 
 using namespace std;
 using namespace boost::algorithm;
+namespace bfs=boost::filesystem;
 
 void usage()
 {

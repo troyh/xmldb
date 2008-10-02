@@ -241,14 +241,17 @@ namespace Ouzo
 
 	ostream& operator<<(ostream& os, const UIntIndex& idx);
 
-	// class InvertedIndex
-	// {
-	// 	typedef map< uint32_t, vector<Key> > index_type;
-	// 	typedef map< uint32_t, vector<Key> >::iterator iterator_type;
-	// public:
-	// 	InvertedIndex();
-	// 	~InvertedIndex();
-	// };
+	class Config
+	{
+		map<std::string,std::string> m_info;
+	public:
+		Config() {}
+		~Config() {}
+		
+		inline std::string get(const std::string& s) const { return ((Config*)this)->m_info[s]; }
+		void set(std::string name, std::string value);
+		void set(std::string name, uint32_t value);
+	};
 
 	class Ouzo
 	{
@@ -260,9 +263,7 @@ namespace Ouzo
 		dynamic_bitset<> m_avail_docids;
 		vector<Index*> m_indexes;
 		bfs::path m_config_file;
-		bfs::path m_cfg_docdir;
-		bfs::path m_cfg_datadir;
-		uint32_t m_cfg_doccapacity;
+		Config m_cfg;
 
 		void addXMLDocument(bfs::path fname, docid_t docid);
 		const char* getNodeValue(const DOMNode* node,const char* tag);
@@ -272,6 +273,8 @@ namespace Ouzo
 	public:	
 		Ouzo(bfs::path config_file);
 		~Ouzo();
+		
+		Config config() const { return m_cfg; }
 	
 		void addDocument(bfs::path docfile,doctype type=XML);
 		void delDocument(bfs::path docfile);

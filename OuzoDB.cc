@@ -1,6 +1,6 @@
+#include <sstream>
 #include "OuzoDB.hpp"
 
-// TODO: store filenames in docidmap relative to config's documents/dir
 // TODO: auto-convert between bitmap and vector in DocSet
 // TODO: use locks when saving files
 // TODO: read config file
@@ -502,22 +502,36 @@ namespace Ouzo
 		return os;
 	}
 	
+	void Config::set(std::string name, std::string value)
+	{
+		m_info[name]=value;
+	}
+	
+	void Config::set(std::string name, uint32_t value)
+	{
+		std::ostringstream n;
+		n << value;
+		m_info[name]=n.str();
+	}
+	
 	Ouzo::Ouzo(bfs::path config_file)
 		: m_config_file(config_file)
 	{
 		// TODO: read these from config file
-		m_cfg_docdir="/home/troy/medline/docs";
-		m_cfg_datadir=".";
-		m_cfg_doccapacity=1000;
+		m_cfg.set("docdir","/home/troy/medline/docs/"); // MUST have a trailing slash!
+		m_cfg.set("datadir",".");
+		m_cfg.set("doccapacity",1000);
 		
 		Index* p=new UIntIndex("PMID.index","/MedlineCitation/PMID/text()");
 		m_indexes.push_back(p);
 		p=new UIntIndex("Year.index","/MedlineCitation/DateCreated/Year/text()");
 		m_indexes.push_back(p);
 		
+		bfs::path datadir(m_cfg.get("datadir"));
+
 		try
 		{
-			bfs::path fname=m_cfg_datadir / "docidmap";
+			bfs::path fname=datadir / "docidmap";
 			std::ifstream ifs(fname.string().c_str());
 			boost::archive::text_iarchive ar(ifs);
 			boost::serialization::load(ar,m_docidmap,0);
@@ -529,15 +543,16 @@ namespace Ouzo
 
 		try
 		{
-			bfs::path fname=m_cfg_datadir / "docid.map";
+			bfs::path fname=datadir / "docid.map";
 			if (exists(fname))
 			{
 				std::ifstream ifs(fname.string().c_str());
 				ifs >> m_avail_docids;
 			}
 
-			if (m_avail_docids.size()<m_cfg_doccapacity)
-				m_avail_docids.resize(m_cfg_doccapacity,1);
+			size_t capacity=strtoul(m_cfg.get("doccapacity").c_str(),0,10);
+			if (m_avail_docids.size()<capacity)
+				m_avail_docids.resize(capacity,1);
 			
 		}
 		catch (boost::archive::archive_exception& x)
@@ -656,10 +671,12 @@ namespace Ouzo
 			m_indexes[i]->save();
 		}
 		
+		bfs::path datadir(m_cfg.get("datadir"));
+		
 		// Write docidmap file
 		try
 		{
-			bfs::path fname=m_cfg_datadir / "docidmap";
+			bfs::path fname=datadir / "docidmap";
 			std::ofstream ofs(fname.string().c_str());
 			boost::archive::text_oarchive ar(ofs);
 			boost::serialization::save(ar,m_docidmap,0);
@@ -669,7 +686,7 @@ namespace Ouzo
 			cout << "Archive exception: " << x.what() << endl;
 		}
 		
-		bfs::path fname=m_cfg_datadir / "docid.map";
+		bfs::path fname=datadir / "docid.map";
 		std::ofstream ofs(fname.string().c_str());
 		ofs << m_avail_docids;
 
@@ -679,9 +696,32 @@ namespace Ouzo
 	
 	void Ouzo::addDocument(bfs::path docfile, doctype type)
 	{
+		std::string fname;
+		
+		// If docfile is an absolute path, verify that it is in the config's documents/dir
+		if (docfile.has_root_path())
+		{
+			// Is it in the config's documents/dir?
+			string s1=m_cfg.get("docdir");
+			string s2=docfile.string().substr(0,s1.length());
+			if (s1!=s2)
+			{
+				return; // TODO: return an appropriate error
+			}
+			else
+			{
+				fname=docfile.string().substr(s1.length());
+			}
+		}
+		else // Relative path, pre-pend the config's documents/dir
+		{
+			fname=docfile.string();
+			docfile=m_cfg.get("docdir") / docfile;
+		}
+		
 		docid_t docid;
 		// Find out if we already know about this document
-		if (m_docidmap.find(docfile)==m_docidmap.end())
+		if (m_docidmap.find(fname)==m_docidmap.end())
 		{
 			// Create a new unique docid
 			dynamic_bitset<>::size_type n=m_avail_docids.find_first(); // Find first on bit which represents the first available doc number
@@ -695,7 +735,7 @@ namespace Ouzo
 		else
 		{ 
 			// Get the docid
-			docid=m_docidmap[docfile];
+			docid=m_docidmap[fname];
 		}
 		
 		switch (type)
@@ -707,7 +747,7 @@ namespace Ouzo
 				break;
 		}
 		
-		m_docidmap[docfile]=docid;
+		m_docidmap[fname]=docid;
 		m_avail_docids.set(docid-1,false);
 		
 		persist();
@@ -750,9 +790,9 @@ namespace Ouzo
 		dynamic_bitset<>::size_type nextdocid=ouzo.m_avail_docids.find_first()+1;
 		
 		os << "Config file     :" << ouzo.m_config_file << std::endl
-		   << "Doc dir         :" << ouzo.m_cfg_docdir << std::endl
-		   << "Data dir        :" << ouzo.m_cfg_datadir << std::endl
-		   << "Doc capacity    :" << ouzo.m_cfg_doccapacity << std::endl
+		   << "Doc dir         :" << ouzo.m_cfg.get("docdir") << std::endl
+		   << "Data dir        :" << ouzo.m_cfg.get("datadir") << std::endl
+		   << "Doc capacity    :" << ouzo.m_cfg.get("doccapacity") << std::endl
 		   << "Next avail docid:" << nextdocid << std::endl
   		   << "Doc-ID map      :" << std::endl;
 
