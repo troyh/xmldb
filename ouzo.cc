@@ -2,6 +2,9 @@
 #include <glob.h>
 #include "OuzoDB.hpp"
 
+// TODO: support reindex command
+// TODO: accept files relative to Ouzo config's documents/dir
+
 using namespace std;
 using namespace boost::algorithm;
 

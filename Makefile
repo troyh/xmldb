@@ -21,7 +21,7 @@ XMLDoc.o: XMLDoc.cc XMLDoc.hpp
 
 index.o: index.cc XMLDoc.hpp
 
-OuzoDB.o: OuzoDB.cc
+OuzoDB.o: OuzoDB.cc OuzoDB.hpp
 
 ouzo.o: ouzo.cc OuzoDB.hpp
 

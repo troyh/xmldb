@@ -1,5 +1,13 @@
 #include "OuzoDB.hpp"
 
+// TODO: store filenames in docidmap relative to config's documents/dir
+// TODO: auto-convert between bitmap and vector in DocSet
+// TODO: use locks when saving files
+// TODO: read config file
+// TODO: support more index types (Float, Int, multi-val, etc.)
+// TODO: support queries
+// TODO: make it thread-safe
+
 namespace Ouzo
 {
 
@@ -13,8 +21,8 @@ namespace Ouzo
 	{
 	}
 	
-	DocSet::DocSet()
-		: m_type(arr), m_docs_arr(new vector<docid_t>)
+	DocSet::DocSet(size_t capacity)
+		: m_type(bitmap), m_docs_arr(new vector<docid_t>), m_docs_bitmap(new bitset_type(capacity,0,BitmapAllocator<unsigned long>()))
 	{
 	}
 	
@@ -52,7 +60,7 @@ namespace Ouzo
 				return m_docs_bitmap->size();
 				break;
 			default:
-				throw new exception; // TODO: throw Ouzo::Exception
+				throw Exception(__FILE__,__LINE__);
 				break;
 		}
 	}
@@ -138,7 +146,7 @@ namespace Ouzo
 		is.read((char*)&m_type,sizeof(m_type));
 		
 		if (!is.good())
-			throw new exception; // TODO: throw Ouzo::Exception
+			throw Exception(__FILE__,__LINE__);
 		
 		switch (m_type)
 		{
@@ -150,7 +158,7 @@ namespace Ouzo
 				is.read((char*)&n,sizeof(n));
 
 				if (!is.good())
-					throw new exception; // TODO: throw Ouzo::Exception
+					throw Exception(__FILE__,__LINE__);
 				
 				for(size_t i = 0; i < n; ++i)
 				{
@@ -158,7 +166,7 @@ namespace Ouzo
 					is.read((char*)&docid,sizeof(docid));
 
 					if (!is.good())
-						throw new exception; // TODO: throw Ouzo::Exception
+						throw Exception(__FILE__,__LINE__);
 					
 					m_docs_arr->push_back(docid);
 				}
@@ -167,18 +175,23 @@ namespace Ouzo
 			}
 			case bitmap:
 			{
-				dynamic_bitset<>::size_type n;
+				BitmapAllocator<bitset_type::block_type>::size_type n;
 				is.read((char*)&n,sizeof(n));
-
+				
 				if (!is.good())
-					throw new exception; // TODO: throw Ouzo::Exception
+					throw Exception(__FILE__,__LINE__);
 				
 				m_docs_bitmap->clear();
 				m_docs_bitmap->resize(n);
-				is >> *m_docs_bitmap;
+				
+				BitmapAllocator< bitset_type::block_type > pa=m_docs_bitmap->get_allocator();
+				if (pa.sizeInBytes()<n)
+					throw Exception(__FILE__,__LINE__);
+					
+				is.read(pa.startOfSpace(),n);
 				
 				if (!is.good())
-					throw new exception; // TODO: throw Ouzo::Exception
+					throw Exception(__FILE__,__LINE__);
 				
 				break;
 			}
@@ -207,11 +220,16 @@ namespace Ouzo
 			}
 			case bitmap:
 			{
-				dynamic_bitset<>::size_type n=m_docs_bitmap->size();
-				os.write((char*)&n,sizeof(n));
+				BitmapAllocator< bitset_type::block_type > pa=m_docs_bitmap->get_allocator();
+				BitmapAllocator< bitset_type::block_type >::size_type n=pa.sizeInBytes();
 				
-				os << *m_docs_bitmap;
-				os << '$';
+				os.write((char*)&n,sizeof(n));
+				if (!os.good())
+					throw Exception(__FILE__,__LINE__);
+					
+				os.write(pa.startOfSpace(),n);
+				if (!os.good())
+					throw Exception(__FILE__,__LINE__);
 				break;
 			}
 			default:
@@ -236,6 +254,16 @@ namespace Ouzo
 				break;
 			}
 			case DocSet::bitmap:
+			{
+				bool first=true;
+				for (DocSet::bitset_type::size_type n=ds.m_docs_bitmap->find_first(); n!=DocSet::bitset_type::npos; n=ds.m_docs_bitmap->find_next(n))
+				{
+					if (!first)
+						os << ',';
+					os << n;
+					first=false;
+				}
+			}
 			break;
 		}
 		return os;
@@ -657,9 +685,9 @@ namespace Ouzo
 		{
 			// Create a new unique docid
 			dynamic_bitset<>::size_type n=m_avail_docids.find_first(); // Find first on bit which represents the first available doc number
-			if (n==dynamic_bitset<>::npos)
+			if (n==dynamic_bitset<>::npos) // No available docid
 			{
-				throw new exception(); // TODO: throw Ouzo::Exception
+				throw Exception(__FILE__,__LINE__);
 			}
 			
 			docid=n+1;
