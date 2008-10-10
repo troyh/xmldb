@@ -1,28 +1,26 @@
 #include <sstream>
+#include <boost/interprocess/sync/scoped_lock.hpp>
+#include <boost/interprocess/sync/sharable_lock.hpp>
 #include "OuzoDB.hpp"
 
-// TODO: auto-convert between bitmap and vector in DocSet
 // TODO: use locks when saving files
 // TODO: read config file
 // TODO: support more index types (Float, Int, multi-val, etc.)
 // TODO: support queries
 // TODO: make it thread-safe
+// TODO: In DocSet, don't always allocate a vector and a dynamic_bitset, only the one you need
+// TODO: version index file format
 
 namespace Ouzo
 {
 
 	using namespace xercesc;
 
-	Semaphore::Semaphore()
-	{
-	}
-	
-	Semaphore::~Semaphore()
-	{
-	}
-	
 	DocSet::DocSet(size_t capacity)
-		: m_type(bitmap), m_docs_arr(new vector<docid_t>), m_docs_bitmap(new bitset_type(capacity,0,BitmapAllocator<unsigned long>()))
+		: m_type(bitmap), 
+		m_docs_arr(new std::vector<docid_t>), 
+		m_docs_bitmap(new bitset_type(capacity,0,BitmapAllocator<unsigned long>())),
+		m_capacity(capacity)
 	{
 	}
 	
@@ -41,6 +39,7 @@ namespace Ouzo
 		m_docs_bitmap=ds.m_docs_bitmap; 
 		m_docs_arr=ds.m_docs_arr; 
 		m_type=ds.m_type; 
+		m_capacity=ds.m_capacity;
 		return *this; 
 	}
 
@@ -75,9 +74,9 @@ namespace Ouzo
 		case arr:
 		{
 			// See if it's already there
-			vector<docid_t>::const_iterator itr_end=m_docs_arr->end();
+			std::vector<docid_t>::const_iterator itr_end=m_docs_arr->end();
 			bool found=false;
-			for (vector<docid_t>::const_iterator itr=m_docs_arr->begin(); itr!=itr_end; ++itr)
+			for (std::vector<docid_t>::const_iterator itr=m_docs_arr->begin(); itr!=itr_end; ++itr)
 			{
 				if (*itr==docno)
 					found=true;
@@ -101,8 +100,8 @@ namespace Ouzo
 		else // Array type
 		{
 			// Remove from vector
-			vector<docid_t>::iterator itr_end=m_docs_arr->end();
-			for (vector<docid_t>::iterator itr=m_docs_arr->begin(); itr!=itr_end; ++itr)
+			std::vector<docid_t>::iterator itr_end=m_docs_arr->end();
+			for (std::vector<docid_t>::iterator itr=m_docs_arr->begin(); itr!=itr_end; ++itr)
 			{
 				if (*itr==docno)
 				{
@@ -154,7 +153,7 @@ namespace Ouzo
 			{
 				m_docs_arr->clear();
 
-				vector<docid_t>::size_type n;
+				std::vector<docid_t>::size_type n;
 				is.read((char*)&n,sizeof(n));
 
 				if (!is.good())
@@ -198,6 +197,13 @@ namespace Ouzo
 			default:
 				break;
 		}
+		
+		// Should we convert from one type of data structure to the other for efficiency?
+		set_type besttype=mostEfficientType();
+		if (besttype!=m_type)
+		{
+			convertToType(besttype);
+		}
 	}
 
 	void DocSet::save(ostream& os) const
@@ -208,10 +214,10 @@ namespace Ouzo
 		{
 			case arr:
 			{
-				vector<docid_t>::size_type n=m_docs_arr->size();
+				std::vector<docid_t>::size_type n=m_docs_arr->size();
 				os.write((char*)&n,sizeof(n));
 				
-				for(vector<docid_t>::size_type i = 0; i < n; ++i)
+				for(std::vector<docid_t>::size_type i = 0; i < n; ++i)
 				{
 					docid_t docid=(*m_docs_arr)[i];
 					os.write((char*)&docid,sizeof(docid));
@@ -244,7 +250,7 @@ namespace Ouzo
 			case DocSet::arr:
 			{
 				bool first=true;
-				for (vector<docid_t>::const_iterator itr=ds.m_docs_arr->begin(); itr!=ds.m_docs_arr->end(); ++itr)
+				for (std::vector<docid_t>::const_iterator itr=ds.m_docs_arr->begin(); itr!=ds.m_docs_arr->end(); ++itr)
 				{
 					if (!first)
 						os << ',';
@@ -269,6 +275,52 @@ namespace Ouzo
 		return os;
 	}
 
+	/**
+	Based on capacity and the number of documents we're storing, choose the type.
+	*/
+	DocSet::set_type DocSet::mostEfficientType() const
+	{
+		return bitmap; // TODO: don't always return bitmap, do the math
+	}
+	
+	void DocSet::convertToType(set_type t)
+	{
+		if (m_type!=t)
+		{
+			switch (t)
+			{
+			case bitmap:
+			{
+				// Convert from vector to bitmap
+				std::vector<docid_t>::const_iterator itr_end=m_docs_arr->end();
+				for (std::vector<docid_t>::const_iterator itr=m_docs_arr->begin(); itr!=itr_end; ++itr)
+				{
+					docid_t docid=*itr;
+					m_docs_bitmap->set(docid-1);
+				}
+				
+				m_docs_arr->clear();
+				break;
+			}
+			case arr:
+			{
+				// Convert from bitmap to vector
+				for (bitset_type::size_type n=m_docs_bitmap->find_first(); n!=bitset_type::npos; n=m_docs_bitmap->find_next(n))
+				{
+					m_docs_arr->push_back(n+1);
+				}
+				
+				m_docs_bitmap->resize(0);
+				break;
+			}
+			default:
+				throw Exception(__FILE__,__LINE__);
+				break;
+			}
+			
+			m_type=t;
+		}
+	}
 	
 	Index::Index(bfs::path index_file, const std::string& keyspec)
 		: m_filename(index_file), m_keyspec(keyspec)
@@ -283,14 +335,6 @@ namespace Ouzo
 	{
 	}
 
-	Semaphore Index::lock()
-	{
-	}
-
-	void Index::unlock(const Semaphore& sem)
-	{
-	}
-	
 	void Index::merge(const Index& other)
 	{
 	// 	// Add keys from other into this index
@@ -341,23 +385,25 @@ namespace Ouzo
 	
 	const DocSet& UIntIndex::get(uint32_t key) const
 	{
-		map<uint32_t,DocSet>::const_iterator itr=m_map.find(key);
+		std::map<uint32_t,DocSet>::const_iterator itr=m_map.find(key);
 		return itr->second;
 	}
 	
 	void UIntIndex::del(docid_t docid)
 	{
 		// Iterate the keys
-		map<uint32_t,DocSet>::iterator itr_end=m_map.end();
-		for(map<uint32_t,DocSet>::iterator itr=m_map.begin(); itr!=itr_end; ++itr)
+		std::map<uint32_t,DocSet>::iterator itr_end=m_map.end();
+		for(std::map<uint32_t,DocSet>::iterator itr=m_map.begin(); itr!=itr_end; ++itr)
 		{
 			// Remove the docid from the DocSet
 			itr->second.clr(docid);
 		}
 	}
 	
-	void UIntIndex::load()
+	void UIntIndex::load(boost::interprocess::file_lock& f_lock)
 	{
+		boost::interprocess::sharable_lock<file_lock> sh_lock(f_lock);
+		
 		// Clear out m_map
 		if (!m_map.empty())
 			m_map.clear();
@@ -382,13 +428,15 @@ namespace Ouzo
 		}
 	}
 	
-	void UIntIndex::save() const
+	void UIntIndex::save(boost::interprocess::file_lock& f_lock) const
 	{
+		boost::interprocess::scoped_lock<boost::interprocess::file_lock> e_lock(f_lock);
+		
 		std::ofstream ofs(m_filename.string().c_str());
 		
-		map<uint32_t,DocSet>::const_iterator itr_end=m_map.end();
+		std::map<uint32_t,DocSet>::const_iterator itr_end=m_map.end();
 		size_t ckeys=0;
-		for(map<uint32_t,DocSet>::const_iterator itr = m_map.begin(); itr != itr_end; ++itr)
+		for(std::map<uint32_t,DocSet>::const_iterator itr = m_map.begin(); itr != itr_end; ++itr)
 		{
 			// Write key
 			uint32_t n=itr->first;
@@ -418,23 +466,25 @@ namespace Ouzo
 
 	const DocSet& StringIndex::get(const char* key) const
 	{
-		map<std::string,DocSet>::const_iterator itr=m_map.find(key);
+		std::map<std::string,DocSet>::const_iterator itr=m_map.find(key);
 		return itr->second;
 	}
 	
 	void StringIndex::del(docid_t docid)
 	{
 		// Iterate the keys
-		map<std::string,DocSet>::iterator itr_end=m_map.end();
-		for(map<std::string,DocSet>::iterator itr=m_map.begin(); itr!=itr_end; ++itr)
+		std::map<std::string,DocSet>::iterator itr_end=m_map.end();
+		for(std::map<std::string,DocSet>::iterator itr=m_map.begin(); itr!=itr_end; ++itr)
 		{
 			// Remove the docid from the DocSet
 			itr->second.clr(docid);
 		}
 	}
 	
-	void StringIndex::load()
+	void StringIndex::load(boost::interprocess::file_lock& f_lock)
 	{
+		sharable_lock<boost::interprocess::file_lock> sh_lock(f_lock);
+		
 		// Clear out m_map
 		if (!m_map.empty())
 			m_map.clear();
@@ -461,12 +511,14 @@ namespace Ouzo
 		}
 	}
 	
-	void StringIndex::save() const
+	void StringIndex::save(boost::interprocess::file_lock& f_lock) const
 	{
+		boost::interprocess::scoped_lock<boost::interprocess::file_lock> e_lock(f_lock);
+
 		std::ofstream ofs(m_filename.string().c_str());
 		
-		map<std::string,DocSet>::const_iterator itr_end=m_map.end();
-		for(map<std::string,DocSet>::const_iterator itr = m_map.begin(); itr != itr_end; ++itr)
+		std::map<std::string,DocSet>::const_iterator itr_end=m_map.end();
+		for(std::map<std::string,DocSet>::const_iterator itr = m_map.begin(); itr != itr_end; ++itr)
 		{
 			// Write key
 			std::string key=itr->first;
@@ -483,8 +535,8 @@ namespace Ouzo
 	ostream& operator<<(ostream& os, const UIntIndex& idx)
 	{
 		UIntIndex& idx2=(UIntIndex&)idx; // cast away const-ness because C++ is kinda dumb this way
-		map<uint32_t,DocSet>::const_iterator itr_end=idx.m_map.end();
-		for(map<uint32_t,DocSet>::const_iterator itr = idx.m_map.begin(); itr != itr_end; ++itr)
+		std::map<uint32_t,DocSet>::const_iterator itr_end=idx.m_map.end();
+		for(std::map<uint32_t,DocSet>::const_iterator itr = idx.m_map.begin(); itr != itr_end; ++itr)
 		{
 			const DocSet& ds=idx2.get(itr->first);
 			os << itr->first << ':' << ds << endl;
@@ -494,8 +546,8 @@ namespace Ouzo
 	
 	ostream& operator<<(ostream& os, const StringIndex& idx)
 	{
-		map<std::string,DocSet>::const_iterator itr_end=idx.m_map.end();
-		for(map<std::string,DocSet>::const_iterator itr = idx.m_map.begin(); itr != itr_end; ++itr)
+		std::map<std::string,DocSet>::const_iterator itr_end=idx.m_map.end();
+		for(std::map<std::string,DocSet>::const_iterator itr = idx.m_map.begin(); itr != itr_end; ++itr)
 		{
 			os << itr->first << ':' << endl;
 		}
@@ -602,47 +654,50 @@ namespace Ouzo
 			if(document == 0)
 			{
 		        std::cerr << "Document not found." << std::endl;
-				throw new exception();
+				throw Exception(__FILE__,__LINE__);
 			}
 
 			// Read config_file to get list of keys to index
 			// loadConfig();
 			
 			// Iterate the indexes
-			for (vector<Index*>::size_type i=0; i< m_indexes.size(); ++i)
+			for (std::vector<Index*>::size_type i=0; i< m_indexes.size(); ++i)
 			{
 				Index* idx=m_indexes[i];
 				
-				Semaphore sem=idx->lock();
+				boost::interprocess::file_lock f_lock(idx->filename().string().c_str());
 				
-				idx->load();
-				
-				// First remove any existing data in the index for this docid
-				idx->del(docid);
-				
-				// Parse an XPath 2 expression
-		        const DOMXPathExpression* expression = document->createExpression(X(idx->keyspec().c_str()), 0);
-
-		        // Execute the query
-		        XPath2Result* result = (XPath2Result*)expression->evaluate(document, XPath2Result::ITERATOR_RESULT, 0);
-
-		        // Iterate over the results
-		        while(result->iterateNext())
 				{
-					const char* val=XMLString::transcode(result->asNode()->getTextContent());
-					idx->put(val,docid);
-					XMLString::release((char**)&val);
-		        }
-	
-		        // Clean up all the objects we have created
-		        result->release();
-		        ((XQillaExpression*)expression)->release();
+					boost::interprocess::sharable_lock<file_lock> sh_lock(f_lock);
 
-				// idx->merge(idx2);
+					idx->load(f_lock);
 				
-				idx->save();
+					// First remove any existing data in the index for this docid
+					idx->del(docid);
 				
-				idx->unlock(sem);
+					// Parse an XPath 2 expression
+			        const DOMXPathExpression* expression = document->createExpression(X(idx->keyspec().c_str()), 0);
+
+			        // Execute the query
+			        XPath2Result* result = (XPath2Result*)expression->evaluate(document, XPath2Result::ITERATOR_RESULT, 0);
+
+			        // Iterate over the results
+			        while(result->iterateNext())
+					{
+						const char* val=XMLString::transcode(result->asNode()->getTextContent());
+						idx->put(val,docid);
+						XMLString::release((char**)&val);
+			        }
+	
+			        // Clean up all the objects we have created
+			        result->release();
+			        ((XQillaExpression*)expression)->release();
+
+					// idx->merge(idx2);
+					
+					idx->save(f_lock);
+				}
+				
 			}
 
 			builder->release();
@@ -668,7 +723,8 @@ namespace Ouzo
 		// Persist all the indexes
 		for(size_t i = 0; i < m_indexes.size(); ++i)
 		{
-			m_indexes[i]->save();
+			boost::interprocess::file_lock f_lock(m_indexes[i]->filename().string().c_str());
+			m_indexes[i]->save(f_lock);
 		}
 		
 		bfs::path datadir(m_cfg.get("datadir"));
@@ -702,8 +758,8 @@ namespace Ouzo
 		if (docfile.has_root_path())
 		{
 			// Is it in the config's documents/dir?
-			string s1=m_cfg.get("docdir");
-			string s2=docfile.string().substr(0,s1.length());
+			std::string s1=m_cfg.get("docdir");
+			std::string s2=docfile.string().substr(0,s1.length());
 			if (s1!=s2)
 			{
 				return; // TODO: return an appropriate error
@@ -765,17 +821,14 @@ namespace Ouzo
 			m_avail_docids.set(docid-1,true);
 			
 			// Iterate the indexes
-			for (vector<Index*>::size_type i=0; i< m_indexes.size(); ++i)
+			for (std::vector<Index*>::size_type i=0; i< m_indexes.size(); ++i)
 			{
 				Index* idx=m_indexes[i];
 			
-				Semaphore sem=idx->lock();
-			
-				idx->load();
+				boost::interprocess::file_lock f_lock(idx->filename().string().c_str());
+				idx->load(f_lock);
 				idx->del(docid);
-				idx->save();
-			
-				idx->unlock(sem);
+				idx->save(f_lock);
 			}
 			
 			changed=true;
@@ -796,15 +849,15 @@ namespace Ouzo
 		   << "Next avail docid:" << nextdocid << std::endl
   		   << "Doc-ID map      :" << std::endl;
 
-		map<bfs::path,docid_t>::const_iterator itr_end=ouzo.m_docidmap.end();
-		for (map<bfs::path,docid_t>::const_iterator itr=ouzo.m_docidmap.begin(); itr!=itr_end; ++itr)
+		std::map<bfs::path,docid_t>::const_iterator itr_end=ouzo.m_docidmap.end();
+		for (std::map<bfs::path,docid_t>::const_iterator itr=ouzo.m_docidmap.begin(); itr!=itr_end; ++itr)
 		{
 			os << itr->second << '\t' << itr->first << std::endl;
 		}
 		os << std::endl;
 
 		os << "Indexes:" << std::endl;
-		for (vector<Index*>::size_type i=0; i< ouzo.m_indexes.size(); ++i)
+		for (std::vector<Index*>::size_type i=0; i< ouzo.m_indexes.size(); ++i)
 		{
 			Index* idx=ouzo.m_indexes[i];
 			os << "------------------" << std::endl

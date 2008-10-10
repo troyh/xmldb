@@ -13,6 +13,9 @@
 // #include <boost/serialization/string.hpp>
 #include <boost/archive/text_oarchive.hpp>
 #include <boost/archive/text_iarchive.hpp>
+#include <boost/interprocess/sync/file_lock.hpp>
+#include <boost/interprocess/sync/sharable_lock.hpp>
+#include <boost/shared_ptr.hpp>
 
 #include <xercesc/framework/StdInInputSource.hpp>
 #include <xercesc/framework/Wrapper4InputSource.hpp>
@@ -33,6 +36,7 @@ namespace Ouzo
 	using namespace std;
 	using namespace boost;
 	using namespace xercesc;
+	using namespace boost::interprocess;
 	
 	typedef uint32_t docid_t;
 	
@@ -46,13 +50,6 @@ namespace Ouzo
 		
 		const char* const file() const { return m_f; }
 		size_t line() const { return m_ln; }
-	};
-
-	class Semaphore
-	{
-	public:
-		Semaphore();
-		~Semaphore();
 	};
 
 	template <class T>
@@ -128,10 +125,14 @@ namespace Ouzo
 	private:
 		// union DocUnion
 		// {
-			shared_ptr< vector<docid_t> > m_docs_arr;
-			shared_ptr<bitset_type> m_docs_bitmap;
+			boost::shared_ptr< std::vector<docid_t> > m_docs_arr;
+			boost::shared_ptr<bitset_type> m_docs_bitmap;
 		// } m_docs;
 		set_type m_type;
+		size_t m_capacity;
+		
+		set_type mostEfficientType() const;
+		void convertToType(set_type t);
 		
 	public:
 		DocSet(size_t capacity=1000);
@@ -164,7 +165,7 @@ namespace Ouzo
 	class Index
 	{
 	protected:
-		static map<string, Index*> m_indexes;
+		static std::map<std::string, Index*> m_indexes;
 		
 		bfs::path m_filename;
 		std::string m_keyspec;
@@ -177,12 +178,9 @@ namespace Ouzo
 		const bfs::path& filename() const { return m_filename; }
 		const std::string& keyspec() const { return m_keyspec; }
 
-		virtual void load()=0;
+		virtual void load(boost::interprocess::file_lock& f_lock)=0;
 		
-		virtual Semaphore lock();
-		virtual void unlock(const Semaphore& sem);
-		
-		virtual void save() const=0;
+		virtual void save(boost::interprocess::file_lock& f_lock) const=0;
 		
 		virtual void merge(const Index& other);
 		
@@ -194,13 +192,13 @@ namespace Ouzo
 	
 	class StringIndex : public Index
 	{
-		map< std::string, DocSet > m_map;
+		std::map< std::string, DocSet > m_map;
 	public:
-		typedef map< std::string, DocSet >::iterator iterator_type;
+		typedef std::map< std::string, DocSet >::iterator iterator_type;
 		
 		StringIndex(const bfs::path& index_file, const std::string& keyspec) : Index(index_file, keyspec) {}
 		
-		inline DocSet& operator[](const string& key) {return m_map[key]; }
+		inline DocSet& operator[](const std::string& key) {return m_map[key]; }
 		inline iterator_type begin() { return m_map.begin(); }
 		inline iterator_type end() { return m_map.end(); }
 	
@@ -208,8 +206,8 @@ namespace Ouzo
 		const DocSet& get(const char* key) const;
 		void del(docid_t docid);
 		
-		void load();
-		void save() const;
+		void load(boost::interprocess::file_lock& f_lock);
+		void save(boost::interprocess::file_lock& f_lock) const;
 
 		friend ostream& operator<<(ostream&,const StringIndex&);
 	};
@@ -218,9 +216,9 @@ namespace Ouzo
 	
 	class UIntIndex : public Index
 	{
-		map< uint32_t, DocSet > m_map;
+		std::map< uint32_t, DocSet > m_map;
 	public:
-		typedef map< uint32_t, DocSet >::iterator iterator_type;
+		typedef std::map< uint32_t, DocSet >::iterator iterator_type;
 
 		UIntIndex(const bfs::path& index_file, const std::string& keyspec) : Index(index_file, keyspec) {}
 		
@@ -233,8 +231,8 @@ namespace Ouzo
 		const DocSet& get(uint32_t key) const;
 		void del(docid_t docid);
 
-		void load();
-		void save() const;
+		void load(boost::interprocess::file_lock& f_lock);
+		void save(boost::interprocess::file_lock& f_lock) const;
 		
 		friend ostream& operator<<(ostream&,const UIntIndex&);
 	};
@@ -243,7 +241,7 @@ namespace Ouzo
 
 	class Config
 	{
-		map<std::string,std::string> m_info;
+		std::map<std::string,std::string> m_info;
 	public:
 		Config() {}
 		~Config() {}
@@ -259,9 +257,9 @@ namespace Ouzo
 	public:
 		typedef enum { XML } doctype; // Supported document types
 	private:
-		map<bfs::path,docid_t> m_docidmap;
+		std::map<bfs::path,docid_t> m_docidmap;
 		dynamic_bitset<> m_avail_docids;
-		vector<Index*> m_indexes;
+		std::vector<Index*> m_indexes;
 		bfs::path m_config_file;
 		Config m_cfg;
 
