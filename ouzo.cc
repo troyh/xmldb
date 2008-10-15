@@ -90,7 +90,24 @@ int main(int argc,char* argv[])
 			{
 				Ouzo::Ouzo ouzo("ouzo.conf");
 
-				std::cout << ouzo << std::endl;
+				if (argc>2)
+				{
+					string subcmd(argv[2]);
+					if (subcmd=="index")
+					{
+						string idxname(argv[3]);
+						Ouzo::Index* pIdx=ouzo.getIndex(idxname);
+						if (pIdx)
+						{
+							pIdx->load();
+							std::cout << *pIdx << std::endl;
+						}
+					}
+				}
+				else
+				{
+					std::cout << ouzo << std::endl;
+				}
 			}
 			catch (...)
 			{

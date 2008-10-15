@@ -3,13 +3,11 @@
 #include <boost/interprocess/sync/sharable_lock.hpp>
 #include "OuzoDB.hpp"
 
-// TODO: use locks when saving files
 // TODO: read config file
 // TODO: support more index types (Float, Int, multi-val, etc.)
 // TODO: support queries
 // TODO: make it thread-safe
 // TODO: In DocSet, don't always allocate a vector and a dynamic_bitset, only the one you need
-// TODO: version index file format
 
 namespace Ouzo
 {
@@ -209,6 +207,8 @@ namespace Ouzo
 	void DocSet::save(ostream& os) const
 	{
 		os.write((char*)&m_type,sizeof(m_type));
+		if (!os.good())
+			throw Exception(__FILE__,__LINE__);
 
 		switch (m_type)
 		{
@@ -242,6 +242,17 @@ namespace Ouzo
 				break;
 		}
 	}
+	
+	uint32_t DocSet::sizeInBytes() const
+	{
+		std::vector<docid_t>::size_type arrn=m_docs_arr->size();
+		
+		BitmapAllocator< bitset_type::block_type > pa=m_docs_bitmap->get_allocator();
+		BitmapAllocator< bitset_type::block_type >::size_type bitsn=pa.sizeInBytes();
+		
+		return max(sizeof(arrn)+arrn,sizeof(bitsn)+bitsn);
+	}
+	
 
 	ostream& operator<<(ostream& os, const DocSet& ds)
 	{
@@ -322,16 +333,18 @@ namespace Ouzo
 		}
 	}
 	
-	Index::Index(bfs::path index_file, const std::string& keyspec)
+	Index::Index(bfs::path index_file, const std::string& keyspec, uint32_t doccapacity)
 		: m_filename(index_file), m_keyspec(keyspec)
 	{
+		if (!bfs::exists(m_filename))
+		{
+			ofstream f(m_filename.string().c_str()); // Create it
+		}
+		
+		m_headerinfo.doccapacity=doccapacity;
 	}
 	
 	Index::~Index()
-	{
-	}
-	
-	size_t Index::documentCount() const
 	{
 	}
 
@@ -365,20 +378,101 @@ namespace Ouzo
 	// 	}
 	}
 	
+	void Index::writeMeta(ostream& ofs) const
+	{
+		VersionInfo verinfo;
+		verinfo.version=FILEVERSION;
+		verinfo.metasize=sizeof(m_headerinfo);
+		
+		ofs.write((char*)&verinfo,sizeof(verinfo));
+		if (!ofs.good())
+			throw Exception(__FILE__,__LINE__);
+			
+		ofs.write((char*)&m_headerinfo,sizeof(m_headerinfo));
+		if (!ofs.good())
+			throw Exception(__FILE__,__LINE__);
+
+		ofs << m_keyspec << '\0';
+		if (!ofs.good())
+			throw Exception(__FILE__,__LINE__);
+	}
+
+	void Index::readMeta(istream& ifs)
+	{
+		uint32_t specified_doccapacity=m_headerinfo.doccapacity; // Save this
+		
+		VersionInfo verinfo;
+
+		// Init meta info
+		verinfo.version=0;
+		verinfo.metasize=0;
+
+		m_headerinfo.doccount=0;
+		m_headerinfo.doccapacity=0;
+		m_headerinfo.keyspeclen=0;
+		m_headerinfo.keycount=0;
+		m_headerinfo.keysize=0;
+
+		ifs.read((char*)&verinfo,sizeof(verinfo));
+		if (!ifs.good())
+		{
+			verinfo.version=0;
+			verinfo.metasize=0;
+		}
+		else
+		{
+			ifs.read((char*)&m_headerinfo,min(sizeof(m_headerinfo),verinfo.metasize));
+			if (!ifs.good())
+			{
+				m_headerinfo.doccount=0;
+				m_headerinfo.doccapacity=0;
+				m_headerinfo.keyspeclen=0;
+				m_headerinfo.keycount=0;
+				m_headerinfo.keysize=0;
+			}
+			else
+			{
+				if (verinfo.version >= 1)
+				{
+					getline(ifs,m_keyspec,'\0');
+				}
+			}
+		}
+		
+		m_version=verinfo.version;
+		m_headerinfo.doccapacity=specified_doccapacity; // Always ignore the capacity specified in the file and use the one specified at run-time
+	}
+	
+	ostream& operator<<(ostream& os, const Index& idx)
+	{
+		os	<< "Version  : " << idx.version() << endl
+			<< "Filename : " << idx.m_filename << endl
+			<< "Documents: " << idx.documentCount() << endl
+			<< "Capacity : " << idx.documentCapacity() << endl
+			<< "Key Spec : " << idx.m_keyspec << endl
+			<< "Key Count: " << idx.keyCount() << endl
+			<< "Key Size : " << idx.m_headerinfo.keysize << endl
+			<< endl;
+		return os;
+	}
+	
 	void UIntIndex::put(const char* key, docid_t docid)
 	{
 		uint32_t val=strtoul(key,0,10);
 		
-		if (m_map.find(val)==m_map.end())
+		std::map<uint32_t,DocSet>::iterator itr=m_map.find(val);
+		if (itr==m_map.end())
 		{ // Doesn't yet exist in index
-			DocSet docset;
+			DocSet docset(m_headerinfo.doccapacity);
 			docset.set(docid);
 			
 			m_map.insert(make_pair(val,docset));
+			m_headerinfo.doccount++;
+			m_headerinfo.keycount++;
 		}
 		else
 		{ // Update existing docset in index
-			DocSet& docset=m_map[val];
+			DocSet& docset=itr->second;
 			docset.set(docid);
 		}
 	}
@@ -400,27 +494,33 @@ namespace Ouzo
 		}
 	}
 	
-	void UIntIndex::load(boost::interprocess::file_lock& f_lock)
+	void UIntIndex::load()
 	{
-		boost::interprocess::sharable_lock<file_lock> sh_lock(f_lock);
+		Mutex<boost::interprocess::file_lock> mutex(this->filename().string(),false);
 		
 		// Clear out m_map
 		if (!m_map.empty())
 			m_map.clear();
-			
-		std::ifstream ifs(m_filename.string().c_str());
-		
-		while (ifs.good())
-		{
-			// Read key
-			uint32_t n;
-			ifs.read((char*)&n,sizeof(n));
 
-			if (ifs.good())
+		std::ifstream ifs(m_filename.string().c_str());
+		if (ifs.good())
+		{
+			readMeta(ifs);
+		
+			for (uint32_t i=0;i<m_headerinfo.keycount;++i)
 			{
+				// Read key
+				uint32_t n;
+				ifs.read((char*)&n,sizeof(n));
+
+				if (!ifs.good())
+					throw Exception(__FILE__,__LINE__);
+
 				// Read DocSet
-				DocSet ds;
+				DocSet ds(m_headerinfo.doccapacity);
 				ds.load(ifs);
+				
+				m_headerinfo.keysize=ds.sizeInBytes();
 
 				// Put into index
 				m_map.insert(make_pair(n,ds));
@@ -428,37 +528,43 @@ namespace Ouzo
 		}
 	}
 	
-	void UIntIndex::save(boost::interprocess::file_lock& f_lock) const
+	void UIntIndex::save() const
 	{
-		boost::interprocess::scoped_lock<boost::interprocess::file_lock> e_lock(f_lock);
-		
+		Mutex<boost::interprocess::file_lock> mutex(this->filename().string(),true);
+
 		std::ofstream ofs(m_filename.string().c_str());
+		if (!ofs.good())
+			throw Exception(__FILE__,__LINE__);
 		
+		// Write index meta info
+		writeMeta(ofs);
+
 		std::map<uint32_t,DocSet>::const_iterator itr_end=m_map.end();
-		size_t ckeys=0;
 		for(std::map<uint32_t,DocSet>::const_iterator itr = m_map.begin(); itr != itr_end; ++itr)
 		{
 			// Write key
 			uint32_t n=itr->first;
 			ofs.write((char*)&n,sizeof(n));
-
+			if (!ofs.good())
+				throw Exception(__FILE__,__LINE__);
+			
 			// Write DocSet
 			itr->second.save(ofs);
-			++ckeys;
 		}
 	}
 
 	void StringIndex::put(const char* key, docid_t docid)
 	{
-		if (m_map.find(key)==m_map.end())
+		std::map<std::string,DocSet>::iterator itr=m_map.find(key);
+		if (itr==m_map.end())
 		{ // Doesn't yet exist in index
-			DocSet docset;
+			DocSet docset(m_headerinfo.doccapacity);
 			docset.set(docid);
 			m_map.insert(make_pair(key,docset));
 		}
 		else
 		{ // Update existing docset in index
-			DocSet& docset=m_map[key];
+			DocSet& docset(itr->second);
 			docset.set(docid);
 		}
 		
@@ -481,41 +587,59 @@ namespace Ouzo
 		}
 	}
 	
-	void StringIndex::load(boost::interprocess::file_lock& f_lock)
+	void StringIndex::load()
 	{
-		sharable_lock<boost::interprocess::file_lock> sh_lock(f_lock);
+		Mutex<boost::interprocess::file_lock> mutex(this->filename().string(),false);
 		
 		// Clear out m_map
 		if (!m_map.empty())
 			m_map.clear();
 			
 		std::ifstream ifs(m_filename.string().c_str());
-		
-		while (ifs.good())
+		if (ifs.good())
 		{
-			// Read key
-			std::string key;
-			char buf[256];
-			size_t len;
-			ifs.read((char*)&len,sizeof(len));
-			ifs.read(buf,len);
-			buf[len]='\0';
-			key=buf;
+			readMeta(ifs);
 		
-			// Read DocSet
-			DocSet ds;
-			ds.load(ifs);
+			for(uint32_t i = 0; i < m_headerinfo.keycount; ++i)
+			{
+				// Read key
+				std::string key;
+				char buf[256];
+				size_t len;
+				ifs.read((char*)&len,sizeof(len));
+				if (!ifs.good())
+					throw Exception(__FILE__,__LINE__);
+				
+				ifs.read(buf,len);
+				if (!ifs.good())
+					throw Exception(__FILE__,__LINE__);
 
-			// Put into index
-			m_map.insert(make_pair(key,ds));
+				buf[len]='\0';
+				key=buf;
+		
+				// Read DocSet
+				DocSet ds(m_headerinfo.doccapacity);
+				ds.load(ifs);
+
+				m_headerinfo.keysize=ds.sizeInBytes();
+
+				// Put into index
+				m_map.insert(make_pair(key,ds));
+			}
 		}
 	}
 	
-	void StringIndex::save(boost::interprocess::file_lock& f_lock) const
+	void StringIndex::save() const
 	{
-		boost::interprocess::scoped_lock<boost::interprocess::file_lock> e_lock(f_lock);
+		Mutex<boost::interprocess::file_lock> mutex(this->filename().string(),true);
 
 		std::ofstream ofs(m_filename.string().c_str());
+		
+		// Write index meta info
+		writeMeta(ofs);
+		
+		uint32_t cKeys=m_map.size();
+		ofs.write((char*)&cKeys,sizeof(cKeys));
 		
 		std::map<std::string,DocSet>::const_iterator itr_end=m_map.end();
 		for(std::map<std::string,DocSet>::const_iterator itr = m_map.begin(); itr != itr_end; ++itr)
@@ -574,9 +698,9 @@ namespace Ouzo
 		m_cfg.set("datadir",".");
 		m_cfg.set("doccapacity",1000);
 		
-		Index* p=new UIntIndex("PMID.index","/MedlineCitation/PMID/text()");
+		Index* p=new UIntIndex("PMID.index","/MedlineCitation/PMID/text()",strtoul(m_cfg.get("doccapacity").c_str(),0,10));
 		m_indexes.push_back(p);
-		p=new UIntIndex("Year.index","/MedlineCitation/DateCreated/Year/text()");
+		p=new UIntIndex("Year.index","/MedlineCitation/DateCreated/Year/text()",strtoul(m_cfg.get("doccapacity").c_str(),0,10));
 		m_indexes.push_back(p);
 		
 		bfs::path datadir(m_cfg.get("datadir"));
@@ -664,40 +788,35 @@ namespace Ouzo
 			for (std::vector<Index*>::size_type i=0; i< m_indexes.size(); ++i)
 			{
 				Index* idx=m_indexes[i];
-				
-				boost::interprocess::file_lock f_lock(idx->filename().string().c_str());
-				
+
+				Mutex<boost::interprocess::file_lock> mutex(idx->filename().string(),true); // Make sure no one else can read/write the index
+
+				idx->load();
+		
+				// First remove any existing data in the index for this docid
+				idx->del(docid);
+		
+				// Parse an XPath 2 expression
+		        const DOMXPathExpression* expression = document->createExpression(X(idx->keyspec().c_str()), 0);
+
+		        // Execute the query
+		        XPath2Result* result = (XPath2Result*)expression->evaluate(document, XPath2Result::ITERATOR_RESULT, 0);
+
+		        // Iterate over the results
+		        while(result->iterateNext())
 				{
-					boost::interprocess::sharable_lock<file_lock> sh_lock(f_lock);
+					const char* val=XMLString::transcode(result->asNode()->getTextContent());
+					idx->put(val,docid);
+					XMLString::release((char**)&val);
+		        }
 
-					idx->load(f_lock);
-				
-					// First remove any existing data in the index for this docid
-					idx->del(docid);
-				
-					// Parse an XPath 2 expression
-			        const DOMXPathExpression* expression = document->createExpression(X(idx->keyspec().c_str()), 0);
+		        // Clean up all the objects we have created
+		        result->release();
+		        ((XQillaExpression*)expression)->release();
 
-			        // Execute the query
-			        XPath2Result* result = (XPath2Result*)expression->evaluate(document, XPath2Result::ITERATOR_RESULT, 0);
-
-			        // Iterate over the results
-			        while(result->iterateNext())
-					{
-						const char* val=XMLString::transcode(result->asNode()->getTextContent());
-						idx->put(val,docid);
-						XMLString::release((char**)&val);
-			        }
-	
-			        // Clean up all the objects we have created
-			        result->release();
-			        ((XQillaExpression*)expression)->release();
-
-					// idx->merge(idx2);
-					
-					idx->save(f_lock);
-				}
-				
+				// idx->merge(idx2);
+			
+				idx->save();
 			}
 
 			builder->release();
@@ -723,8 +842,7 @@ namespace Ouzo
 		// Persist all the indexes
 		for(size_t i = 0; i < m_indexes.size(); ++i)
 		{
-			boost::interprocess::file_lock f_lock(m_indexes[i]->filename().string().c_str());
-			m_indexes[i]->save(f_lock);
+			m_indexes[i]->save();
 		}
 		
 		bfs::path datadir(m_cfg.get("datadir"));
@@ -825,10 +943,11 @@ namespace Ouzo
 			{
 				Index* idx=m_indexes[i];
 			
-				boost::interprocess::file_lock f_lock(idx->filename().string().c_str());
-				idx->load(f_lock);
+				Mutex<boost::interprocess::file_lock> mutex(idx->filename().string(),true);
+				
+				idx->load();
 				idx->del(docid);
-				idx->save(f_lock);
+				idx->save();
 			}
 			
 			changed=true;
@@ -837,6 +956,21 @@ namespace Ouzo
 		if (changed)
 			persist();
 	}
+	
+	Index* Ouzo::getIndex(const bfs::path& fname)
+	{
+		std::vector<Index*>::const_iterator itr_end(m_indexes.end());
+		for (std::vector<Index*>::const_iterator itr=m_indexes.begin(); itr!=itr_end; ++itr)
+		{
+			Index* pIdx=*itr;
+			if (pIdx->filename()==fname)
+			{
+				return pIdx;
+			}
+		}
+		return NULL;
+	}
+	
 
 	std::ostream& operator<<(std::ostream& os, const Ouzo& ouzo)
 	{

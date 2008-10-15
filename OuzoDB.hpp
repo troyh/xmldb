@@ -51,6 +51,26 @@ namespace Ouzo
 		const char* const file() const { return m_f; }
 		size_t line() const { return m_ln; }
 	};
+	
+	template<class T>
+	class Mutex
+	{
+		T m_lock;
+	public:
+		Mutex(const std::string& s, bool exclusive=false)
+			: m_lock(s.c_str())
+		{
+			if (exclusive)
+				m_lock.lock();
+			else
+				m_lock.lock_sharable();
+		}
+		~Mutex()
+		{
+			m_lock.unlock();
+		}
+		
+	};
 
 	template <class T>
 	class BitmapAllocator
@@ -135,7 +155,7 @@ namespace Ouzo
 		void convertToType(set_type t);
 		
 	public:
-		DocSet(size_t capacity=1000);
+		DocSet(size_t capacity);
 		DocSet(DocSet& ds);
 		DocSet(const DocSet& ds);
 		~DocSet() {}
@@ -145,6 +165,7 @@ namespace Ouzo
 		
 		set_type type() const { return m_type; }
 		size_t size() const;
+		uint32_t sizeInBytes() const;
 		
 		void set(docid_t docno);
 		void clr(docid_t docno);
@@ -164,23 +185,50 @@ namespace Ouzo
 
 	class Index
 	{
+		friend ostream& operator<<(ostream&,const Index&);
+	public:
+		
+		static const uint32_t FILEVERSION=2;
+		struct VersionInfo
+		{
+			uint32_t version;
+			uint32_t metasize;
+		};
+		struct HeaderInfo
+		{
+			uint32_t doccount;
+			uint32_t doccapacity;
+			uint16_t keyspeclen;
+			uint32_t keycount;
+			uint32_t keysize;
+		};
+		
 	protected:
 		static std::map<std::string, Index*> m_indexes;
-		
+
+		uint32_t m_version;
+		HeaderInfo m_headerinfo;
 		bfs::path m_filename;
 		std::string m_keyspec;
+
+		void writeMeta(ostream& ofs) const;
+		void readMeta(istream& ifs);
 	public:
-		Index(bfs::path index_file, const std::string& keyspec);
+		
+		Index(bfs::path index_file, const std::string& keyspec, uint32_t doccapacity);
 		virtual ~Index();
 		
-		virtual size_t documentCount() const;
+		uint32_t version() const { return m_version; };
+		virtual size_t documentCount() const { return m_headerinfo.doccount; }
+		virtual size_t documentCapacity() const { return m_headerinfo.doccapacity; }
+		virtual size_t keyCount() const=0;
 	
 		const bfs::path& filename() const { return m_filename; }
 		const std::string& keyspec() const { return m_keyspec; }
 
-		virtual void load(boost::interprocess::file_lock& f_lock)=0;
+		virtual void load()=0;
 		
-		virtual void save(boost::interprocess::file_lock& f_lock) const=0;
+		virtual void save() const=0;
 		
 		virtual void merge(const Index& other);
 		
@@ -190,15 +238,19 @@ namespace Ouzo
 		
 	};
 	
+	ostream& operator<<(ostream& os, const Index& idx);
+	
 	class StringIndex : public Index
 	{
 		std::map< std::string, DocSet > m_map;
 	public:
 		typedef std::map< std::string, DocSet >::iterator iterator_type;
 		
-		StringIndex(const bfs::path& index_file, const std::string& keyspec) : Index(index_file, keyspec) {}
+		StringIndex(const bfs::path& index_file, const std::string& keyspec, uint32_t doccapacity) : Index(index_file, keyspec, doccapacity) {}
 		
-		inline DocSet& operator[](const std::string& key) {return m_map[key]; }
+		size_t keyCount() const { return m_map.size(); }
+		
+		// inline DocSet& operator[](const std::string& key) {return m_map[key]; }
 		inline iterator_type begin() { return m_map.begin(); }
 		inline iterator_type end() { return m_map.end(); }
 	
@@ -206,8 +258,8 @@ namespace Ouzo
 		const DocSet& get(const char* key) const;
 		void del(docid_t docid);
 		
-		void load(boost::interprocess::file_lock& f_lock);
-		void save(boost::interprocess::file_lock& f_lock) const;
+		void load();
+		void save() const;
 
 		friend ostream& operator<<(ostream&,const StringIndex&);
 	};
@@ -220,9 +272,11 @@ namespace Ouzo
 	public:
 		typedef std::map< uint32_t, DocSet >::iterator iterator_type;
 
-		UIntIndex(const bfs::path& index_file, const std::string& keyspec) : Index(index_file, keyspec) {}
-		
-		inline DocSet& operator[](uint32_t key) {return m_map[key]; }
+		UIntIndex(const bfs::path& index_file, const std::string& keyspec, uint32_t doccapacity) : Index(index_file, keyspec, doccapacity) {}
+
+		size_t keyCount() const { return m_map.size(); }
+
+		// inline DocSet& operator[](uint32_t key) {return m_map[key]; }
 		inline iterator_type begin() { return m_map.begin(); }
 		inline iterator_type end() { return m_map.end(); }
 
@@ -231,8 +285,8 @@ namespace Ouzo
 		const DocSet& get(uint32_t key) const;
 		void del(docid_t docid);
 
-		void load(boost::interprocess::file_lock& f_lock);
-		void save(boost::interprocess::file_lock& f_lock) const;
+		void load();
+		void save() const;
 		
 		friend ostream& operator<<(ostream&,const UIntIndex&);
 	};
@@ -276,6 +330,8 @@ namespace Ouzo
 	
 		void addDocument(bfs::path docfile,doctype type=XML);
 		void delDocument(bfs::path docfile);
+		
+		Index* getIndex(const bfs::path& fname);
 	
 		// Results fetch(const Query& q) const;
 	};
