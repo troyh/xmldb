@@ -20,10 +20,10 @@ split: split.o
 query: query.o
 	g++ -o $@ $^ -lxml++-2.6 -lxml2 -lboost_filesystem-gcc43-mt -lboost_serialization-gcc43-mt
 
-libouzo.a: OuzoDB.o DocSet.o Index.o StringIndex.o UIntIndex.o Config.o
+libouzo.a: Ouzo.o DocSet.o Index.o StringIndex.o UIntIndex.o Config.o
 	ar rcs $@ $^
 
 include odeps.mk
 
 clean:
-	rm -f index kvpairs split ouzo OuzoDB *.o
+	rm -f index kvpairs split ouzo *.o

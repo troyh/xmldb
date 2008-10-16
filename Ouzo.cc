@@ -21,7 +21,7 @@
 #include <boost/interprocess/sync/file_lock.hpp>
 #include <boost/interprocess/sync/sharable_lock.hpp>
 
-#include "OuzoDB.hpp"
+#include "Ouzo.hpp"
 
 // TODO: read config file
 // TODO: support more index types (Float, Int, multi-val, etc.)

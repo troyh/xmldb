@@ -1,4 +1,4 @@
-#include "OuzoDB.hpp"
+#include "Ouzo.hpp"
 
 namespace Ouzo
 {

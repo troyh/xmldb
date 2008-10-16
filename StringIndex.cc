@@ -1,6 +1,6 @@
 #include <boost/interprocess/sync/file_lock.hpp>
 
-#include "OuzoDB.hpp"
+#include "Ouzo.hpp"
 
 namespace Ouzo
 {

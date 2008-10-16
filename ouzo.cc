@@ -1,7 +1,7 @@
 #include <boost/algorithm/string/case_conv.hpp>
 #include <boost/filesystem.hpp>
 #include <glob.h>
-#include "OuzoDB.hpp"
+#include "Ouzo.hpp"
 
 // TODO: support reindex command
 // TODO: accept files relative to Ouzo config's documents/dir
