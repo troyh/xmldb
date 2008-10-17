@@ -17,7 +17,8 @@ namespace Ouzo
 	public:
 		typedef std::map< std::string, DocSet >::iterator iterator_type;
 	
-		StringIndex(const bfs::path& index_file, const std::string& keyspec, uint32_t doccapacity) : Index(index_file, keyspec, doccapacity) {}
+		StringIndex(const bfs::path& index_file, const std::string& keyspec, uint32_t doccapacity) 
+			: Index(index_file, keyspec, doccapacity, INDEX_TYPE_STRING) {}
 	
 		size_t keyCount() const { return m_map.size(); }
 	

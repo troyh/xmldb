@@ -18,7 +18,18 @@ namespace Ouzo
 		friend ostream& operator<<(ostream&,const Index&);
 	public:
 	
-		static const uint32_t FILEVERSION=2;
+		typedef enum 
+		{
+			INDEX_TYPE_UNKNOWN	=0, 
+			INDEX_TYPE_STRING	=1, 
+			INDEX_TYPE_UINT8	=2, 
+			INDEX_TYPE_UINT16	=3, 
+			INDEX_TYPE_UINT32	=4, 
+			INDEX_TYPE_FLOAT	=5,
+			INDEX_TYPE_DATE		=6
+		} index_type;
+		
+		static const uint32_t FILEVERSION=3;
 		struct VersionInfo
 		{
 			uint32_t version;
@@ -31,6 +42,7 @@ namespace Ouzo
 			uint16_t keyspeclen;
 			uint32_t keycount;
 			uint32_t keysize;
+			index_type type;
 		};
 	
 	protected:
@@ -45,7 +57,7 @@ namespace Ouzo
 		void readMeta(istream& ifs);
 	public:
 	
-		Index(bfs::path index_file, const std::string& keyspec, uint32_t doccapacity);
+		Index(bfs::path index_file, const std::string& keyspec, uint32_t doccapacity, index_type type);
 		virtual ~Index();
 	
 		uint32_t version() const { return m_version; };

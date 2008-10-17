@@ -3,8 +3,8 @@
 namespace Ouzo
 {
 	
-Index::Index(bfs::path index_file, const std::string& keyspec, uint32_t doccapacity)
-	: m_filename(index_file), m_keyspec(keyspec)
+Index::Index(bfs::path index_file, const std::string& keyspec, uint32_t doccapacity, index_type type)
+	: m_filename(bfs::change_extension(index_file,".index")), m_keyspec(keyspec)
 {
 	if (!bfs::exists(m_filename))
 	{
@@ -12,6 +12,7 @@ Index::Index(bfs::path index_file, const std::string& keyspec, uint32_t doccapac
 	}
 	
 	m_headerinfo.doccapacity=doccapacity;
+	m_headerinfo.type=type;
 }
 
 Index::~Index()
@@ -69,7 +70,8 @@ void Index::writeMeta(ostream& ofs) const
 
 void Index::readMeta(istream& ifs)
 {
-	uint32_t specified_doccapacity=m_headerinfo.doccapacity; // Save this
+	// Save the values that we've been configured with
+	HeaderInfo config_info=m_headerinfo;
 	
 	VersionInfo verinfo;
 
@@ -82,6 +84,7 @@ void Index::readMeta(istream& ifs)
 	m_headerinfo.keyspeclen=0;
 	m_headerinfo.keycount=0;
 	m_headerinfo.keysize=0;
+	m_headerinfo.type=INDEX_TYPE_UNKNOWN;
 
 	ifs.read((char*)&verinfo,sizeof(verinfo));
 	if (!ifs.good())
@@ -99,6 +102,7 @@ void Index::readMeta(istream& ifs)
 			m_headerinfo.keyspeclen=0;
 			m_headerinfo.keycount=0;
 			m_headerinfo.keysize=0;
+			m_headerinfo.type=INDEX_TYPE_UNKNOWN;
 		}
 		else
 		{
@@ -110,13 +114,34 @@ void Index::readMeta(istream& ifs)
 	}
 	
 	m_version=verinfo.version;
-	m_headerinfo.doccapacity=specified_doccapacity; // Always ignore the capacity specified in the file and use the one specified at run-time
+	m_headerinfo.doccapacity=config_info.doccapacity; // Always ignore the capacity specified in the file and use the one specified at run-time
+
+	if (m_headerinfo.type==0)	// If the file doesn't have a type, take the type we're configured to have
+		m_headerinfo.type=config_info.type;
 }
 
+ostream& operator<<(ostream& os, const Index::index_type t)
+{
+	switch (t)
+	{
+		case Index::INDEX_TYPE_UNKNOWN: os << "Unknown"; break;
+		case Index::INDEX_TYPE_STRING:	os << "String";  break;
+		case Index::INDEX_TYPE_UINT8:   os << "UInt8";   break;
+		case Index::INDEX_TYPE_UINT16:  os << "UInt16";  break;
+		case Index::INDEX_TYPE_UINT32:  os << "UInt32";  break;
+		case Index::INDEX_TYPE_FLOAT:   os << "Float";   break;
+		case Index::INDEX_TYPE_DATE:    os << "Date";    break;
+		default:
+			os << "???" << endl; // Shouldn't ever happen
+	}
+	
+	return os;
+}
 ostream& operator<<(ostream& os, const Index& idx)
 {
 	os	<< "Version  : " << idx.version() << endl
 		<< "Filename : " << idx.m_filename << endl
+		<< "Type	 : " << idx.m_headerinfo.type << endl
 		<< "Documents: " << idx.documentCount() << endl
 		<< "Capacity : " << idx.documentCapacity() << endl
 		<< "Key Spec : " << idx.m_keyspec << endl

@@ -51,7 +51,10 @@ void StringIndex::load()
 	if (ifs.good())
 	{
 		readMeta(ifs);
-	
+		
+		if (m_headerinfo.type!=INDEX_TYPE_STRING)
+			throw Exception(__FILE__,__LINE__);
+
 		for(uint32_t i = 0; i < m_headerinfo.keycount; ++i)
 		{
 			// Read key

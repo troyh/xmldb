@@ -1,13 +1,17 @@
 #ifndef _OUZO_CONFIG_HPP
 #define _OUZO_CONFIG_HPP
 
+#include <iostream>
 #include <string>
 
 namespace Ouzo
 {
-
+	using namespace std;
+	
 	class Config
 	{
+		friend ostream& operator<<(ostream& os, const Config& cfg);
+		
 		std::map<std::string,std::string> m_info;
 	public:
 		Config() {}
@@ -18,6 +22,8 @@ namespace Ouzo
 		void set(std::string name, uint32_t value);
 	};
 
+	ostream& operator<<(ostream& os, const Config& cfg);
+	
 }
 
 #endif

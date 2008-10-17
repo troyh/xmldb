@@ -6,6 +6,7 @@
 #include <xercesc/dom/DOMBuilder.hpp>
 #include <xercesc/dom/DOMDocument.hpp>
 #include <xercesc/dom/DOMWriter.hpp>
+#include <xercesc/dom/DOM.hpp>
 #include <xercesc/framework/StdOutFormatTarget.hpp>
 
 #include <xqilla/xqilla-dom3.hpp>
@@ -23,7 +24,7 @@
 
 #include "Ouzo.hpp"
 
-// TODO: read config file
+// TODO: make StringIndex work
 // TODO: support more index types (Float, Int, multi-val, etc.)
 // TODO: support queries
 // TODO: make it thread-safe
@@ -35,28 +36,175 @@ namespace Ouzo
 	using namespace xercesc;
 	using namespace boost::interprocess;
 
+	char* getXPathVal(const char* xpath, DOMDocument* document, const DOMNode* node)
+	{
+		char* ret=0;
+
+		try
+		{
+			const DOMXPathExpression* expr=document->createExpression(X(xpath),0);
+			if (expr)
+			{
+				XPath2Result* result=(XPath2Result*)expr->evaluate((DOMNode*)node, XPath2Result::ITERATOR_RESULT, 0);
+				// The above casting away the const-ness seems wrong, why doesn't it take a const pointer??
+				if (result)
+				{
+					if (result->iterateNext())
+					{
+						const DOMNode* pNode=result->asNode();
+						switch (pNode->getNodeType())
+						{
+							case DOMNode::ELEMENT_NODE:
+							{
+								const DOMElement* pElem=dynamic_cast<const DOMElement*>(pNode);
+								if (pElem)
+									ret=XMLString::transcode(pElem->getTextContent());
+								break;
+							}
+							case DOMNode::ATTRIBUTE_NODE:
+							{
+								const DOMAttr* pAttr=dynamic_cast<const DOMAttr*>(pNode);
+								if (pAttr)
+									ret=XMLString::transcode(pAttr->getValue());
+								break;
+							}
+							case DOMNode::TEXT_NODE:
+								break;
+						}
+					}
+		
+					result->release();
+				}
+			
+		        ((XQillaExpression*)expr)->release();
+			}
+		}
+		catch (XQillaException& x)
+		{
+			cout << XMLString::transcode(x.getString()) << endl;
+		}
+		
+		return ret;
+	}
 	
 	Ouzo::Ouzo(bfs::path config_file)
 		: m_config_file(config_file)
 	{
-		// TODO: read these from config file
-		m_cfg.set("docdir","/home/troy/medline/docs/"); // MUST have a trailing slash!
-		m_cfg.set("datadir",".");
-		m_cfg.set("doccapacity",1000);
-		
-		Index* p=new UIntIndex("PMID.index","/MedlineCitation/PMID/text()",strtoul(m_cfg.get("doccapacity").c_str(),0,10));
-		m_indexes.push_back(p);
-		p=new UIntIndex("Year.index","/MedlineCitation/DateCreated/Year/text()",strtoul(m_cfg.get("doccapacity").c_str(),0,10));
-		m_indexes.push_back(p);
-		
+		// Initialise Xerces-C and XQilla using XQillaPlatformUtils
+		XQillaPlatformUtils::initialize();
+
+		try
+		{
+			// Get the XQilla DOMImplementation object
+			DOMImplementation *xqillaImplementation=DOMImplementationRegistry::getDOMImplementation(X("XPath2 3.0"));
+
+			// Create a DOMBuilder object
+			DOMBuilder *builder = xqillaImplementation->createDOMBuilder(DOMImplementationLS::MODE_SYNCHRONOUS, 0);
+			builder->setFeature(X("namespaces"), true);
+			builder->setFeature(X("http://apache.org/xml/features/validation/schema"), true);
+			builder->setFeature(X("validation"), true);
+			// TODO: validate against a DTD/XSchema
+
+			// Parse a DOMDocument
+			DOMDocument *document = builder->parseURI(X(m_config_file.string().c_str()));
+			if(document == 0)
+			{
+				throw Exception(__FILE__,__LINE__);
+			}
+			else
+			{
+				char* s=getXPathVal("/ouzo/documents/dir",document,document);
+				if (s)
+				{
+					m_cfg.set("docdir",	s);
+					XMLString::release(&s);
+				}
+				// TODO: Add trailing slash to docdir
+				
+				s=getXPathVal("/ouzo/documents/capacity",document,document);
+				if (s)
+				{
+					m_cfg.set("doccapacity",s);
+					XMLString::release(&s);
+				}
+				
+				s=getXPathVal("/ouzo/indexes/@directory",document,document);
+				if (s)
+				{
+					m_cfg.set("datadir",s);
+					XMLString::release(&s);
+				}
+				
+				// Parse an XPath 2 expression
+		        const DOMXPathExpression* expression = document->createExpression(X("/ouzo/indexes/index"), 0);
+				if (expression)
+				{
+			        // Execute the query
+			        XPath2Result* result = (XPath2Result*)expression->evaluate(document, XPath2Result::ITERATOR_RESULT, 0);
+					if (result)
+					{
+				        // Iterate over the results
+				        while (result->iterateNext())
+						{
+							const DOMElement* pElem=dynamic_cast<const DOMElement*>(result->asNode());
+					
+							const char* val=XMLString::transcode(pElem->getTextContent());
+					
+							const XMLCh* idxname=pElem->getAttribute(X("name"));
+							const XMLCh* idxtype=pElem->getAttribute(X("type"));
+							const XMLCh* idxuniq=pElem->getAttribute(X("unique")); // TODO: support this
+							
+							char* idxkey_s=getXPathVal("./xpath",document,pElem);
+
+							char* idxname_s=XMLString::transcode(idxname);
+
+							if (XMLString::equals(idxtype,X("string")))
+							{
+								Index* p=new StringIndex(idxname_s,idxkey_s,strtoul(m_cfg.get("doccapacity").c_str(),0,10));
+								m_indexes.push_back(p);
+							}
+							else if (XMLString::equals(idxtype,X("uint32")))
+							{
+								Index* p=new UIntIndex(idxname_s,idxkey_s,strtoul(m_cfg.get("doccapacity").c_str(),0,10));
+								m_indexes.push_back(p);
+							}
+					
+							XMLString::release(&idxname_s);
+							XMLString::release(&idxkey_s);
+				        }
+
+				        // Clean up all the objects we have created
+				        result->release();
+					}
+					
+			        ((XQillaExpression*)expression)->release();
+				}
+
+				builder->release();
+
+			}
+		}
+		catch (...)
+		{
+			// Terminate Xerces-C and XQilla using XQillaPlatformUtils
+			XQillaPlatformUtils::terminate();
+			throw;
+		}
+
+		// Terminate Xerces-C and XQilla using XQillaPlatformUtils
+		XQillaPlatformUtils::terminate();
+
 		bfs::path datadir(m_cfg.get("datadir"));
 
 		try
 		{
 			bfs::path fname=datadir / "docidmap";
-			std::ifstream ifs(fname.string().c_str());
-			boost::archive::text_iarchive ar(ifs);
-			boost::serialization::load(ar,m_docidmap,0);
+			if (exists(fname))
+			{
+				std::ifstream ifs(fname.string().c_str());
+				boost::archive::text_iarchive ar(ifs);
+				boost::serialization::load(ar,m_docidmap,0);
+			}
 		}
 		catch (boost::archive::archive_exception& x)
 		{
@@ -127,9 +275,6 @@ namespace Ouzo
 				throw Exception(__FILE__,__LINE__);
 			}
 
-			// Read config_file to get list of keys to index
-			// loadConfig();
-			
 			// Iterate the indexes
 			for (std::vector<Index*>::size_type i=0; i< m_indexes.size(); ++i)
 			{
@@ -159,8 +304,6 @@ namespace Ouzo
 		        // Clean up all the objects we have created
 		        result->release();
 		        ((XQillaExpression*)expression)->release();
-
-				// idx->merge(idx2);
 			
 				idx->save();
 			}
@@ -336,14 +479,17 @@ namespace Ouzo
 		}
 		os << std::endl;
 
-		os << "Indexes:" << std::endl;
+		os << "Indexes (" << ouzo.m_indexes.size() << "):" << std::endl;
 		for (std::vector<Index*>::size_type i=0; i< ouzo.m_indexes.size(); ++i)
 		{
 			Index* idx=ouzo.m_indexes[i];
+			
 			os << "------------------" << std::endl
 			   << idx->filename() << std::endl
 			   << "------------------" << std::endl;
 			
+			idx->load();
+		
 			UIntIndex* uiidx=dynamic_cast<UIntIndex*>(idx);
 			if (uiidx)
 				os << *uiidx << std::endl;

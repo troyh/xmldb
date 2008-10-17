@@ -55,6 +55,9 @@ void UIntIndex::load()
 	if (ifs.good())
 	{
 		readMeta(ifs);
+		
+		if (m_headerinfo.type!=INDEX_TYPE_UINT32)
+			throw Exception(__FILE__,__LINE__);
 	
 		for (uint32_t i=0;i<m_headerinfo.keycount;++i)
 		{
