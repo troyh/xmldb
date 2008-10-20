@@ -113,11 +113,11 @@ void StringIndex::save() const
 	}
 }
 
-ostream& operator<<(ostream& os, const StringIndex& idx)
+ostream& StringIndex::operator<<(ostream& os) const
 {
-	StringIndex& idx2=(StringIndex&)idx; // cast away const-ness because C++ is kinda dumb this way
-	std::map<std::string,DocSet>::const_iterator itr_end=idx.m_map.end();
-	for(std::map<std::string,DocSet>::const_iterator itr = idx.m_map.begin(); itr != itr_end; ++itr)
+	StringIndex& idx2=(StringIndex&)(*this); // cast away const-ness because C++ is kinda dumb this way
+	std::map<std::string,DocSet>::const_iterator itr_end=m_map.end();
+	for(std::map<std::string,DocSet>::const_iterator itr = m_map.begin(); itr != itr_end; ++itr)
 	{
 		const DocSet& ds=idx2.get(itr->first.c_str());
 		os << itr->first << ':' << ds << endl;

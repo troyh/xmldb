@@ -77,7 +77,8 @@ namespace Ouzo
 		virtual void put(const char* key,docid_t docid)=0;
 		virtual const DocSet& get(const char* key) const=0;
 		virtual void del(docid_t docid)=0;
-	
+
+		virtual index_type type() const { return m_headerinfo.type; }
 	};
 
 	ostream& operator<<(ostream& os, const Index& idx);

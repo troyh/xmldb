@@ -24,7 +24,6 @@
 
 #include "Ouzo.hpp"
 
-// TODO: make StringIndex work
 // TODO: support more index types (Float, Int, multi-val, etc.)
 // TODO: support queries
 // TODO: make it thread-safe
@@ -165,7 +164,12 @@ namespace Ouzo
 							}
 							else if (XMLString::equals(idxtype,X("uint32")))
 							{
-								Index* p=new UIntIndex(idxname_s,idxkey_s,strtoul(m_cfg.get("doccapacity").c_str(),0,10));
+								Index* p=new UIntIndex<uint32_t>(idxname_s,idxkey_s,strtoul(m_cfg.get("doccapacity").c_str(),0,10));
+								m_indexes.push_back(p);
+							}
+							else if (XMLString::equals(idxtype,X("uint16")))
+							{
+								Index* p=new UIntIndex<uint16_t>(idxname_s,idxkey_s,strtoul(m_cfg.get("doccapacity").c_str(),0,10));
 								m_indexes.push_back(p);
 							}
 					
@@ -490,15 +494,57 @@ namespace Ouzo
 			
 			idx->load();
 		
-			UIntIndex* uiidx=dynamic_cast<UIntIndex*>(idx);
-			if (uiidx)
-				os << *uiidx << std::endl;
-			else
+			switch (idx->type())
 			{
-				StringIndex* sidx=dynamic_cast<StringIndex*>(idx);
-				if (sidx)
-					os << *sidx << std::endl;
+				case Index::INDEX_TYPE_UNKNOWN:
+					break;
+				case Index::INDEX_TYPE_STRING:
+				{
+					StringIndex* pIdx=dynamic_cast<StringIndex*>(idx);
+					os << *pIdx;
+					break;
+				}
+				case Index::INDEX_TYPE_UINT8:
+				{
+					UIntIndex<uint8_t>* pIdx=dynamic_cast< UIntIndex<uint8_t>* >(idx);
+					os << *pIdx;
+					break;
+				}
+				case Index::INDEX_TYPE_UINT16:
+				{
+					UIntIndex<uint16_t>* pIdx=dynamic_cast< UIntIndex<uint16_t>* >(idx);
+					os << *pIdx;
+					break;
+				}
+				case Index::INDEX_TYPE_UINT32:
+				{
+					UIntIndex<uint32_t>* pIdx=dynamic_cast< UIntIndex<uint32_t>* >(idx);
+					os << *pIdx;
+					break;
+				}
+				case Index::INDEX_TYPE_FLOAT:
+				{
+					// TODO: implement this
+					break;
+				}
+				case Index::INDEX_TYPE_DATE:
+				{
+					// TODO: implement this
+					break;
+				}
 			}
+
+			os << std::endl;
+			
+			// UIntIndex* uiidx=dynamic_cast<UIntIndex*>(idx);
+			// if (uiidx)
+			// 	os << *uiidx << std::endl;
+			// else
+			// {
+			// 	StringIndex* sidx=dynamic_cast<StringIndex*>(idx);
+			// 	if (sidx)
+			// 		os << *sidx << std::endl;
+			// }
 		}
 		
 		return os;
