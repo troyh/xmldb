@@ -485,7 +485,7 @@ namespace Ouzo
 			Index* idx=ouzo.m_indexes[i];
 			
 			os << "------------------" << std::endl
-			   << idx->filename() << std::endl
+			   << idx->filename() << " (" << idx->keyCount() << ")" << std::endl
 			   << "------------------" << std::endl;
 			
 			idx->load();

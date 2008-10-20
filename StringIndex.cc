@@ -12,7 +12,10 @@ void StringIndex::put(const char* key, docid_t docid)
 	{ // Doesn't yet exist in index
 		DocSet docset(m_headerinfo.doccapacity);
 		docset.set(docid);
+		
 		m_map.insert(make_pair(key,docset));
+		m_headerinfo.doccount++;
+		m_headerinfo.keycount++;
 	}
 	else
 	{ // Update existing docset in index
@@ -94,7 +97,6 @@ void StringIndex::save() const
 	writeMeta(ofs);
 	
 	uint32_t cKeys=m_map.size();
-	ofs.write((char*)&cKeys,sizeof(cKeys));
 	
 	std::map<std::string,DocSet>::const_iterator itr_end=m_map.end();
 	for(std::map<std::string,DocSet>::const_iterator itr = m_map.begin(); itr != itr_end; ++itr)
@@ -113,10 +115,12 @@ void StringIndex::save() const
 
 ostream& operator<<(ostream& os, const StringIndex& idx)
 {
+	StringIndex& idx2=(StringIndex&)idx; // cast away const-ness because C++ is kinda dumb this way
 	std::map<std::string,DocSet>::const_iterator itr_end=idx.m_map.end();
 	for(std::map<std::string,DocSet>::const_iterator itr = idx.m_map.begin(); itr != itr_end; ++itr)
 	{
-		os << itr->first << ':' << endl;
+		const DocSet& ds=idx2.get(itr->first.c_str());
+		os << itr->first << ':' << ds << endl;
 	}
 	return os;
 }
