@@ -24,7 +24,7 @@
 
 #include "Ouzo.hpp"
 
-// TODO: support more index types (Float, Int, multi-val, etc.)
+// TODO: For unique indexes, make DocSet efficient, i.e., store only one docid, not a bitset or vector
 // TODO: support queries
 // TODO: make it thread-safe
 // TODO: In DocSet, don't always allocate a vector and a dynamic_bitset, only the one you need
@@ -524,12 +524,38 @@ namespace Ouzo
 				}
 				case Index::INDEX_TYPE_FLOAT:
 				{
-					// TODO: implement this
+					FloatIndex* pIdx=dynamic_cast<FloatIndex*>(idx);
+					os << *pIdx;
 					break;
 				}
 				case Index::INDEX_TYPE_DATE:
 				{
-					// TODO: implement this
+					DateIndex* pIdx=dynamic_cast<DateIndex*>(idx);
+					os << *pIdx;
+					break;
+				}
+				case Index::INDEX_TYPE_TIME:
+				{
+					TimeIndex* pIdx=dynamic_cast<TimeIndex*>(idx);
+					os << *pIdx;
+					break;
+				}
+				case Index::INDEX_TYPE_SINT8:
+				{
+					IntIndex<int8_t>* pIdx=dynamic_cast< IntIndex<int8_t>* >(idx);
+					os << *pIdx;
+					break;
+				}
+				case Index::INDEX_TYPE_SINT16:
+				{
+					IntIndex<int16_t>* pIdx=dynamic_cast< IntIndex<int16_t>* >(idx);
+					os << *pIdx;
+					break;
+				}
+				case Index::INDEX_TYPE_SINT32:
+				{
+					IntIndex<int32_t>* pIdx=dynamic_cast< IntIndex<int32_t>* >(idx);
+					os << *pIdx;
 					break;
 				}
 			}

@@ -149,6 +149,13 @@ namespace Ouzo
 			
 		}
 	};
+	
+	template<typename INT_TYPE>
+	class IntIndex : public UIntIndex<INT_TYPE> {};
+	
+	class DateIndex : public UIntIndex<uint32_t> {};
+	class TimeIndex : public UIntIndex<time_t> {};
+	class FloatIndex : public UIntIndex<double> {};
 
 }
 

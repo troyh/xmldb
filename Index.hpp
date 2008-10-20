@@ -26,7 +26,11 @@ namespace Ouzo
 			INDEX_TYPE_UINT16	=3, 
 			INDEX_TYPE_UINT32	=4, 
 			INDEX_TYPE_FLOAT	=5,
-			INDEX_TYPE_DATE		=6
+			INDEX_TYPE_DATE		=6,
+			INDEX_TYPE_TIME		=7,
+			INDEX_TYPE_SINT8	=8, 
+			INDEX_TYPE_SINT16	=9, 
+			INDEX_TYPE_SINT32	=10
 		} index_type;
 		
 		static const uint32_t FILEVERSION=3;
