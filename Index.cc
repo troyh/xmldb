@@ -2,8 +2,36 @@
 
 namespace Ouzo
 {
+
+Index::index_type Index::getType(const Index& idx)
+{
+	Index::index_type t=Index::INDEX_TYPE_UNKNOWN;
 	
-Index::Index(bfs::path index_file, const std::string& keyspec, uint32_t doccapacity, index_type type)
+	if (dynamic_cast<const StringIndex*>(&idx))
+		t=Index::INDEX_TYPE_STRING;
+	else if (dynamic_cast<const UIntIndex<uint8_t>* >(&idx))
+		t=Index::INDEX_TYPE_UINT8;
+	else if (dynamic_cast<const UIntIndex<uint16_t>* >(&idx))
+		t=Index::INDEX_TYPE_UINT16;
+	else if (dynamic_cast<const UIntIndex<uint32_t>* >(&idx))
+		t=Index::INDEX_TYPE_UINT32;
+	else if (dynamic_cast<const FloatIndex*>(&idx))
+		t=Index::INDEX_TYPE_FLOAT;
+	else if (dynamic_cast<const DateIndex*>(&idx))
+		t=Index::INDEX_TYPE_DATE;
+	else if (dynamic_cast<const TimeIndex*>(&idx))
+		t=Index::INDEX_TYPE_TIME;
+	else if (dynamic_cast<const IntIndex<int8_t>* >(&idx))
+		t=Index::INDEX_TYPE_SINT8;
+	else if (dynamic_cast<const IntIndex<int16_t>* >(&idx))
+		t=Index::INDEX_TYPE_SINT16;
+	else if (dynamic_cast<const IntIndex<int32_t>* >(&idx))
+		t=Index::INDEX_TYPE_SINT32;
+
+	return t;
+}
+	
+Index::Index(bfs::path index_file, const std::string& keyspec, uint32_t doccapacity)
 	: m_filename(bfs::change_extension(index_file,".index")), m_keyspec(keyspec)
 {
 	if (!bfs::exists(m_filename))
@@ -12,7 +40,7 @@ Index::Index(bfs::path index_file, const std::string& keyspec, uint32_t doccapac
 	}
 	
 	m_headerinfo.doccapacity=doccapacity;
-	m_headerinfo.type=type;
+	m_headerinfo.type=getType(*this);
 }
 
 Index::~Index()
@@ -124,19 +152,24 @@ ostream& operator<<(ostream& os, const Index::index_type t)
 {
 	switch (t)
 	{
-		case Index::INDEX_TYPE_UNKNOWN: os << "Unknown"; break;
-		case Index::INDEX_TYPE_STRING:	os << "String";  break;
-		case Index::INDEX_TYPE_UINT8:   os << "UInt8";   break;
-		case Index::INDEX_TYPE_UINT16:  os << "UInt16";  break;
-		case Index::INDEX_TYPE_UINT32:  os << "UInt32";  break;
-		case Index::INDEX_TYPE_FLOAT:   os << "Float";   break;
-		case Index::INDEX_TYPE_DATE:    os << "Date";    break;
+		case Index::INDEX_TYPE_UNKNOWN: os << "unknown"; break;
+		case Index::INDEX_TYPE_STRING:	os << "string";  break;
+		case Index::INDEX_TYPE_UINT8:   os << "uint8";   break;
+		case Index::INDEX_TYPE_UINT16:  os << "uint16";  break;
+		case Index::INDEX_TYPE_UINT32:  os << "uint32";  break;
+		case Index::INDEX_TYPE_FLOAT:   os << "float";   break;
+		case Index::INDEX_TYPE_DATE:    os << "date";    break;
+		case Index::INDEX_TYPE_TIME:    os << "time";    break;
+		case Index::INDEX_TYPE_SINT8:   os << "sint8";   break;
+		case Index::INDEX_TYPE_SINT16:  os << "sint16";  break;
+		case Index::INDEX_TYPE_SINT32:  os << "sint32";  break;
 		default:
 			os << "???" << endl; // Shouldn't ever happen
 	}
 	
 	return os;
 }
+
 ostream& operator<<(ostream& os, const Index& idx)
 {
 	os	<< "Version  : " << idx.version() << endl

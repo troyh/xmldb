@@ -15,7 +15,6 @@ namespace Ouzo
 
 	class Index
 	{
-		friend ostream& operator<<(ostream&,const Index&);
 	public:
 	
 		typedef enum 
@@ -60,8 +59,10 @@ namespace Ouzo
 		void writeMeta(ostream& ofs) const;
 		void readMeta(istream& ifs);
 	public:
+		
+		static index_type getType(const Index& idx);
 	
-		Index(bfs::path index_file, const std::string& keyspec, uint32_t doccapacity, index_type type);
+		Index(bfs::path index_file, const std::string& keyspec, uint32_t doccapacity);
 		virtual ~Index();
 	
 		uint32_t version() const { return m_version; };
@@ -82,10 +83,9 @@ namespace Ouzo
 		virtual const DocSet& get(const char* key) const=0;
 		virtual void del(docid_t docid)=0;
 
-		virtual index_type type() const { return m_headerinfo.type; }
+		friend ostream& operator<<(ostream& os, const Index& idx);
 	};
 
-	ostream& operator<<(ostream& os, const Index& idx);
 }
 
 #endif

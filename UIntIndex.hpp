@@ -12,11 +12,17 @@
 namespace Ouzo
 {
 
+	template<typename UINT_TYPE>
+	class UIntIndex;
+	
+	template<typename UINT_TYPE>
+	ostream& operator<<(ostream& os, const UIntIndex<UINT_TYPE>& idx);
+
 	template<typename UINT_TYPE=uint32_t>
 	class UIntIndex : public Index
 	{
 		typedef std::map< UINT_TYPE, DocSet > map_type;
-		
+
 		map_type m_map;
 	public:
 
@@ -24,14 +30,14 @@ namespace Ouzo
 		typedef typename map_type::const_iterator const_iterator_type;
 
 		UIntIndex(const bfs::path& index_file, const std::string& keyspec, uint32_t doccapacity) 
-			: Index(index_file, keyspec, doccapacity, INDEX_TYPE_UINT32) {}
+			: Index(index_file, keyspec, doccapacity) {}
 
 		size_t keyCount() const { return m_map.size(); }
 
 		// inline DocSet& operator[](UINT_TYPE key) {return m_map[key]; }
 		inline iterator_type begin() { return m_map.begin(); }
 		inline iterator_type end() { return m_map.end(); }
-
+		
 		void put(const char* key,docid_t docid)
 		{
 			UINT_TYPE val=strtoul(key,0,10);
@@ -133,29 +139,52 @@ namespace Ouzo
 			}
 		}
 	
-		// template<UINT_TYPE>
-		// friend ostream& operator<<(ostream& os, const UIntIndex<UINT_TYPE>& idx);
-		
-		ostream& operator<<(ostream& os) const
+		friend ostream& operator<< <UINT_TYPE> (ostream& os, const UIntIndex<UINT_TYPE>& idx);
+	};
+
+	template<typename UINT_TYPE>
+	ostream& operator<<(ostream& os, const UIntIndex<UINT_TYPE>& idx) 
+	{
+		os << "UIntIndex::operator<<()" << endl;
+		UIntIndex<UINT_TYPE>& idx2=(UIntIndex<UINT_TYPE>&)(idx); // cast away const-ness because C++ is kinda dumb this way
+		typename UIntIndex<UINT_TYPE>::const_iterator_type itr_end=idx.m_map.end();
+		for(typename UIntIndex<UINT_TYPE>::const_iterator_type itr = idx.m_map.begin(); itr != itr_end; ++itr)
 		{
-			UIntIndex<UINT_TYPE>& idx2=(UIntIndex<UINT_TYPE>&)(*this); // cast away const-ness because C++ is kinda dumb this way
-			const_iterator_type itr_end=m_map.end();
-			for(const_iterator_type itr = m_map.begin(); itr != itr_end; ++itr)
-			{
-				const DocSet& ds=idx2.get(itr->first);
-				os << itr->first << ':' << ds << endl;
-			}
-			return os;
-			
+			const DocSet& ds=idx2.get(itr->first);
+			os << itr->first << ':' << ds << endl;
 		}
+		return os;
+		
+	}
+
+	template<typename INT_TYPE>
+	class IntIndex : public UIntIndex<INT_TYPE>
+	{
+	public:
+		IntIndex(const bfs::path& index_file, const std::string& keyspec, uint32_t doccapacity) 
+			: UIntIndex<INT_TYPE>(index_file, keyspec, doccapacity) {}
 	};
 	
-	template<typename INT_TYPE>
-	class IntIndex : public UIntIndex<INT_TYPE> {};
+	class DateIndex : public UIntIndex<uint32_t>
+	{
+	public:
+		DateIndex(const bfs::path& index_file, const std::string& keyspec, uint32_t doccapacity) 
+			: UIntIndex<uint32_t>(index_file, keyspec, doccapacity) {}
+	};
 	
-	class DateIndex : public UIntIndex<uint32_t> {};
-	class TimeIndex : public UIntIndex<time_t> {};
-	class FloatIndex : public UIntIndex<double> {};
+	class TimeIndex : public UIntIndex<time_t>
+	{
+	public:
+		TimeIndex(const bfs::path& index_file, const std::string& keyspec, uint32_t doccapacity) 
+			: UIntIndex<time_t>(index_file, keyspec, doccapacity) {}
+	};
+	
+	class FloatIndex : public UIntIndex<double>
+	{
+	public:
+		FloatIndex(const bfs::path& index_file, const std::string& keyspec, uint32_t doccapacity) 
+			: UIntIndex<double>(index_file, keyspec, doccapacity) {}
+	};
 
 }
 

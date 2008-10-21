@@ -172,6 +172,41 @@ namespace Ouzo
 								Index* p=new UIntIndex<uint16_t>(idxname_s,idxkey_s,strtoul(m_cfg.get("doccapacity").c_str(),0,10));
 								m_indexes.push_back(p);
 							}
+							else if (XMLString::equals(idxtype,X("uint8")))
+							{
+								Index* p=new UIntIndex<uint8_t>(idxname_s,idxkey_s,strtoul(m_cfg.get("doccapacity").c_str(),0,10));
+								m_indexes.push_back(p);
+							}
+							else if (XMLString::equals(idxtype,X("sint32")))
+							{
+								Index* p=new IntIndex<int32_t>(idxname_s,idxkey_s,strtoul(m_cfg.get("doccapacity").c_str(),0,10));
+								m_indexes.push_back(p);
+							}
+							else if (XMLString::equals(idxtype,X("sint16")))
+							{
+								Index* p=new IntIndex<int16_t>(idxname_s,idxkey_s,strtoul(m_cfg.get("doccapacity").c_str(),0,10));
+								m_indexes.push_back(p);
+							}
+							else if (XMLString::equals(idxtype,X("sint8")))
+							{
+								Index* p=new IntIndex<int8_t>(idxname_s,idxkey_s,strtoul(m_cfg.get("doccapacity").c_str(),0,10));
+								m_indexes.push_back(p);
+							}
+							else if (XMLString::equals(idxtype,X("date")))
+							{
+								Index* p=new DateIndex(idxname_s,idxkey_s,strtoul(m_cfg.get("doccapacity").c_str(),0,10));
+								m_indexes.push_back(p);
+							}
+							else if (XMLString::equals(idxtype,X("time")))
+							{
+								Index* p=new TimeIndex(idxname_s,idxkey_s,strtoul(m_cfg.get("doccapacity").c_str(),0,10));
+								m_indexes.push_back(p);
+							}
+							else if (XMLString::equals(idxtype,X("float")))
+							{
+								Index* p=new FloatIndex(idxname_s,idxkey_s,strtoul(m_cfg.get("doccapacity").c_str(),0,10));
+								m_indexes.push_back(p);
+							}
 					
 							XMLString::release(&idxname_s);
 							XMLString::release(&idxkey_s);
@@ -494,7 +529,7 @@ namespace Ouzo
 			
 			idx->load();
 		
-			switch (idx->type())
+			switch (Index::getType(*idx))
 			{
 				case Index::INDEX_TYPE_UNKNOWN:
 					break;
