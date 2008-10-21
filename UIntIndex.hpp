@@ -145,7 +145,7 @@ namespace Ouzo
 	template<typename UINT_TYPE>
 	ostream& operator<<(ostream& os, const UIntIndex<UINT_TYPE>& idx) 
 	{
-		os << "UIntIndex::operator<<()" << endl;
+		os << (Index&)(idx) << endl;
 		UIntIndex<UINT_TYPE>& idx2=(UIntIndex<UINT_TYPE>&)(idx); // cast away const-ness because C++ is kinda dumb this way
 		typename UIntIndex<UINT_TYPE>::const_iterator_type itr_end=idx.m_map.end();
 		for(typename UIntIndex<UINT_TYPE>::const_iterator_type itr = idx.m_map.begin(); itr != itr_end; ++itr)

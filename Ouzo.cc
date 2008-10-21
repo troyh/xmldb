@@ -596,16 +596,6 @@ namespace Ouzo
 			}
 
 			os << std::endl;
-			
-			// UIntIndex* uiidx=dynamic_cast<UIntIndex*>(idx);
-			// if (uiidx)
-			// 	os << *uiidx << std::endl;
-			// else
-			// {
-			// 	StringIndex* sidx=dynamic_cast<StringIndex*>(idx);
-			// 	if (sidx)
-			// 		os << *sidx << std::endl;
-			// }
 		}
 		
 		return os;

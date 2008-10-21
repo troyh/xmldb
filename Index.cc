@@ -179,8 +179,7 @@ ostream& operator<<(ostream& os, const Index& idx)
 		<< "Capacity : " << idx.documentCapacity() << endl
 		<< "Key Spec : " << idx.m_keyspec << endl
 		<< "Key Count: " << idx.keyCount() << endl
-		<< "Key Size : " << idx.m_headerinfo.keysize << endl
-		<< endl;
+		<< "Key Size : " << idx.m_headerinfo.keysize << endl;
 	return os;
 }
 

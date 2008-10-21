@@ -33,7 +33,8 @@ namespace Ouzo
 		void load();
 		void save() const;
 
-		ostream& operator<<(ostream& os) const;
+		friend ostream& operator<<(ostream& os, const StringIndex& idx);
+		
 	};
 
 }
