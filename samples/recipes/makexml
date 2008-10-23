@@ -1,0 +1,11 @@
+#!/bin/bash
+
+g++ tsv2xml.cc -o tsv2xml
+g++ split.cc -o split
+
+rmdir -f documents/
+mkdir -p documents/chefs documents/reviews documents/recipes
+
+iconv -c -f ASCII -t ASCII members.tsv  | ./tsv2xml member | ./split documents/chefs/
+iconv -c -f ASCII -t ASCII comments.tsv | ./tsv2xml review | ./split documents/reviews/
+iconv -c -f ASCII -t ASCII recipes.tsv  | ./tsv2xml recipe | ./split documents/recipes/
