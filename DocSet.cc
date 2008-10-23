@@ -4,9 +4,10 @@ namespace Ouzo
 {
 	
 DocSet::DocSet(size_t capacity)
-	: m_type(bitmap), 
+	: m_type(docid), 
 	m_docs_arr(new std::vector<docid_t>), 
 	m_docs_bitmap(new bitset_type(capacity,0,BitmapAllocator<unsigned long>())),
+	m_docs_docid(0),
 	m_capacity(capacity)
 {
 }
@@ -25,6 +26,7 @@ DocSet& DocSet::operator=(DocSet& ds)
 { 
 	m_docs_bitmap=ds.m_docs_bitmap; 
 	m_docs_arr=ds.m_docs_arr; 
+	m_docs_docid=ds.m_docs_docid; 
 	m_type=ds.m_type; 
 	m_capacity=ds.m_capacity;
 	return *this; 
@@ -44,6 +46,9 @@ size_t DocSet::size() const
 			break;
 		case bitmap:
 			return m_docs_bitmap->size();
+			break;
+		case docid:
+			return 1;
 			break;
 		default:
 			throw Exception(__FILE__,__LINE__);
@@ -72,6 +77,17 @@ void DocSet::set(docid_t docno)
 			m_docs_arr->push_back(docno);
 		break;
 	}
+	case docid:
+		if (m_docs_docid)
+		{
+			convertToType(bitmap);
+			set(docno);
+		}
+		else
+		{
+			m_docs_docid=docno;
+		}
+		break;
 	default:
 		throw Exception(__FILE__,__LINE__);
 		break;
@@ -83,6 +99,10 @@ void DocSet::clr(docid_t docno)
 	if (this->type()==bitmap)
 	{
 		m_docs_bitmap->reset(docno);
+	}
+	else if (this->type()==docid)
+	{
+		m_docs_docid=0;
 	}
 	else // Array type
 	{
@@ -105,6 +125,10 @@ DocSet& DocSet::operator|=(const DocSet& ds)
 	{
 		*(m_docs_bitmap)|=*(ds.m_docs_bitmap);
 	}
+	else if (this->type()==docid)
+	{
+		// TODO: implement this
+	}
 	else
 	{
 		// TODO: combine manually
@@ -118,6 +142,10 @@ DocSet& DocSet::operator&=(const DocSet& ds)
 	if (this->type()==bitmap && ds.type()==bitmap) // Both are bitmaps
 	{
 		*(m_docs_bitmap)&=*(ds.m_docs_bitmap);
+	}
+	else if (this->type()==docid)
+	{
+		// TODO: implement this
 	}
 	else
 	{
@@ -181,6 +209,13 @@ void DocSet::load(istream& is)
 			
 			break;
 		}
+		case docid:
+		{
+			is.read((char*)&m_docs_docid,sizeof(m_docs_docid));
+			if (!is.good())
+				throw Exception(__FILE__,__LINE__);
+			break;
+		}
 		default:
 			break;
 	}
@@ -227,6 +262,13 @@ void DocSet::save(ostream& os) const
 				throw Exception(__FILE__,__LINE__);
 			break;
 		}
+		case docid:
+		{
+			os.write((char*)&m_docs_docid,sizeof(m_docs_docid));
+			if (!os.good())
+				throw Exception(__FILE__,__LINE__);
+			break;
+		}
 		default:
 			break;
 	}
@@ -239,7 +281,7 @@ uint32_t DocSet::sizeInBytes() const
 	BitmapAllocator< bitset_type::block_type > pa=m_docs_bitmap->get_allocator();
 	BitmapAllocator< bitset_type::block_type >::size_type bitsn=pa.sizeInBytes();
 	
-	return max(sizeof(arrn)+arrn,sizeof(bitsn)+bitsn);
+	return max(max(sizeof(arrn)+arrn,sizeof(bitsn)+bitsn),sizeof(m_docs_docid));
 }
 
 
@@ -269,8 +311,15 @@ ostream& operator<<(ostream& os, const DocSet& ds)
 				os << n;
 				first=false;
 			}
+			break;
 		}
-		break;
+		case DocSet::docid:
+		{
+			os << ds.m_docs_docid;
+			break;
+		}
+		default:
+			throw Exception(__FILE__,__LINE__);
 	}
 	return os;
 }
@@ -280,6 +329,8 @@ Based on capacity and the number of documents we're storing, choose the type.
 */
 DocSet::set_type DocSet::mostEfficientType() const
 {
+	if (m_type==docid)
+		return docid;
 	return bitmap; // TODO: don't always return bitmap, do the math
 }
 
@@ -291,26 +342,43 @@ void DocSet::convertToType(set_type t)
 		{
 		case bitmap:
 		{
-			// Convert from vector to bitmap
-			std::vector<docid_t>::const_iterator itr_end=m_docs_arr->end();
-			for (std::vector<docid_t>::const_iterator itr=m_docs_arr->begin(); itr!=itr_end; ++itr)
+			if (m_type==docid) // Convert from docid to bitmap
 			{
-				docid_t docid=*itr;
-				m_docs_bitmap->set(docid-1);
+				m_docs_bitmap->set(m_docs_docid);
 			}
+			else // Convert from vector to bitmap
+			{
+				std::vector<docid_t>::const_iterator itr_end=m_docs_arr->end();
+				for (std::vector<docid_t>::const_iterator itr=m_docs_arr->begin(); itr!=itr_end; ++itr)
+				{
+					docid_t docid=*itr;
+					m_docs_bitmap->set(docid-1);
+				}
 			
-			m_docs_arr->clear();
+				m_docs_arr->clear();
+			}
 			break;
 		}
 		case arr:
 		{
-			// Convert from bitmap to vector
-			for (bitset_type::size_type n=m_docs_bitmap->find_first(); n!=bitset_type::npos; n=m_docs_bitmap->find_next(n))
+			if (m_type==docid) // Convert from docid to vector
 			{
-				m_docs_arr->push_back(n+1);
+				m_docs_arr->push_back(m_docs_docid);
 			}
+			else // Convert from bitmap to vector
+			{
+				for (bitset_type::size_type n=m_docs_bitmap->find_first(); n!=bitset_type::npos; n=m_docs_bitmap->find_next(n))
+				{
+					m_docs_arr->push_back(n+1);
+				}
 			
-			m_docs_bitmap->resize(0);
+				m_docs_bitmap->resize(0);
+			}
+			break;
+		}
+		case docid:
+		{
+			// TODO: convert to type docid from bitmap and vector
 			break;
 		}
 		default:

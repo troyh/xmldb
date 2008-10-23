@@ -20,13 +20,14 @@ namespace Ouzo
 	class DocSet
 	{
 	public:
-		typedef enum { arr, bitmap } set_type;
+		typedef enum { arr, bitmap, docid } set_type;
 		typedef dynamic_bitset< unsigned long,BitmapAllocator<unsigned long> > bitset_type;
 	private:
 		// union DocUnion
 		// {
 			boost::shared_ptr< std::vector<docid_t> > m_docs_arr;
 			boost::shared_ptr<bitset_type> m_docs_bitmap;
+			docid_t m_docs_docid;
 		// } m_docs;
 		set_type m_type;
 		size_t m_capacity;
