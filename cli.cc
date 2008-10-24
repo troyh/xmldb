@@ -125,7 +125,8 @@ int main(int argc,char* argv[])
 	catch (Ouzo::Exception& x)
 	{
 		std::cerr << "Ouzo::Exception:" << std::endl;
-		std::cerr << x.file() << '(' << x.line() << ')' << std::endl;
+		std::cerr << x.file() << '(' << x.line() << ')' << std::endl << std::endl;
+		std::cerr << x << std::endl;
 	}
 	catch (Ouzo::Exception* x)
 	{
