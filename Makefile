@@ -22,7 +22,7 @@ split: split.o
 query: query.o
 	g++ -o $@ $^ -lxml++-2.6 -lxml2 -lboost_filesystem-gcc43-mt -lboost_serialization-gcc43-mt
 
-libouzo.a: Ouzo.o DocSet.o Index.o StringIndex.o UIntIndex.o Config.o
+libouzo.a: Ouzo.o DocSet.o Index.o StringIndex.o UIntIndex.o Config.o DocumentBase.o
 	rm -f $@
 	ar rcs $@ $^
 

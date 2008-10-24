@@ -95,13 +95,14 @@ int main(int argc,char* argv[])
 					string subcmd(argv[2]);
 					if (subcmd=="index")
 					{
-						string idxname(argv[3]);
-						Ouzo::Index* pIdx=ouzo.getIndex(idxname);
-						if (pIdx)
-						{
-							pIdx->load();
-							std::cout << *pIdx << std::endl;
-						}
+						// TODO: implement this
+						// string idxname(argv[3]);
+						// Ouzo::Index* pIdx=ouzo.getIndex(idxname);
+						// if (pIdx)
+						// {
+						// 	pIdx->load();
+						// 	std::cout << *pIdx << std::endl;
+						// }
 					}
 				}
 				else

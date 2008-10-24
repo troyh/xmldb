@@ -55,34 +55,37 @@ void StringIndex::load()
 	{
 		readMeta(ifs);
 		
-		if (m_headerinfo.type!=INDEX_TYPE_STRING)
-			throw Exception(__FILE__,__LINE__);
-
-		for(uint32_t i = 0; i < m_headerinfo.keycount; ++i)
+		if (ifs.good())
 		{
-			// Read key
-			std::string key;
-			char buf[256];
-			size_t len;
-			ifs.read((char*)&len,sizeof(len));
-			if (!ifs.good())
+			if (m_headerinfo.type!=INDEX_TYPE_STRING)
 				throw Exception(__FILE__,__LINE__);
+
+			for(uint32_t i = 0; i < m_headerinfo.keycount; ++i)
+			{
+				// Read key
+				std::string key;
+				char buf[256];
+				size_t len;
+				ifs.read((char*)&len,sizeof(len));
+				if (!ifs.good())
+					throw Exception(__FILE__,__LINE__);
 			
-			ifs.read(buf,len);
-			if (!ifs.good())
-				throw Exception(__FILE__,__LINE__);
+				ifs.read(buf,len);
+				if (!ifs.good())
+					throw Exception(__FILE__,__LINE__);
 
-			buf[len]='\0';
-			key=buf;
+				buf[len]='\0';
+				key=buf;
 	
-			// Read DocSet
-			DocSet ds(m_headerinfo.doccapacity);
-			ds.load(ifs);
+				// Read DocSet
+				DocSet ds(m_headerinfo.doccapacity);
+				ds.load(ifs);
 
-			m_headerinfo.keysize=ds.sizeInBytes();
+				m_headerinfo.keysize=ds.sizeInBytes();
 
-			// Put into index
-			m_map.insert(make_pair(key,ds));
+				// Put into index
+				m_map.insert(make_pair(key,ds));
+			}
 		}
 	}
 }

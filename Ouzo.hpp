@@ -16,11 +16,10 @@
 #include <xercesc/dom/DOMDocument.hpp>
 
 #include "Config.hpp"
+#include "DocumentBase.hpp"
 
 namespace Ouzo
 {
-	typedef uint32_t docid_t;
-
 	namespace bfs=boost::filesystem;
 	using namespace std;
 	using namespace boost;
@@ -31,30 +30,23 @@ namespace Ouzo
 	class Ouzo
 	{
 		friend ostream& operator<<(ostream& os, const Ouzo& ouzo);
-	public:
-		typedef enum { XML } doctype; // Supported document types
-	private:
-		std::map<bfs::path,docid_t> m_docidmap;
-		dynamic_bitset<> m_avail_docids;
-		std::vector<Index*> m_indexes;
-		bfs::path m_config_file;
-		Config m_cfg;
 
-		void addXMLDocument(bfs::path fname, docid_t docid);
-		const char* getNodeValue(const DOMNode* node,const char* tag);
+		map<bfs::path,DocumentType> m_doctypes;
+		bfs::path m_config_file;
+
+		DocumentType& findDocType(const bfs::path& docfile);
+		// const char* getNodeValue(const DOMNode* node,const char* tag);
 		void getValues(DOMDocument* document,const char*);
-		void persist();
+		void readConfigIndexes(DOMDocument* document, const DOMElement* node, DocumentType& doctype);
 		
 	public:	
 		Ouzo(bfs::path config_file);
 		~Ouzo();
 		
-		Config config() const { return m_cfg; }
-	
-		void addDocument(bfs::path docfile,doctype type=XML);
+		void addDocument(bfs::path docfile);
 		void delDocument(bfs::path docfile);
 		
-		Index* getIndex(const bfs::path& fname);
+		// Index* getIndex(const bfs::path& fname);
 	
 		// Results fetch(const Query& q) const;
 	};

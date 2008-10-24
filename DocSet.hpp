@@ -9,7 +9,6 @@
 #include <boost/filesystem.hpp>
 #include <boost/dynamic_bitset.hpp>
 
-#include "Ouzo.hpp"
 #include "BitmapAllocator.hpp"
 
 namespace Ouzo

@@ -8,6 +8,8 @@
 #include <boost/interprocess/sync/file_lock.hpp>
 
 #include "Index.hpp"
+#include "Mutex.hpp"
+#include "Exception.hpp"
 
 namespace Ouzo
 {
@@ -89,27 +91,30 @@ namespace Ouzo
 			if (ifs.good())
 			{
 				readMeta(ifs);
-
-				if (m_headerinfo.type!=INDEX_TYPE_UINT32)
-					throw Exception(__FILE__,__LINE__);
-
-				for (uint32_t i=0;i<m_headerinfo.keycount;++i)
+				
+				if (ifs.good())
 				{
-					// Read key
-					UINT_TYPE n;
-					ifs.read((char*)&n,sizeof(n));
-
-					if (!ifs.good())
+					if (m_headerinfo.type!=INDEX_TYPE_UINT32)
 						throw Exception(__FILE__,__LINE__);
 
-					// Read DocSet
-					DocSet ds(m_headerinfo.doccapacity);
-					ds.load(ifs);
+					for (uint32_t i=0;i<m_headerinfo.keycount;++i)
+					{
+						// Read key
+						UINT_TYPE n;
+						ifs.read((char*)&n,sizeof(n));
 
-					m_headerinfo.keysize=ds.sizeInBytes();
+						if (!ifs.good())
+							throw Exception(__FILE__,__LINE__);
 
-					// Put into index
-					m_map.insert(make_pair(n,ds));
+						// Read DocSet
+						DocSet ds(m_headerinfo.doccapacity);
+						ds.load(ifs);
+
+						m_headerinfo.keysize=ds.sizeInBytes();
+
+						// Put into index
+						m_map.insert(make_pair(n,ds));
+					}
 				}
 			}
 		}

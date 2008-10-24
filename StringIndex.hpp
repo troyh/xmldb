@@ -6,7 +6,6 @@
 
 #include <boost/filesystem.hpp>
 
-#include "DocSet.hpp"
 #include "Index.hpp"
 
 namespace Ouzo
