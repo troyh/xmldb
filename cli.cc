@@ -56,8 +56,16 @@ int main(int argc,char* argv[])
 					{
 						for (size_t i=0;i<globbuf.gl_pathc;++i)
 						{
-							std::cout << globbuf.gl_pathv[i] << endl;
-							ouzo.addDocument(globbuf.gl_pathv[i]);
+							// Make the filepath absolute
+							bfs::path fpath(globbuf.gl_pathv[i]);
+							if (!fpath.has_root_path())
+							{
+								// Use the cwd
+								fpath=bfs::initial_path() / fpath;
+							}
+
+							std::cout << fpath << endl;
+							ouzo.addDocument(fpath);
 						}
 						globfree(&globbuf);
 					}
@@ -124,14 +132,9 @@ int main(int argc,char* argv[])
 	}
 	catch (Ouzo::Exception& x)
 	{
-		std::cerr << "Ouzo::Exception:" << std::endl;
-		std::cerr << x.file() << '(' << x.line() << ')' << std::endl << std::endl;
+		// std::cerr << "Ouzo::Exception:" << std::endl;
+		// std::cerr << x.file() << '(' << x.line() << ')' << std::endl << std::endl;
 		std::cerr << x << std::endl;
-	}
-	catch (Ouzo::Exception* x)
-	{
-		std::cerr << "Ouzo::Exception:" << std::endl;
-		std::cerr << x->file() << '(' << x->line() << ')' << std::endl;
 	}
 	catch (std::exception& x)
 	{

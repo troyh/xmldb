@@ -1,5 +1,5 @@
-#ifndef _OUZO_DOCUMENTTYPE_HPP
-#define _OUZO_DOCUMENTTYPE_HPP
+#ifndef _OUZO_DOCUMENTBASE_HPP
+#define _OUZO_DOCUMENTBASE_HPP
 
 #include <iostream>
 #include <vector>
@@ -17,9 +17,9 @@ namespace Ouzo
 	
 	class Index;
 	
-	class DocumentType
+	class DocumentBase
 	{
-		friend ostream& operator<<(ostream& os, const DocumentType& doctype);
+		friend ostream& operator<<(ostream& os, const DocumentBase& doctype);
 	public:
 		typedef enum { UNKNOWN=0, XML=1 } fileformat_type;
 	private:
@@ -35,15 +35,15 @@ namespace Ouzo
 		void addXMLDocument(bfs::path fname, docid_t docid);
 		void persist();
 	public:	
-		DocumentType() : m_fileformat(UNKNOWN), m_capacity(0) {}
-		~DocumentType() {}
+		DocumentBase() : m_fileformat(UNKNOWN), m_capacity(0) {}
+		~DocumentBase() {}
 
-		void docDirectory(const char* dir) { m_docdir=dir; }
-		void docDirectory(bfs::path dir) { m_docdir=dir; }
+		void docDirectory(const char* dir);
+		void docDirectory(bfs::path dir);
 		bfs::path docDirectory() const { return m_docdir; }
 
-		void dataDirectory(const char* dir) { m_datadir=dir; }
-		void dataDirectory(bfs::path dir) { m_datadir=dir; }
+		void dataDirectory(const char* dir);
+		void dataDirectory(bfs::path dir);
 		bfs::path dataDirectory() const { return m_datadir; }
 		
 		void capacity(const char* str);
@@ -62,7 +62,7 @@ namespace Ouzo
 		void load();
 	};
 
-	ostream& operator<<(ostream& os, const DocumentType& doctype);
+	ostream& operator<<(ostream& os, const DocumentBase& doctype);
 
 }
 

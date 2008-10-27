@@ -21,7 +21,10 @@ namespace Ouzo
 
 	std::ostream& operator<<(std::ostream& os, const Exception& x)
 	{
+		os << "Ouzo Exception: " << x.file() << '(' << x.line() << ')' << std::endl
+			<< "Call stack:" << std::endl;
 		for (size_t i = 0; i < x.m_bt_size; i++)
-			os << x.m_bt_strings[i] << std::endl;
+			os << i << ':' << x.m_bt_strings[i] << std::endl;
+		return os;
 	}
 }

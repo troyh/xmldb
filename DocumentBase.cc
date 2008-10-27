@@ -36,7 +36,34 @@ namespace Ouzo
 	
 	using namespace xercesc;
 	
-	void DocumentType::load()
+	void DocumentBase::docDirectory(const char* dir) 
+	{
+		m_docdir=dir; 
+		m_docdir /= "foo"; // Temporarily add a filename so we can remove it and the trailing slash
+		m_docdir=m_docdir.remove_filename().remove_filename();
+		
+	}
+	void DocumentBase::docDirectory(bfs::path dir) 
+	{
+		m_docdir=dir; 
+		m_docdir /= "foo"; // Temporarily add a filename so we can remove it and the trailing slash
+		m_docdir=m_docdir.remove_filename().remove_filename();
+	}
+
+	void DocumentBase::dataDirectory(const char* dir) 
+	{ 
+		m_datadir=dir; 
+		m_datadir /= "foo"; // Temporarily add a filename so we can remove it and the trailing slash
+		m_datadir=m_datadir.remove_filename().remove_filename();
+	}
+	void DocumentBase::dataDirectory(bfs::path dir) 
+	{ 
+		m_datadir=dir; 
+		m_datadir /= "foo"; // Temporarily add a filename so we can remove it and the trailing slash
+		m_datadir=m_datadir.remove_filename().remove_filename();
+	}
+	
+	void DocumentBase::load()
 	{
 		try
 		{
@@ -73,7 +100,7 @@ namespace Ouzo
 	
 	}
 	
-	void DocumentType::persist()
+	void DocumentBase::persist()
 	{
 		// TODO: Lock docidmap file
 		// TODO: lock docid.map file
@@ -106,30 +133,9 @@ namespace Ouzo
 		// TODO: unlock docid.map file
 	}
 
-	void DocumentType::addDocument(bfs::path docfile)
+	void DocumentBase::addDocument(bfs::path docfile)
 	{
-		std::string fname;
-
-		// If docfile is an absolute path, verify that it is in the config's documents/dir
-		if (docfile.has_root_path())
-		{
-			// Is it in the config's documents/dir?
-			std::string s1=m_docdir.string();
-			std::string s2=docfile.string().substr(0,s1.length());
-			if (s1!=s2)
-			{
-				return; // TODO: return an appropriate error
-			}
-			else
-			{
-				fname=docfile.string().substr(s1.length());
-			}
-		}
-		else // Relative path, pre-pend the config's documents/dir
-		{
-			fname=docfile.string();
-			docfile=m_docdir / docfile;
-		}
+		std::string fname=docfile.filename();
 		
 		docid_t docid;
 		// Find out if we already know about this document
@@ -165,14 +171,16 @@ namespace Ouzo
 		persist();
 	}
 
-	void DocumentType::delDocument(bfs::path docfile)
+	void DocumentBase::delDocument(bfs::path docfile)
 	{
+		std::string fname=docfile.filename();
+		
 		bool changed=false;
 		
 		// Find out if we already know about this document
-		if (m_docidmap.find(docfile)!=m_docidmap.end())
+		if (m_docidmap.find(fname)!=m_docidmap.end())
 		{
-			docid_t docid=m_docidmap[docfile];
+			docid_t docid=m_docidmap[fname];
 			m_docidmap.erase(docfile);
 			m_avail_docids.set(docid-1,true);
 			
@@ -195,7 +203,7 @@ namespace Ouzo
 			persist();
 	}
 
-	void DocumentType::addXMLDocument(bfs::path docfile, docid_t docid)
+	void DocumentBase::addXMLDocument(bfs::path docfile, docid_t docid)
 	{
 		// Initialise Xerces-C and XQilla using XQillaPlatformUtils
 		XQillaPlatformUtils::initialize();
@@ -267,7 +275,7 @@ namespace Ouzo
 		
 	}
 
-	std::ostream& operator<<(std::ostream& os, const DocumentType& doctype)
+	std::ostream& operator<<(std::ostream& os, const DocumentBase& doctype)
 	{
 		dynamic_bitset<>::size_type nextdocid=doctype.m_avail_docids.find_first()+1;
 		
@@ -363,20 +371,20 @@ namespace Ouzo
 		return os;
 	}
 
-	void DocumentType::capacity(const char* str)
+	void DocumentBase::capacity(const char* str)
 	{
 		m_capacity=strtoul(str,0,10);
 	}
 	
-	void DocumentType::fileFormat(const char* s)
+	void DocumentBase::fileFormat(const char* s)
 	{
-		if (strcasecmp(s,"XML"))
+		if (!strcasecmp(s,"XML"))
 		{
 			m_fileformat=XML;
 		}
 	}
 	
-	void DocumentType::addIndex(Index* idx)
+	void DocumentBase::addIndex(Index* idx)
 	{
 		m_indexes.push_back(idx);
 	}

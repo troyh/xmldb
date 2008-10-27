@@ -9,12 +9,6 @@ Index::index_type Index::getType(const Index& idx)
 	
 	if (dynamic_cast<const StringIndex*>(&idx))
 		t=Index::INDEX_TYPE_STRING;
-	else if (dynamic_cast<const UIntIndex<uint8_t>* >(&idx))
-		t=Index::INDEX_TYPE_UINT8;
-	else if (dynamic_cast<const UIntIndex<uint16_t>* >(&idx))
-		t=Index::INDEX_TYPE_UINT16;
-	else if (dynamic_cast<const UIntIndex<uint32_t>* >(&idx))
-		t=Index::INDEX_TYPE_UINT32;
 	else if (dynamic_cast<const FloatIndex*>(&idx))
 		t=Index::INDEX_TYPE_FLOAT;
 	else if (dynamic_cast<const DateIndex*>(&idx))
@@ -27,6 +21,12 @@ Index::index_type Index::getType(const Index& idx)
 		t=Index::INDEX_TYPE_SINT16;
 	else if (dynamic_cast<const IntIndex<int32_t>* >(&idx))
 		t=Index::INDEX_TYPE_SINT32;
+	else if (dynamic_cast<const UIntIndex<uint8_t>* >(&idx))
+		t=Index::INDEX_TYPE_UINT8;
+	else if (dynamic_cast<const UIntIndex<uint16_t>* >(&idx))
+		t=Index::INDEX_TYPE_UINT16;
+	else if (dynamic_cast<const UIntIndex<uint32_t>* >(&idx))
+		t=Index::INDEX_TYPE_UINT32;
 
 	return t;
 }
@@ -37,6 +37,8 @@ Index::Index(bfs::path index_file, const std::string& keyspec, uint32_t doccapac
 	if (!bfs::exists(m_filename))
 	{
 		ofstream f(m_filename.string().c_str()); // Create it
+		if (!f.good())
+			throw Exception(__FILE__,__LINE__);  // Unable to create it
 	}
 	
 	m_headerinfo.doccapacity=doccapacity;
@@ -86,7 +88,7 @@ void Index::writeMeta(ostream& ofs) const
 	ofs.write((char*)&verinfo,sizeof(verinfo));
 	if (!ofs.good())
 		throw Exception(__FILE__,__LINE__);
-		
+
 	ofs.write((char*)&m_headerinfo,sizeof(m_headerinfo));
 	if (!ofs.good())
 		throw Exception(__FILE__,__LINE__);
@@ -100,6 +102,7 @@ void Index::readMeta(istream& ifs)
 {
 	// Save the values that we've been configured with
 	HeaderInfo config_info=m_headerinfo;
+	std::string orig_keyspec=m_keyspec;
 	
 	VersionInfo verinfo;
 
@@ -144,8 +147,14 @@ void Index::readMeta(istream& ifs)
 	m_version=verinfo.version;
 	m_headerinfo.doccapacity=config_info.doccapacity; // Always ignore the capacity specified in the file and use the one specified at run-time
 
-	if (m_headerinfo.type==0)	// If the file doesn't have a type, take the type we're configured to have
-		m_headerinfo.type=config_info.type;
+	if (m_headerinfo.type==INDEX_TYPE_UNKNOWN)	// If the file doesn't have a type, take the type we're configured to have
+		m_headerinfo.type=getType(*this);
+		
+	if (orig_keyspec!=m_keyspec)
+	{
+		// TODO: handle this discrepancy between the file's keyspec and the conf's keyspec
+		m_keyspec=orig_keyspec;
+	}
 }
 
 ostream& operator<<(ostream& os, const Index::index_type t)

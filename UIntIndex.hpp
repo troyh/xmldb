@@ -94,8 +94,11 @@ namespace Ouzo
 				
 				if (ifs.good())
 				{
-					if (m_headerinfo.type!=INDEX_TYPE_UINT32)
-						throw Exception(__FILE__,__LINE__);
+					if (m_headerinfo.type==INDEX_TYPE_UNKNOWN && m_headerinfo.keycount==0)
+						m_headerinfo.type=INDEX_TYPE_UINT32;
+					// Note: we can't expect INDEX_TYPE_UINT32, because this is a base for many similar types
+					// else if (m_headerinfo.type!=INDEX_TYPE_UINT32)
+					// 	throw Exception(__FILE__,__LINE__);
 
 					for (uint32_t i=0;i<m_headerinfo.keycount;++i)
 					{

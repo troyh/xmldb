@@ -31,13 +31,13 @@ namespace Ouzo
 	{
 		friend ostream& operator<<(ostream& os, const Ouzo& ouzo);
 
-		map<bfs::path,DocumentType> m_doctypes;
+		map<bfs::path,DocumentBase> m_doctypes;
 		bfs::path m_config_file;
 
-		DocumentType& findDocType(const bfs::path& docfile);
+		DocumentBase& findDocType(const bfs::path& docfile);
 		// const char* getNodeValue(const DOMNode* node,const char* tag);
 		void getValues(DOMDocument* document,const char*);
-		void readConfigIndexes(DOMDocument* document, const DOMElement* node, DocumentType& doctype);
+		void readConfigIndexes(DOMDocument* document, const DOMElement* node, DocumentBase& doctype);
 		
 	public:	
 		Ouzo(bfs::path config_file);

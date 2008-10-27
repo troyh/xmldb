@@ -75,13 +75,16 @@ namespace Ouzo
 		return ret;
 	}
 	
-	void Ouzo::readConfigIndexes(DOMDocument* document, const DOMElement* node, DocumentType& doctype)
+	void Ouzo::readConfigIndexes(DOMDocument* document, const DOMElement* node, DocumentBase& doctype)
 	{
 		DOMNodeList* indexes=node->getElementsByTagName(X("indexes"));
 		DOMElement* indexeselem=dynamic_cast<DOMElement*>(indexes->item(0)); // Should only be 1
 		char* p=XMLString::transcode(indexeselem->getAttribute(X("directory")));
 		doctype.dataDirectory(p);
 		XMLString::release(&p);
+		
+		if (!bfs::exists(doctype.dataDirectory()))
+			throw Exception(__FILE__,__LINE__);
 		
 		// Parse an XPath 2 expression
         const DOMXPathExpression* expression = document->createExpression(X("indexes/index"), 0);
@@ -201,8 +204,8 @@ namespace Ouzo
 				        while (result->iterateNext())
 						{
 							const DOMElement* docselem=dynamic_cast<const DOMElement*>(result->asNode());
-							
-							DocumentType* doctype=new DocumentType();
+
+							DocumentBase* doctype=new DocumentBase();
 							
 							char* p=XMLString::transcode(docselem->getAttribute(X("format")));
 							doctype->fileFormat(p);
@@ -215,7 +218,9 @@ namespace Ouzo
 							p=XMLString::transcode(docselem->getAttribute(X("capacity")));
 							doctype->capacity(p);
 							XMLString::release(&p);
-
+							
+							doctype->load();
+							
 							readConfigIndexes(document, docselem, *doctype);
 							
 							m_doctypes.insert(make_pair(doctype->docDirectory(),*doctype));
@@ -252,24 +257,24 @@ namespace Ouzo
 	
 	void Ouzo::addDocument(bfs::path docfile)
 	{
-		DocumentType& doctype=findDocType(docfile);
+		DocumentBase& doctype=findDocType(docfile);
 		doctype.addDocument(docfile);
 	}
 	
 	void Ouzo::delDocument(bfs::path docfile)
 	{
-		DocumentType& doctype=findDocType(docfile);
+		DocumentBase& doctype=findDocType(docfile);
 		doctype.delDocument(docfile);
 	}
 	
-	DocumentType& Ouzo::findDocType(const bfs::path& docfile)
+	DocumentBase& Ouzo::findDocType(const bfs::path& docfile)
 	{
 		// If docfile is an absolute path, verify that it is in the config's documents/dir
 		if (!docfile.has_root_path())
 			throw Exception(__FILE__,__LINE__);
-			
-		// Find the DocumentType that refers to documents in the directory docfile is in.
-		std::map<bfs::path,DocumentType>::iterator itr=m_doctypes.find(docfile.parent_path());
+
+		// Find the DocumentBase that refers to documents in the directory docfile is in.
+		std::map<bfs::path,DocumentBase>::iterator itr=m_doctypes.find(docfile.parent_path());
 		if (itr==m_doctypes.end())
 		{
 			throw Exception(__FILE__,__LINE__);
@@ -282,8 +287,8 @@ namespace Ouzo
 	{
 		os << "Config file     :" << ouzo.m_config_file << std::endl;
 		
-		std::map<bfs::path,DocumentType>::const_iterator itr_end=ouzo.m_doctypes.end();
-		for (std::map<bfs::path,DocumentType>::const_iterator itr=ouzo.m_doctypes.begin(); itr!=itr_end; ++itr)
+		std::map<bfs::path,DocumentBase>::const_iterator itr_end=ouzo.m_doctypes.end();
+		for (std::map<bfs::path,DocumentBase>::const_iterator itr=ouzo.m_doctypes.begin(); itr!=itr_end; ++itr)
 		{
 			os << "======================" << endl
 			   << " Documents:" << endl
