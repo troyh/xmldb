@@ -3,8 +3,10 @@
 namespace Ouzo
 {
 	
+// TODO: make m_type=docid work, it doesn't seem to work upon save() and load()
+	
 DocSet::DocSet(size_t capacity)
-	: m_type(docid), 
+	: m_type(bitmap), 
 	m_docs_arr(new std::vector<docid_t>), 
 	m_docs_bitmap(new bitset_type(capacity,0,BitmapAllocator<unsigned long>())),
 	m_docs_docid(0),
@@ -295,7 +297,7 @@ ostream& operator<<(ostream& os, const DocSet& ds)
 			for (std::vector<docid_t>::const_iterator itr=ds.m_docs_arr->begin(); itr!=ds.m_docs_arr->end(); ++itr)
 			{
 				if (!first)
-					os << ',';
+					os << ' ';
 				os << *itr;
 				first=false;
 			}
@@ -307,7 +309,7 @@ ostream& operator<<(ostream& os, const DocSet& ds)
 			for (DocSet::bitset_type::size_type n=ds.m_docs_bitmap->find_first(); n!=DocSet::bitset_type::npos; n=ds.m_docs_bitmap->find_next(n))
 			{
 				if (!first)
-					os << ',';
+					os << ' ';
 				os << n;
 				first=false;
 			}
