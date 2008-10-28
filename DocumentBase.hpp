@@ -34,6 +34,10 @@ namespace Ouzo
 
 		void addXMLDocument(bfs::path fname, docid_t docid);
 		void persist();
+		
+		// Prevent these from being used:
+		DocumentBase(const DocumentBase&);
+		DocumentBase& operator=(const DocumentBase&);
 	public:	
 		DocumentBase() : m_fileformat(UNKNOWN), m_capacity(0) {}
 		~DocumentBase() {}

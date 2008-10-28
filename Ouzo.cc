@@ -219,11 +219,11 @@ namespace Ouzo
 							doctype->capacity(p);
 							XMLString::release(&p);
 							
-							doctype->load();
-							
 							readConfigIndexes(document, docselem, *doctype);
 							
-							m_doctypes.insert(make_pair(doctype->docDirectory(),*doctype));
+							doctype->load();
+							
+							m_doctypes.insert(make_pair(doctype->docDirectory(),doctype));
 						}
 						
 						result->release();
@@ -274,26 +274,26 @@ namespace Ouzo
 			throw Exception(__FILE__,__LINE__);
 
 		// Find the DocumentBase that refers to documents in the directory docfile is in.
-		std::map<bfs::path,DocumentBase>::iterator itr=m_doctypes.find(docfile.parent_path());
+		std::map<bfs::path,DocumentBase*>::iterator itr=m_doctypes.find(docfile.parent_path());
 		if (itr==m_doctypes.end())
 		{
 			throw Exception(__FILE__,__LINE__);
 		}
 
-		return itr->second;
+		return *(itr->second);
 	}
 
 	std::ostream& operator<<(std::ostream& os, const Ouzo& ouzo)
 	{
 		os << "Config file     :" << ouzo.m_config_file << std::endl;
 		
-		std::map<bfs::path,DocumentBase>::const_iterator itr_end=ouzo.m_doctypes.end();
-		for (std::map<bfs::path,DocumentBase>::const_iterator itr=ouzo.m_doctypes.begin(); itr!=itr_end; ++itr)
+		std::map<bfs::path,DocumentBase*>::const_iterator itr_end=ouzo.m_doctypes.end();
+		for (std::map<bfs::path,DocumentBase*>::const_iterator itr=ouzo.m_doctypes.begin(); itr!=itr_end; ++itr)
 		{
 			os << "======================" << endl
 			   << " Documents:" << endl
 			   << "======================" << endl
-			   << itr->second << endl;
+			   << *(itr->second) << endl;
 		}
 		
 		return os;

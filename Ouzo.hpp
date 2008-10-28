@@ -31,7 +31,7 @@ namespace Ouzo
 	{
 		friend ostream& operator<<(ostream& os, const Ouzo& ouzo);
 
-		map<bfs::path,DocumentBase> m_doctypes;
+		map<bfs::path,DocumentBase*> m_doctypes;
 		bfs::path m_config_file;
 
 		DocumentBase& findDocType(const bfs::path& docfile);

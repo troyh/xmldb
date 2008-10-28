@@ -97,7 +97,6 @@ namespace Ouzo
 		{
 			cout << "Archive exception: " << x.what() << endl;
 		}
-	
 	}
 	
 	void DocumentBase::persist()
