@@ -304,7 +304,7 @@ namespace Ouzo
 		for (std::map<bfs::path,DocumentBase*>::const_iterator itr=ouzo.m_doctypes.begin(); itr!=itr_end; ++itr)
 		{
 			os << "======================" << endl
-			   << " Documents:" << endl
+			   << " Documents: " << itr->second->name() << endl
 			   << "======================" << endl
 			   << *(itr->second) << endl;
 		}

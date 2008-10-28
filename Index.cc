@@ -211,7 +211,7 @@ ostream& operator<<(ostream& os, const Index& idx)
 			UIntIndex<uint8_t>::const_iterator_type itr_end=rIdx.end();
 			for (UIntIndex<uint8_t>::const_iterator_type itr=rIdx.begin(); itr!=itr_end; ++itr)
 			{
-				os << itr->first << "\t:" << itr->second << endl;
+				os << (uint16_t)itr->first << "\t:" << itr->second << endl;
 			}
 			break;
 		}
