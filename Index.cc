@@ -188,7 +188,115 @@ ostream& operator<<(ostream& os, const Index& idx)
 		<< "Capacity : " << idx.documentCapacity() << endl
 		<< "Key Spec : " << idx.m_keyspec << endl
 		<< "Key Count: " << idx.keyCount() << endl
-		<< "Key Size : " << idx.m_headerinfo.keysize << endl;
+		<< "Key Size : " << idx.m_headerinfo.keysize << endl
+		<< endl;
+
+	switch (Index::getType(idx))
+	{
+		case Index::INDEX_TYPE_UNKNOWN:
+			break;
+		case Index::INDEX_TYPE_STRING:
+		{
+			const StringIndex& rIdx=dynamic_cast<const StringIndex&>(idx);
+			StringIndex::const_iterator_type itr_end=rIdx.end();
+			for (StringIndex::const_iterator_type itr=rIdx.begin(); itr!=itr_end; ++itr)
+			{
+				os << itr->first << "\t:" << itr->second << endl;
+			}
+			break;
+		}
+		case Index::INDEX_TYPE_UINT8:
+		{
+			const UIntIndex<uint8_t> rIdx=dynamic_cast< const UIntIndex<uint8_t>& >(idx);
+			UIntIndex<uint8_t>::const_iterator_type itr_end=rIdx.end();
+			for (UIntIndex<uint8_t>::const_iterator_type itr=rIdx.begin(); itr!=itr_end; ++itr)
+			{
+				os << itr->first << "\t:" << itr->second << endl;
+			}
+			break;
+		}
+		case Index::INDEX_TYPE_UINT16:
+		{
+			const UIntIndex<uint16_t> rIdx=dynamic_cast< const UIntIndex<uint16_t>& >(idx);
+			UIntIndex<uint16_t>::const_iterator_type itr_end=rIdx.end();
+			for (UIntIndex<uint16_t>::const_iterator_type itr=rIdx.begin(); itr!=itr_end; ++itr)
+			{
+				os << itr->first << "\t:" << itr->second << endl;
+			}
+			break;
+		}
+		case Index::INDEX_TYPE_UINT32:
+		{
+			const UIntIndex<uint32_t> rIdx=dynamic_cast< const UIntIndex<uint32_t>& >(idx);
+			UIntIndex<uint32_t>::const_iterator_type itr_end=rIdx.end();
+			for (UIntIndex<uint32_t>::const_iterator_type itr=rIdx.begin(); itr!=itr_end; ++itr)
+			{
+				os << itr->first << "\t:" << itr->second << endl;
+			}
+			break;
+		}
+		case Index::INDEX_TYPE_FLOAT:
+		{
+			const FloatIndex& rIdx=dynamic_cast<const FloatIndex&>(idx);
+			FloatIndex::const_iterator_type itr_end=rIdx.end();
+			for (FloatIndex::const_iterator_type itr=rIdx.begin(); itr!=itr_end; ++itr)
+			{
+				os << itr->first << "\t:" << itr->second << endl;
+			}
+			break;
+		}
+		case Index::INDEX_TYPE_DATE:
+		{
+			const DateIndex& rIdx=dynamic_cast<const DateIndex&>(idx);
+			DateIndex::const_iterator_type itr_end=rIdx.end();
+			for (DateIndex::const_iterator_type itr=rIdx.begin(); itr!=itr_end; ++itr)
+			{
+				os << itr->first << "\t:" << itr->second << endl;
+			}
+			break;
+		}
+		case Index::INDEX_TYPE_TIME:
+		{
+			const TimeIndex& rIdx=dynamic_cast<const TimeIndex&>(idx);
+			TimeIndex::const_iterator_type itr_end=rIdx.end();
+			for (TimeIndex::const_iterator_type itr=rIdx.begin(); itr!=itr_end; ++itr)
+			{
+				os << itr->first << "\t:" << itr->second << endl;
+			}
+			break;
+		}
+		case Index::INDEX_TYPE_SINT8:
+		{
+			const IntIndex<int8_t>& rIdx=dynamic_cast< const IntIndex<int8_t>& >(idx);
+			IntIndex<int8_t>::const_iterator_type itr_end=rIdx.end();
+			for (IntIndex<int8_t>::const_iterator_type itr=rIdx.begin(); itr!=itr_end; ++itr)
+			{
+				os << itr->first << "\t:" << itr->second << endl;
+			}
+			break;
+		}
+		case Index::INDEX_TYPE_SINT16:
+		{
+			const IntIndex<int16_t>& rIdx=dynamic_cast< const IntIndex<int16_t>& >(idx);
+			IntIndex<int16_t>::const_iterator_type itr_end=rIdx.end();
+			for (IntIndex<int16_t>::const_iterator_type itr=rIdx.begin(); itr!=itr_end; ++itr)
+			{
+				os << itr->first << "\t:" << itr->second << endl;
+			}
+			break;
+		}
+		case Index::INDEX_TYPE_SINT32:
+		{
+			const IntIndex<int32_t>& rIdx=dynamic_cast< const IntIndex<int32_t>& >(idx);
+			IntIndex<int32_t>::const_iterator_type itr_end=rIdx.end();
+			for (IntIndex<int32_t>::const_iterator_type itr=rIdx.begin(); itr!=itr_end; ++itr)
+			{
+				os << itr->first << "\t:" << itr->second << endl;
+			}
+			break;
+		}
+	}
+
 	return os;
 }
 

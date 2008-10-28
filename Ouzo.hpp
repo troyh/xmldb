@@ -46,7 +46,7 @@ namespace Ouzo
 		void addDocument(bfs::path docfile);
 		void delDocument(bfs::path docfile);
 		
-		// Index* getIndex(const bfs::path& fname);
+		DocumentBase* getDocBase(std::string name);
 	
 		// Results fetch(const Query& q) const;
 	};

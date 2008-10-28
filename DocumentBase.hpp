@@ -23,6 +23,7 @@ namespace Ouzo
 	public:
 		typedef enum { UNKNOWN=0, XML=1 } fileformat_type;
 	private:
+		std::string m_name;
 		fileformat_type m_fileformat;
 		uint32_t m_capacity;
 		bfs::path m_docdir;
@@ -39,8 +40,10 @@ namespace Ouzo
 		DocumentBase(const DocumentBase&);
 		DocumentBase& operator=(const DocumentBase&);
 	public:	
-		DocumentBase() : m_fileformat(UNKNOWN), m_capacity(0) {}
+		DocumentBase(std::string name) : m_name(name), m_fileformat(UNKNOWN), m_capacity(0) {}
 		~DocumentBase() {}
+		
+		std::string name() const { return  m_name; }
 
 		void docDirectory(const char* dir);
 		void docDirectory(bfs::path dir);
@@ -64,6 +67,9 @@ namespace Ouzo
 		void delDocument(bfs::path docfile);
 		
 		void load();
+		
+		Index* getIndex(std::string name);
+		
 	};
 
 	ostream& operator<<(ostream& os, const DocumentBase& doctype);

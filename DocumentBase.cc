@@ -298,73 +298,7 @@ namespace Ouzo
 			
 			idx->load();
 		
-			switch (Index::getType(*idx))
-			{
-				case Index::INDEX_TYPE_UNKNOWN:
-					break;
-				case Index::INDEX_TYPE_STRING:
-				{
-					StringIndex* pIdx=dynamic_cast<StringIndex*>(idx);
-					os << *pIdx;
-					break;
-				}
-				case Index::INDEX_TYPE_UINT8:
-				{
-					UIntIndex<uint8_t>* pIdx=dynamic_cast< UIntIndex<uint8_t>* >(idx);
-					os << *pIdx;
-					break;
-				}
-				case Index::INDEX_TYPE_UINT16:
-				{
-					UIntIndex<uint16_t>* pIdx=dynamic_cast< UIntIndex<uint16_t>* >(idx);
-					os << *pIdx;
-					break;
-				}
-				case Index::INDEX_TYPE_UINT32:
-				{
-					UIntIndex<uint32_t>* pIdx=dynamic_cast< UIntIndex<uint32_t>* >(idx);
-					os << *pIdx;
-					break;
-				}
-				case Index::INDEX_TYPE_FLOAT:
-				{
-					FloatIndex* pIdx=dynamic_cast<FloatIndex*>(idx);
-					os << *pIdx;
-					break;
-				}
-				case Index::INDEX_TYPE_DATE:
-				{
-					DateIndex* pIdx=dynamic_cast<DateIndex*>(idx);
-					os << *pIdx;
-					break;
-				}
-				case Index::INDEX_TYPE_TIME:
-				{
-					TimeIndex* pIdx=dynamic_cast<TimeIndex*>(idx);
-					os << *pIdx;
-					break;
-				}
-				case Index::INDEX_TYPE_SINT8:
-				{
-					IntIndex<int8_t>* pIdx=dynamic_cast< IntIndex<int8_t>* >(idx);
-					os << *pIdx;
-					break;
-				}
-				case Index::INDEX_TYPE_SINT16:
-				{
-					IntIndex<int16_t>* pIdx=dynamic_cast< IntIndex<int16_t>* >(idx);
-					os << *pIdx;
-					break;
-				}
-				case Index::INDEX_TYPE_SINT32:
-				{
-					IntIndex<int32_t>* pIdx=dynamic_cast< IntIndex<int32_t>* >(idx);
-					os << *pIdx;
-					break;
-				}
-			}
-
-			os << std::endl;
+			os << *idx << std::endl;
 		}
 		
 		return os;
@@ -386,6 +320,18 @@ namespace Ouzo
 	void DocumentBase::addIndex(Index* idx)
 	{
 		m_indexes.push_back(idx);
+	}
+
+	Index* DocumentBase::getIndex(std::string name)
+	{
+		for (std::vector<Index*>::size_type i=0; i< m_indexes.size(); ++i)
+		{
+			bfs::path idxname=m_indexes[i]->filename();
+			idxname=bfs::change_extension(idxname.filename(),"");
+			if (idxname==name)
+				return m_indexes[i];
+		}
+		return NULL;
 	}
 
 }

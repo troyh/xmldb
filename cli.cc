@@ -103,14 +103,18 @@ int main(int argc,char* argv[])
 					string subcmd(argv[2]);
 					if (subcmd=="index")
 					{
-						// TODO: implement this
-						// string idxname(argv[3]);
-						// Ouzo::Index* pIdx=ouzo.getIndex(idxname);
-						// if (pIdx)
-						// {
-						// 	pIdx->load();
-						// 	std::cout << *pIdx << std::endl;
-						// }
+						string docbase(argv[3]);
+						Ouzo::DocumentBase* pDB=ouzo.getDocBase(docbase);
+						if (pDB)
+						{
+							string idxname(argv[4]);
+							Ouzo::Index* pIdx=pDB->getIndex(idxname);
+							if (pIdx)
+							{
+								pIdx->load();
+								std::cout << *pIdx << std::endl;
+							}
+						}
 					}
 				}
 				else

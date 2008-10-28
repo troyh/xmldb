@@ -36,9 +36,10 @@ namespace Ouzo
 
 		size_t keyCount() const { return m_map.size(); }
 
-		// inline DocSet& operator[](UINT_TYPE key) {return m_map[key]; }
 		inline iterator_type begin() { return m_map.begin(); }
 		inline iterator_type end() { return m_map.end(); }
+		inline const_iterator_type begin() const { return m_map.begin(); }
+		inline const_iterator_type end() const { return m_map.end(); }
 		
 		void put(const char* key,docid_t docid)
 		{

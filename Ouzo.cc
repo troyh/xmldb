@@ -205,9 +205,11 @@ namespace Ouzo
 						{
 							const DOMElement* docselem=dynamic_cast<const DOMElement*>(result->asNode());
 
-							DocumentBase* doctype=new DocumentBase();
-							
-							char* p=XMLString::transcode(docselem->getAttribute(X("format")));
+							char* p=XMLString::transcode(docselem->getAttribute(X("name")));
+							DocumentBase* doctype=new DocumentBase(p);
+							XMLString::release(&p);
+
+							p=XMLString::transcode(docselem->getAttribute(X("format")));
 							doctype->fileFormat(p);
 							XMLString::release(&p);
 							
@@ -283,6 +285,17 @@ namespace Ouzo
 		return *(itr->second);
 	}
 
+	DocumentBase* Ouzo::getDocBase(std::string name)
+	{
+		std::map<bfs::path,DocumentBase*>::const_iterator itr_end=m_doctypes.end();
+		for (std::map<bfs::path,DocumentBase*>::const_iterator itr=m_doctypes.begin(); itr!=itr_end; ++itr)
+		{
+			if (itr->second->name()==name)
+				return itr->second;
+		}
+		return NULL;
+	}
+
 	std::ostream& operator<<(std::ostream& os, const Ouzo& ouzo)
 	{
 		os << "Config file     :" << ouzo.m_config_file << std::endl;
@@ -298,6 +311,5 @@ namespace Ouzo
 		
 		return os;
 	}
-	
-}
 
+}
