@@ -285,7 +285,7 @@ namespace Ouzo
 		return *(itr->second);
 	}
 
-	DocumentBase* Ouzo::getDocBase(std::string name)
+	DocumentBase* Ouzo::getDocBase(std::string name) const
 	{
 		std::map<bfs::path,DocumentBase*>::const_iterator itr_end=m_doctypes.end();
 		for (std::map<bfs::path,DocumentBase*>::const_iterator itr=m_doctypes.begin(); itr!=itr_end; ++itr)
@@ -295,6 +295,64 @@ namespace Ouzo
 		}
 		return NULL;
 	}
+	
+	void Ouzo::fetch(const Query::Node& q, Query::Results& results) const
+	{
+		const Query::TermNode* termnode=dynamic_cast<const Query::TermNode*>(&q);
+		const Query::BooleanNode* boolnode=dynamic_cast<const Query::BooleanNode*>(&q);
+		
+		if (termnode)
+		{
+			std::string docbasename=q.getDocBaseName();
+			DocumentBase* pDB=getDocBase(docbasename);
+			pDB->load();
+			pDB->query(*termnode, results);
+		}
+		else if (boolnode)
+		{
+			Query::Node* left=boolnode->left();
+			Query::Node* right=boolnode->right();
+
+			DocumentBase* leftdb=getDocBase(left->getDocBaseName());
+			DocumentBase* rightdb=getDocBase(right->getDocBaseName());
+			
+			Query::Results l_results(leftdb);
+			Query::Results r_results(rightdb);
+
+			fetch(*left, l_results);
+			fetch(*right, r_results);
+			
+			// convert r_results to the type we need (if not already)
+			r_results.convertToDocBase(results);
+			
+			// convert l_results to the type we need (if not already)
+			l_results.convertToDocBase(results);
+
+			switch(boolnode->oper())
+			{
+				case Query::BooleanNode::OR:
+					results=l_results;
+					results|=r_results;
+					break;
+				case Query::BooleanNode::AND:
+					results=l_results;
+					results&=r_results;
+					break;
+				case Query::BooleanNode::UNDEF:
+					throw Exception(__FILE__,__LINE__);
+					break;
+			}
+			
+			if (boolnode->isUnaryNot())
+			{
+				results.flip();
+			}
+		}
+		else
+			throw Exception(__FILE__,__LINE__); // Unknown type
+		
+	}
+	
 
 	std::ostream& operator<<(std::ostream& os, const Ouzo& ouzo)
 	{

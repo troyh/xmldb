@@ -7,7 +7,7 @@ namespace Ouzo
 	
 DocSet::DocSet(size_t capacity)
 	: m_type(bitmap), 
-	m_docs_arr(new std::vector<docid_t>), 
+	// m_docs_arr(new std::vector<docid_t>), 
 	m_docs_bitmap(new bitset_type(capacity,0,BitmapAllocator<unsigned long>())),
 	m_docs_docid(0),
 	m_capacity(capacity)
@@ -27,7 +27,7 @@ DocSet::DocSet(const DocSet& ds)
 DocSet& DocSet::operator=(DocSet& ds) 
 { 
 	m_docs_bitmap=ds.m_docs_bitmap; 
-	m_docs_arr=ds.m_docs_arr; 
+	// m_docs_arr=ds.m_docs_arr; 
 	m_docs_docid=ds.m_docs_docid; 
 	m_type=ds.m_type; 
 	m_capacity=ds.m_capacity;
@@ -36,16 +36,28 @@ DocSet& DocSet::operator=(DocSet& ds)
 
 DocSet& DocSet::operator=(const DocSet& ds) 
 { 
-	return *this=(DocSet&)ds; 
+	// Copy the bitmap from ds to this bitmap
+
+	
+	// m_docs_bitmap=ds.m_docs_bitmap; 
+	// // m_docs_arr=ds.m_docs_arr; 
+	m_docs_docid=ds.m_docs_docid; 
+	m_type=ds.m_type; 
+	m_capacity=ds.m_capacity;
+	
+	// m_docs_bitmap=new bitset_type(m_capacity,0,BitmapAllocator<unsigned long>());
+	*m_docs_bitmap=*ds.m_docs_bitmap;
+	
+	return *this; 
 }
 
 size_t DocSet::size() const
 {
 	switch (m_type)
 	{
-		case arr:
-			return m_docs_arr->size();
-			break;
+		// case arr:
+			// return m_docs_arr->size();
+			// break;
 		case bitmap:
 			return m_docs_bitmap->size();
 			break;
@@ -65,20 +77,20 @@ void DocSet::set(docid_t docno)
 	case bitmap:
 		m_docs_bitmap->set(docno);
 		break;
-	case arr:
-	{
-		// See if it's already there
-		std::vector<docid_t>::const_iterator itr_end=m_docs_arr->end();
-		bool found=false;
-		for (std::vector<docid_t>::const_iterator itr=m_docs_arr->begin(); itr!=itr_end; ++itr)
-		{
-			if (*itr==docno)
-				found=true;
-		}
-		if (!found) // only add it if it's not already there
-			m_docs_arr->push_back(docno);
-		break;
-	}
+	// case arr:
+	// {
+	// 	// See if it's already there
+	// 	std::vector<docid_t>::const_iterator itr_end=m_docs_arr->end();
+	// 	bool found=false;
+	// 	for (std::vector<docid_t>::const_iterator itr=m_docs_arr->begin(); itr!=itr_end; ++itr)
+	// 	{
+	// 		if (*itr==docno)
+	// 			found=true;
+	// 	}
+	// 	if (!found) // only add it if it's not already there
+	// 		m_docs_arr->push_back(docno);
+	// 	break;
+	// }
 	case docid:
 		if (m_docs_docid)
 		{
@@ -106,19 +118,24 @@ void DocSet::clr(docid_t docno)
 	{
 		m_docs_docid=0;
 	}
-	else // Array type
-	{
-		// Remove from vector
-		std::vector<docid_t>::iterator itr_end=m_docs_arr->end();
-		for (std::vector<docid_t>::iterator itr=m_docs_arr->begin(); itr!=itr_end; ++itr)
-		{
-			if (*itr==docno)
-			{
-				m_docs_arr->erase(itr);
-				break;
-			}
-		}
-	}
+	// else // Array type
+	// {
+	// 	// Remove from vector
+	// 	std::vector<docid_t>::iterator itr_end=m_docs_arr->end();
+	// 	for (std::vector<docid_t>::iterator itr=m_docs_arr->begin(); itr!=itr_end; ++itr)
+	// 	{
+	// 		if (*itr==docno)
+	// 		{
+	// 			m_docs_arr->erase(itr);
+	// 			break;
+	// 		}
+	// 	}
+	// }
+}
+
+void DocSet::flip()
+{
+	m_docs_bitmap->flip();
 }
 
 DocSet& DocSet::operator|=(const DocSet& ds)
@@ -166,29 +183,29 @@ void DocSet::load(istream& is)
 	
 	switch (m_type)
 	{
-		case arr:
-		{
-			m_docs_arr->clear();
-
-			std::vector<docid_t>::size_type n;
-			is.read((char*)&n,sizeof(n));
-
-			if (!is.good())
-				throw Exception(__FILE__,__LINE__);
-			
-			for(size_t i = 0; i < n; ++i)
-			{
-				docid_t docid;
-				is.read((char*)&docid,sizeof(docid));
-
-				if (!is.good())
-					throw Exception(__FILE__,__LINE__);
-				
-				m_docs_arr->push_back(docid);
-			}
-
-			break;
-		}
+		// case arr:
+		// {
+		// 	m_docs_arr->clear();
+		// 
+		// 	std::vector<docid_t>::size_type n;
+		// 	is.read((char*)&n,sizeof(n));
+		// 
+		// 	if (!is.good())
+		// 		throw Exception(__FILE__,__LINE__);
+		// 	
+		// 	for(size_t i = 0; i < n; ++i)
+		// 	{
+		// 		docid_t docid;
+		// 		is.read((char*)&docid,sizeof(docid));
+		// 
+		// 		if (!is.good())
+		// 			throw Exception(__FILE__,__LINE__);
+		// 		
+		// 		m_docs_arr->push_back(docid);
+		// 	}
+		// 
+		// 	break;
+		// }
 		case bitmap:
 		{
 			BitmapAllocator<bitset_type::block_type>::size_type n;
@@ -238,18 +255,18 @@ void DocSet::save(ostream& os) const
 
 	switch (m_type)
 	{
-		case arr:
-		{
-			std::vector<docid_t>::size_type n=m_docs_arr->size();
-			os.write((char*)&n,sizeof(n));
-			
-			for(std::vector<docid_t>::size_type i = 0; i < n; ++i)
-			{
-				docid_t docid=(*m_docs_arr)[i];
-				os.write((char*)&docid,sizeof(docid));
-			}
-			break;
-		}
+		// case arr:
+		// {
+		// 	std::vector<docid_t>::size_type n=m_docs_arr->size();
+		// 	os.write((char*)&n,sizeof(n));
+		// 	
+		// 	for(std::vector<docid_t>::size_type i = 0; i < n; ++i)
+		// 	{
+		// 		docid_t docid=(*m_docs_arr)[i];
+		// 		os.write((char*)&docid,sizeof(docid));
+		// 	}
+		// 	break;
+		// }
 		case bitmap:
 		{
 			BitmapAllocator< bitset_type::block_type > pa=m_docs_bitmap->get_allocator();
@@ -276,14 +293,26 @@ void DocSet::save(ostream& os) const
 	}
 }
 
+DocSet::size_type DocSet::find_first() const
+{
+	return m_docs_bitmap->find_first();
+}
+
+DocSet::size_type DocSet::find_next(size_type n) const
+{
+	return m_docs_bitmap->find_next(n);
+}
+
+
 uint32_t DocSet::sizeInBytes() const
 {
-	std::vector<docid_t>::size_type arrn=m_docs_arr->size();
+	// std::vector<docid_t>::size_type arrn=m_docs_arr->size();
 	
 	BitmapAllocator< bitset_type::block_type > pa=m_docs_bitmap->get_allocator();
 	BitmapAllocator< bitset_type::block_type >::size_type bitsn=pa.sizeInBytes();
 	
-	return max(max(sizeof(arrn)+arrn,sizeof(bitsn)+bitsn),sizeof(m_docs_docid));
+	// return max(max(sizeof(arrn)+arrn,sizeof(bitsn)+bitsn),sizeof(m_docs_docid));
+	return max(sizeof(bitsn)+bitsn,sizeof(m_docs_docid));
 }
 
 
@@ -291,18 +320,18 @@ ostream& operator<<(ostream& os, const DocSet& ds)
 {
 	switch (ds.m_type)
 	{
-		case DocSet::arr:
-		{
-			bool first=true;
-			for (std::vector<docid_t>::const_iterator itr=ds.m_docs_arr->begin(); itr!=ds.m_docs_arr->end(); ++itr)
-			{
-				if (!first)
-					os << ' ';
-				os << *itr;
-				first=false;
-			}
-			break;
-		}
+		// case DocSet::arr:
+		// {
+		// 	bool first=true;
+		// 	for (std::vector<docid_t>::const_iterator itr=ds.m_docs_arr->begin(); itr!=ds.m_docs_arr->end(); ++itr)
+		// 	{
+		// 		if (!first)
+		// 			os << ' ';
+		// 		os << *itr;
+		// 		first=false;
+		// 	}
+		// 	break;
+		// }
 		case DocSet::bitmap:
 		{
 			bool first=true;
@@ -348,36 +377,36 @@ void DocSet::convertToType(set_type t)
 			{
 				m_docs_bitmap->set(m_docs_docid);
 			}
-			else // Convert from vector to bitmap
-			{
-				std::vector<docid_t>::const_iterator itr_end=m_docs_arr->end();
-				for (std::vector<docid_t>::const_iterator itr=m_docs_arr->begin(); itr!=itr_end; ++itr)
-				{
-					docid_t docid=*itr;
-					m_docs_bitmap->set(docid-1);
-				}
-			
-				m_docs_arr->clear();
-			}
+			// else // Convert from vector to bitmap
+			// {
+			// 	std::vector<docid_t>::const_iterator itr_end=m_docs_arr->end();
+			// 	for (std::vector<docid_t>::const_iterator itr=m_docs_arr->begin(); itr!=itr_end; ++itr)
+			// 	{
+			// 		docid_t docid=*itr;
+			// 		m_docs_bitmap->set(docid-1);
+			// 	}
+			// 
+			// 	m_docs_arr->clear();
+			// }
 			break;
 		}
-		case arr:
-		{
-			if (m_type==docid) // Convert from docid to vector
-			{
-				m_docs_arr->push_back(m_docs_docid);
-			}
-			else // Convert from bitmap to vector
-			{
-				for (bitset_type::size_type n=m_docs_bitmap->find_first(); n!=bitset_type::npos; n=m_docs_bitmap->find_next(n))
-				{
-					m_docs_arr->push_back(n+1);
-				}
-			
-				m_docs_bitmap->resize(0);
-			}
-			break;
-		}
+		// case arr:
+		// {
+		// 	if (m_type==docid) // Convert from docid to vector
+		// 	{
+		// 		m_docs_arr->push_back(m_docs_docid);
+		// 	}
+		// 	else // Convert from bitmap to vector
+		// 	{
+		// 		for (bitset_type::size_type n=m_docs_bitmap->find_first(); n!=bitset_type::npos; n=m_docs_bitmap->find_next(n))
+		// 		{
+		// 			m_docs_arr->push_back(n+1);
+		// 		}
+		// 	
+		// 		m_docs_bitmap->resize(0);
+		// 	}
+		// 	break;
+		// }
 		case docid:
 		{
 			// TODO: convert to type docid from bitmap and vector

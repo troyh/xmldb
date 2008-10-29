@@ -73,6 +73,13 @@ namespace Ouzo
 				std::ifstream ifs(fname.string().c_str());
 				boost::archive::text_iarchive ar(ifs);
 				boost::serialization::load(ar,m_docidmap,0);
+				
+				std::map<bfs::path,docid_t>::const_iterator itr_end=m_docidmap.end();
+				for (std::map<bfs::path,docid_t>::const_iterator itr=m_docidmap.begin(); itr!=itr_end; ++itr)
+				{
+					m_docidmap_reverse[itr->second]=itr->first;
+				}
+				// TODO: load m_docidmap_reverse from file to get rid of the above loop
 			}
 		}
 		catch (boost::archive::archive_exception& x)
@@ -101,6 +108,7 @@ namespace Ouzo
 	
 	void DocumentBase::persist()
 	{
+		// TODO: persist these into the same file
 		// TODO: Lock docidmap file
 		// TODO: lock docid.map file
 
@@ -118,6 +126,7 @@ namespace Ouzo
 			std::ofstream ofs(fname.string().c_str());
 			boost::archive::text_oarchive ar(ofs);
 			boost::serialization::save(ar,m_docidmap,0);
+			// TODO: save m_docidmap_reverse to file
 		}
 		catch (boost::archive::archive_exception& x)
 		{
@@ -165,6 +174,7 @@ namespace Ouzo
 		}
 		
 		m_docidmap[fname]=docid;
+		m_docidmap_reverse[docid]=fname;
 		m_avail_docids.set(docid-1,false);
 		
 		persist();
@@ -181,6 +191,7 @@ namespace Ouzo
 		{
 			docid_t docid=m_docidmap[fname];
 			m_docidmap.erase(docfile);
+			m_docidmap_reverse.erase(docid);
 			m_avail_docids.set(docid-1,true);
 			
 			// Iterate the indexes
@@ -273,6 +284,174 @@ namespace Ouzo
 		XQillaPlatformUtils::terminate();
 		
 	}
+	
+	void DocumentBase::query(const Query::TermNode& q, Query::Results& results)
+	{
+		string idxname=q.key();
+		Index* idx=getIndex(idxname);
+		idx->load();
+
+		if (q.eqop()==Query::TermNode::eq || q.eqop()==Query::TermNode::ne || q.eqop()==Query::TermNode::lt || q.eqop()==Query::TermNode::gte)
+		{
+			const DocSet& ds=idx->get(q.val().c_str());
+			results=ds;
+		}
+
+		if (q.eqop()==Query::TermNode::ne)
+		{
+			results.flip();
+		}
+		else if (q.eqop()==Query::TermNode::lt || q.eqop()==Query::TermNode::gt || q.eqop()==Query::TermNode::lte || q.eqop()==Query::TermNode::gte)
+		{
+			Query::Results gt_results(results.docbase());
+
+			switch (Index::getType(*idx))
+			{
+				case Index::INDEX_TYPE_UNKNOWN:
+					break;
+				case Index::INDEX_TYPE_STRING : 
+				{
+					StringIndex* sidx=dynamic_cast<StringIndex*>(idx);
+					StringIndex::const_iterator_type itr=sidx->lower_bound(q.val());
+					StringIndex::const_iterator_type itr_end=sidx->end();
+					for (itr++; itr!=itr_end; itr++)
+					{
+						gt_results|=itr->second;
+					}
+					break;
+				}
+				case Index::INDEX_TYPE_UINT8  : 
+				{
+					UIntIndex<uint8_t>* uiidx=dynamic_cast< UIntIndex<uint8_t>* >(idx);
+					UIntIndex<uint8_t>::const_iterator_type itr=uiidx->lower_bound(q.val());
+					UIntIndex<uint8_t>::const_iterator_type itr_end=uiidx->end();
+					for (itr++; itr!=itr_end; itr++)
+					{
+						gt_results|=itr->second;
+					}
+					break;
+				}
+				case Index::INDEX_TYPE_UINT16 : 
+				{
+					UIntIndex<uint16_t>* uiidx=dynamic_cast< UIntIndex<uint16_t>* >(idx);
+					UIntIndex<uint16_t>::const_iterator_type itr=uiidx->lower_bound(q.val());
+					UIntIndex<uint16_t>::const_iterator_type itr_end=uiidx->end();
+					for (itr++; itr!=itr_end; itr++)
+					{
+						gt_results|=itr->second;
+					}
+					break;
+				}
+				case Index::INDEX_TYPE_UINT32 : 
+				{
+					UIntIndex<uint32_t>* uiidx=dynamic_cast< UIntIndex<uint32_t>* >(idx);
+					UIntIndex<uint32_t>::const_iterator_type itr=uiidx->lower_bound(q.val());
+					UIntIndex<uint32_t>::const_iterator_type itr_end=uiidx->end();
+					for (itr++; itr!=itr_end; itr++)
+					{
+						gt_results|=itr->second;
+					}
+					break;
+				}
+				case Index::INDEX_TYPE_FLOAT  :
+				{
+					FloatIndex* fidx=dynamic_cast<FloatIndex*>(idx);
+					FloatIndex::const_iterator_type itr=fidx->lower_bound(q.val());
+					FloatIndex::const_iterator_type itr_end=fidx->end();
+					for (itr++; itr!=itr_end; itr++)
+					{
+						gt_results|=itr->second;
+					}
+					break;
+				}
+				case Index::INDEX_TYPE_DATE   :
+				{
+					DateIndex* fidx=dynamic_cast<DateIndex*>(idx);
+					DateIndex::const_iterator_type itr=fidx->lower_bound(q.val());
+					DateIndex::const_iterator_type itr_end=fidx->end();
+					for (itr++; itr!=itr_end; itr++)
+					{
+						gt_results|=itr->second;
+					}
+					break;
+				}
+				case Index::INDEX_TYPE_TIME   :
+				{
+					TimeIndex* fidx=dynamic_cast<TimeIndex*>(idx);
+					TimeIndex::const_iterator_type itr=fidx->lower_bound(q.val());
+					TimeIndex::const_iterator_type itr_end=fidx->end();
+					for (itr++; itr!=itr_end; itr++)
+					{
+						gt_results|=itr->second;
+					}
+					break;
+				}
+				case Index::INDEX_TYPE_SINT8  : 
+				{
+					UIntIndex<int8_t>* fidx=dynamic_cast< UIntIndex<int8_t>* >(idx);
+					UIntIndex<int8_t>::const_iterator_type itr=fidx->lower_bound(q.val());
+					UIntIndex<int8_t>::const_iterator_type itr_end=fidx->end();
+					for (itr++; itr!=itr_end; itr++)
+					{
+						gt_results|=itr->second;
+					}
+					break;
+				}
+				case Index::INDEX_TYPE_SINT16 : 
+				{
+					UIntIndex<int16_t>* fidx=dynamic_cast< UIntIndex<int16_t>* >(idx);
+					UIntIndex<int16_t>::const_iterator_type itr=fidx->lower_bound(q.val());
+					UIntIndex<int16_t>::const_iterator_type itr_end=fidx->end();
+					for (itr++; itr!=itr_end; itr++)
+					{
+						gt_results|=itr->second;
+					}
+					break;
+				}
+				case Index::INDEX_TYPE_SINT32 :
+				{
+					UIntIndex<int32_t>* fidx=dynamic_cast< UIntIndex<int32_t>* >(idx);
+					UIntIndex<int32_t>::const_iterator_type itr=fidx->lower_bound(q.val());
+					UIntIndex<int32_t>::const_iterator_type itr_end=fidx->end();
+					for (itr++; itr!=itr_end; itr++)
+					{
+						gt_results|=itr->second;
+					}
+					break;
+				}
+				
+			}
+
+			if (q.eqop()==Query::TermNode::gt)
+			{
+				// Do nothing
+			}
+			else if (q.eqop()==Query::TermNode::gte)
+			{
+				results|=gt_results;
+			}
+			else if (q.eqop()==Query::TermNode::lte)
+			{
+				results=gt_results;
+				results.flip();
+			}
+			else if (q.eqop()==Query::TermNode::lt)
+			{
+				results|=gt_results;
+				results.flip();
+			}
+			
+		}
+		
+	}
+	
+	void DocumentBase::getDocFilenames(const Query::Results& results, std::vector<bfs::path>& docs)
+	{
+		for (DocSet::size_type n=results.find_first(); n!=DocSet::npos; n=results.find_next(n))
+		{
+			docs.push_back(m_docidmap_reverse[n]);
+		}
+	}
 
 	std::ostream& operator<<(std::ostream& os, const DocumentBase& doctype)
 	{
@@ -303,7 +482,7 @@ namespace Ouzo
 		
 		return os;
 	}
-
+	
 	void DocumentBase::capacity(const char* str)
 	{
 		m_capacity=strtoul(str,0,10);

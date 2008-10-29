@@ -15,16 +15,20 @@ namespace Ouzo
 {
 	using namespace std;
 	using namespace boost;
+
+	typedef uint32_t docid_t;
 	
 	class DocSet
 	{
 	public:
-		typedef enum { arr, bitmap, docid } set_type;
+		typedef enum { /*arr,*/ bitmap=1, docid } set_type;
 		typedef dynamic_bitset< unsigned long,BitmapAllocator<unsigned long> > bitset_type;
+		typedef bitset_type::size_type size_type;
+		static const size_type npos=bitset_type::npos;
 	private:
 		// union DocUnion
 		// {
-			boost::shared_ptr< std::vector<docid_t> > m_docs_arr;
+			// boost::shared_ptr< std::vector<docid_t> > m_docs_arr;
 			boost::shared_ptr<bitset_type> m_docs_bitmap;
 			docid_t m_docs_docid;
 		// } m_docs;
@@ -49,6 +53,8 @@ namespace Ouzo
 	
 		void set(docid_t docno);
 		void clr(docid_t docno);
+		
+		void flip();
 	
 		DocSet& operator|=(const DocSet& ds);
 		DocSet& operator&=(const DocSet& ds);
@@ -56,6 +62,9 @@ namespace Ouzo
 		void load(istream& is);
 
 		void save(ostream& os) const;
+		
+		size_type find_first() const;
+		size_type find_next(size_type n) const;
 	
 		friend ostream& operator<<(ostream& os, const DocSet& ds);
 	

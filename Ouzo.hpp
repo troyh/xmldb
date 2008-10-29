@@ -17,6 +17,7 @@
 
 #include "Config.hpp"
 #include "DocumentBase.hpp"
+#include "QueryTree.hpp"
 
 namespace Ouzo
 {
@@ -46,9 +47,9 @@ namespace Ouzo
 		void addDocument(bfs::path docfile);
 		void delDocument(bfs::path docfile);
 		
-		DocumentBase* getDocBase(std::string name);
+		DocumentBase* getDocBase(std::string name) const;
 	
-		// Results fetch(const Query& q) const;
+		void fetch(const Query::Node& q, Query::Results& results) const;
 	};
 	
 	ostream& operator<<(ostream& os, const Ouzo& ouzo);

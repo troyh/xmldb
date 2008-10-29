@@ -8,12 +8,13 @@
 #include <boost/filesystem.hpp>
 #include <boost/dynamic_bitset.hpp>
 
+#include "Index.hpp"
+#include "QueryTree.hpp"
+
 namespace Ouzo
 {
 	namespace bfs=boost::filesystem;
 	using namespace std;
-	
-	typedef uint32_t docid_t;
 	
 	class Index;
 	
@@ -30,6 +31,7 @@ namespace Ouzo
 		bfs::path m_datadir;
 
 		std::map<bfs::path,docid_t> m_docidmap;
+		std::map<docid_t,bfs::path> m_docidmap_reverse;
 		boost::dynamic_bitset<> m_avail_docids;
 		std::vector<Index*> m_indexes;
 
@@ -69,6 +71,11 @@ namespace Ouzo
 		void load();
 		
 		Index* getIndex(std::string name);
+		
+		void query(const Query::TermNode& q, Query::Results& results);
+		
+		void getDocFilenames(const Query::Results& results, std::vector<bfs::path>& docs);
+		
 		
 	};
 

@@ -27,6 +27,9 @@ namespace Ouzo
 		inline iterator_type end() { return m_map.end(); }
 		inline const_iterator_type begin() const { return m_map.begin(); }
 		inline const_iterator_type end() const { return m_map.end(); }
+		inline iterator_type lower_bound(const char* key) { return m_map.lower_bound(key); }
+		inline iterator_type lower_bound(const std::string& key) { return m_map.lower_bound(key); }
+		inline const_iterator_type lower_bound(const std::string& key) const { return m_map.lower_bound(key); }
 
 		void put(const char* key,docid_t docid);
 		const DocSet& get(const char* key) const;

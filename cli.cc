@@ -1,10 +1,10 @@
 #include <boost/algorithm/string/case_conv.hpp>
 #include <boost/filesystem.hpp>
+#include <boost/timer.hpp>
 #include <glob.h>
 #include "Ouzo.hpp"
 
 // TODO: support reindex command
-// TODO: accept files relative to Ouzo config's documents/dir
 
 using namespace std;
 using namespace boost::algorithm;
@@ -86,6 +86,49 @@ int main(int argc,char* argv[])
 				std::cout << "Before:" << std::endl << ouzo << std::endl;
 				ouzo.delDocument(argv[2]);
 				std::cout << "After:" << std::endl << ouzo << std::endl;
+			}
+			catch (...)
+			{
+				throw;
+			}
+		}
+		else if (cmd=="query")
+		{
+			try
+			{
+				Ouzo::Ouzo ouzo("ouzo.conf");
+				
+				Ouzo::DocumentBase* pDB=ouzo.getDocBase("recipe_reviews");
+				Ouzo::Query::Results results(pDB);
+				
+				std::string dbname("recipe_reviews");
+				std::string key("chef_id");
+				std::string val("2312");
+				Ouzo::Query::TermNode query(dbname,key,Ouzo::Query::TermNode::eq,val);
+				
+				boost::timer t;
+				ouzo.fetch(query, results);
+				double query_time=t.elapsed();
+				std::vector<bfs::path> docs;
+				pDB->getDocFilenames(results, docs);
+
+				std::istream::fmtflags old_flags = std::cout.setf( std::istream::fixed,std::istream::floatfield );
+				std::streamsize old_prec = std::cout.precision( 4 );
+
+				std::cout << "<results count=\"" << docs.size() << "\" querytime=\"" << query_time << "\">" << std::endl;
+				
+				std::cout.flags( old_flags );
+				std::cout.precision( old_prec );
+
+				for(size_t i = 0; i < docs.size(); ++i)
+				{
+					bfs::path fname=pDB->docDirectory() / docs[i];
+					ifstream f(fname.string().c_str());
+					string buf;
+					while (getline(f,buf))
+						std::cout << buf << std::endl;
+				}
+				std::cout << "</results>" << std::endl;
 			}
 			catch (...)
 			{

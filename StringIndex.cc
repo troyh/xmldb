@@ -28,6 +28,9 @@ void StringIndex::put(const char* key, docid_t docid)
 const DocSet& StringIndex::get(const char* key) const
 {
 	std::map<std::string,DocSet>::const_iterator itr=m_map.find(key);
+	if (itr==m_map.end())
+		throw Exception(__FILE__,__LINE__);
+		
 	return itr->second;
 }
 
@@ -90,6 +93,7 @@ void StringIndex::load()
 			}
 		}
 	}
+	
 }
 
 void StringIndex::save() const

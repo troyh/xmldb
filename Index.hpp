@@ -47,7 +47,7 @@ namespace Ouzo
 			uint32_t keysize;
 			index_type type;
 		};
-	
+		
 	protected:
 		static std::map<std::string, Index*> m_indexes;
 
@@ -82,7 +82,7 @@ namespace Ouzo
 		virtual void put(const char* key,docid_t docid)=0;
 		virtual const DocSet& get(const char* key) const=0;
 		virtual void del(docid_t docid)=0;
-
+		
 		friend ostream& operator<<(ostream& os, const Index& idx);
 	};
 
