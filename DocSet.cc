@@ -215,7 +215,7 @@ void DocSet::load(istream& is)
 				throw Exception(__FILE__,__LINE__);
 			
 			m_docs_bitmap->clear();
-			m_docs_bitmap->resize(n);
+			m_docs_bitmap->resize(m_capacity);
 			
 			BitmapAllocator< bitset_type::block_type > pa=m_docs_bitmap->get_allocator();
 			if (pa.sizeInBytes()<n)

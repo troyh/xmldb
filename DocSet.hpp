@@ -42,7 +42,7 @@ namespace Ouzo
 		DocSet(size_t capacity);
 		DocSet(DocSet& ds);
 		DocSet(const DocSet& ds);
-		~DocSet() {}
+		~DocSet() { m_docs_bitmap.reset((bitset_type*)0); }
 	
 		DocSet& operator=(DocSet& ds);
 		DocSet& operator=(const DocSet& ds);
