@@ -7,7 +7,7 @@ namespace Ouzo
 	{
 		
 		Results::Results(DocumentBase* pDB)
-			: DocSet(pDB->capacity()), m_pDB(pDB) 
+			: DocSet(pDB->capacity()), m_pDB(pDB), m_timer(0) 
 		{
 		}
 		

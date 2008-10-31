@@ -90,6 +90,7 @@ namespace Ouzo
 		class Results : public DocSet
 		{
 			DocumentBase* m_pDB;
+			double m_timer;
 		public:
 			Results(DocumentBase* pDB);
 			Results(const Results& r);
@@ -102,7 +103,8 @@ namespace Ouzo
 			
 			void convertToDocBase(Results& model);
 			
-			// void copy(const DocSet& ds);
+			double queryTime() const { return m_timer; }
+			void queryTime(double n) { m_timer=n; }
 		};
 	}
 }

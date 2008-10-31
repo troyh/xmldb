@@ -23,6 +23,7 @@
 #include <boost/interprocess/sync/file_lock.hpp>
 #include <boost/interprocess/sync/sharable_lock.hpp>
 #include <boost/dynamic_bitset.hpp>
+#include <boost/timer.hpp>
 
 #include "DocumentBase.hpp"
 #include "UIntIndex.hpp"
@@ -291,6 +292,7 @@ namespace Ouzo
 		Index* idx=getIndex(idxname);
 		idx->load();
 
+		boost::timer t;
 		if (q.eqop()==Query::TermNode::eq || q.eqop()==Query::TermNode::ne || q.eqop()==Query::TermNode::lt || q.eqop()==Query::TermNode::gte)
 		{
 			const DocSet& ds=idx->get(q.val().c_str());
@@ -442,6 +444,7 @@ namespace Ouzo
 			}
 			
 		}
+		results.queryTime(t.elapsed());
 		
 	}
 	
