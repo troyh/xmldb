@@ -1,6 +1,6 @@
 #include <boost/algorithm/string/case_conv.hpp>
 #include <boost/filesystem.hpp>
-#include <boost/timer.hpp>
+#include <boost/progress.hpp>
 #include <glob.h>
 #include "Ouzo.hpp"
 
@@ -46,7 +46,24 @@ int main(int argc,char* argv[])
 			{
 				Ouzo::Ouzo ouzo("ouzo.conf");
 
-				std::cout << "Before:" << std::endl << ouzo << std::endl;
+				// std::cout << "Before:" << std::endl << ouzo << std::endl;
+
+				// This is kinda dumb to do the glob-ing twice, but I want to get a count of
+				// the number of files for all the args to display a progress meter.
+								
+				size_t count=0;
+				for(size_t arg = 2; arg < argc; ++arg)
+				{
+					// Do file-globbing
+					glob_t globbuf;
+					if (!glob(argv[arg],GLOB_TILDE_CHECK,NULL,&globbuf))
+					{
+						count+=globbuf.gl_pathc;
+					}
+				}
+				
+				std::cout << "Adding " << count << " documents" << std::endl;
+				boost::progress_display progress(count	);
 				
 				for(size_t arg = 2; arg < argc; ++arg)
 				{
@@ -64,13 +81,14 @@ int main(int argc,char* argv[])
 								fpath=bfs::initial_path() / fpath;
 							}
 
-							std::cout << fpath << endl;
+							// std::cout << fpath << endl;
 							ouzo.addDocument(fpath);
+							++progress;
 						}
 						globfree(&globbuf);
 					}
 				}
-				std::cout << "After:" << std::endl << ouzo << std::endl;
+				// std::cout << "After:" << std::endl << ouzo << std::endl;
 			}
 			catch (...)
 			{
@@ -102,20 +120,28 @@ int main(int argc,char* argv[])
 				Ouzo::Query::Results results(pDB);
 				
 				std::string dbname("recipe_reviews");
+				
 				std::string key("chef_id");
 				std::string val("2312");
-				Ouzo::Query::TermNode query(dbname,key,Ouzo::Query::TermNode::eq,val);
+				Ouzo::Query::TermNode* query=new Ouzo::Query::TermNode(dbname,key,Ouzo::Query::TermNode::eq,val);
 				
-				boost::timer t;
-				ouzo.fetch(query, results);
-				double query_time=t.elapsed();
+				std::string key2("review_rating");
+				std::string val2("5");
+				Ouzo::Query::TermNode* query2=new Ouzo::Query::TermNode(dbname,key2,Ouzo::Query::TermNode::eq,val2);
+				
+				Ouzo::Query::BooleanNode* boolop=new Ouzo::Query::BooleanNode(dbname,Ouzo::Query::BooleanNode::AND);
+				boolop->left(query);
+				boolop->right(query2);
+				
+				ouzo.fetch(*boolop, results);
+				
 				std::vector<bfs::path> docs;
 				pDB->getDocFilenames(results, docs);
 
 				std::istream::fmtflags old_flags = std::cout.setf( std::istream::fixed,std::istream::floatfield );
 				std::streamsize old_prec = std::cout.precision( 4 );
 
-				std::cout << "<results count=\"" << docs.size() << "\" querytime=\"" << query_time << "\">" << std::endl;
+				std::cout << "<results count=\"" << docs.size() << "\" querytime=\"" << results.queryTime() << "\">" << std::endl;
 				
 				std::cout.flags( old_flags );
 				std::cout.precision( old_prec );
@@ -129,6 +155,9 @@ int main(int argc,char* argv[])
 						std::cout << buf << std::endl;
 				}
 				std::cout << "</results>" << std::endl;
+
+				delete boolop;
+				
 			}
 			catch (...)
 			{
