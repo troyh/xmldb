@@ -3,6 +3,11 @@
 namespace Ouzo
 {
 
+Index::indexid_t Index::getID() const 
+{
+	return (indexid_t)this;
+}
+
 Index::index_type Index::getType(const Index& idx)
 {
 	Index::index_type t=Index::INDEX_TYPE_UNKNOWN;
@@ -31,8 +36,8 @@ Index::index_type Index::getType(const Index& idx)
 	return t;
 }
 	
-Index::Index(bfs::path index_file, const std::string& keyspec, uint32_t doccapacity)
-	: m_filename(bfs::change_extension(index_file,".index")), m_keyspec(keyspec)
+Index::Index(const std::string& name, bfs::path index_file, const std::string& keyspec, uint32_t doccapacity)
+	: m_name(name), m_filename(bfs::change_extension(index_file,".index")), m_keyspec(keyspec)
 {
 	if (!bfs::exists(m_filename))
 	{

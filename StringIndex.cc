@@ -7,18 +7,29 @@ namespace Ouzo
 
 void StringIndex::put(const char* key, docid_t docid)
 {
-	std::map<std::string,DocSet>::iterator itr=m_map.find(key);
-	if (itr==m_map.end())
+	lookupid_t lookupid=getLookupID(key);
+	if (lookupid==0)
 	{ // Doesn't yet exist in index
+	
+		// Add it to the m_lookup_table by creating a lookupid
+		// TODO: lock m_lookup_table
+		lookupid=m_lookup_table.size();
+		m_lookup_table.insert(make_pair(key,lookupid));
+		// TODO: unlock m_lookup_table
+	
 		DocSet docset(m_headerinfo.doccapacity);
 		docset.set(docid);
 		
-		m_map.insert(make_pair(key,docset));
+		m_map.insert(make_pair(lookupid,docset));
 		m_headerinfo.doccount++;
 		m_headerinfo.keycount++;
 	}
 	else
 	{ // Update existing docset in index
+		std::map<lookupid_t,DocSet> itr=m_map.find(lookupid);
+		if (itr==m_map.end())
+			throw Exception(__FILE__,__LINE__);
+			
 		DocSet& docset(itr->second);
 		docset.set(docid);
 	}
@@ -27,21 +38,41 @@ void StringIndex::put(const char* key, docid_t docid)
 
 const DocSet& StringIndex::get(const char* key) const
 {
-	std::map<std::string,DocSet>::const_iterator itr=m_map.find(key);
+	lookupid_t lookupid=getLookupID(key);
+	
+	std::map<lookupid_t,DocSet>::const_iterator itr=m_map.find(lookupid);
 	if (itr==m_map.end())
 		throw Exception(__FILE__,__LINE__);
 		
 	return itr->second;
 }
 
+Index::lookupid_t StringIndex::getLookupID(const char* val) const
+{
+	std::map<std::string,lookupid_t>::const_iterator itr=m_lookup_table.find(key);
+	if (itr==m_lookup_table.end())
+		return 0;
+	return itr->second;
+}
+
 void StringIndex::del(docid_t docid)
 {
 	// Iterate the keys
-	std::map<std::string,DocSet>::iterator itr_end=m_map.end();
-	for(std::map<std::string,DocSet>::iterator itr=m_map.begin(); itr!=itr_end; ++itr)
+	std::map<lookupid_t,DocSet>::iterator itr_end=m_map.end();
+	for(std::map<lookupid_t,DocSet>::iterator itr=m_map.begin(); itr!=itr_end; ++itr)
 	{
 		// Remove the docid from the DocSet
-		itr->second.clr(docid);
+		if (itr->second.test(docid)) // If the bit is set
+		{
+			itr->second.clr(docid);
+			
+			// Remove it from m_lookup_table
+			for (std::map<std::string,lookupid_t> itr2=m_lookup_table.begin(); itr2!=itr2_end; ++itr2)
+			{
+				if (itr2->second==itr->first)
+					m_lookup_table.clear(itr2->first);
+			}
+		}
 	}
 }
 

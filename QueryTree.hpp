@@ -101,8 +101,6 @@ namespace Ouzo
 			
 			DocumentBase* docbase() const { return m_pDB; }
 			
-			void convertToDocBase(Results& model);
-			
 			double queryTime() const { return m_timer; }
 			void queryTime(double n) { m_timer=n; }
 		};

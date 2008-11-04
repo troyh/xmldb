@@ -39,6 +39,7 @@ namespace Ouzo
 		// const char* getNodeValue(const DOMNode* node,const char* tag);
 		void getValues(DOMDocument* document,const char*);
 		void readConfigIndexes(DOMDocument* document, const DOMElement* node, DocumentBase& doctype);
+		void convertToDocBase(Query::Results& from, DocumentBase* pDB) const;
 		
 	public:	
 		Ouzo(bfs::path config_file);

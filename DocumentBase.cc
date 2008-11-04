@@ -216,6 +216,8 @@ namespace Ouzo
 
 	void DocumentBase::addXMLDocument(bfs::path docfile, docid_t docid)
 	{
+		XRefTable* xref_tbl=getXRefTable();
+		
 		// Initialise Xerces-C and XQilla using XQillaPlatformUtils
 		XQillaPlatformUtils::initialize();
 
@@ -261,6 +263,10 @@ namespace Ouzo
 				{
 					const char* val=XMLString::transcode(result->asNode()->getTextContent());
 					idx->put(val,docid);
+
+					// Add document to x-ref table
+					xref_tbl->putCell(docid,val);
+
 					XMLString::release((char**)&val);
 		        }
 
@@ -463,8 +469,16 @@ namespace Ouzo
 		os << "Doc dir         :" << doctype.docDirectory() << std::endl
 		   << "Data dir        :" << doctype.dataDirectory() << std::endl
 		   << "Doc capacity    :" << doctype.capacity() << std::endl
-		   << "Next avail docid:" << nextdocid << std::endl
-  		   << "Doc-ID map      :" << std::endl;
+		   << "Next avail docid:" << nextdocid << std::endl;
+		
+		if (doctype.m_XRefs)
+		{
+			os << "X-Reference table: " << *doctype.m_XRefs << std::endl;
+		}
+		
+		os << "-------------------------" << std::endl
+		   << " Doc-ID map: " << std::endl
+		   << "-------------------------" << std::endl;
 
 		std::map<bfs::path,docid_t>::const_iterator itr_end=doctype.m_docidmap.end();
 		for (std::map<bfs::path,docid_t>::const_iterator itr=doctype.m_docidmap.begin(); itr!=itr_end; ++itr)
@@ -502,6 +516,7 @@ namespace Ouzo
 	void DocumentBase::addIndex(Index* idx)
 	{
 		m_indexes.push_back(idx);
+		idx->setDocBase(this);
 	}
 
 	Index* DocumentBase::getIndex(std::string name)
@@ -514,6 +529,13 @@ namespace Ouzo
 				return m_indexes[i];
 		}
 		return NULL;
+	}
+	
+	XRefTable* DocumentBase::getXRefTable()
+	{
+		if (!m_XRefs)
+			m_XRefs=new XRefTable(this);
+		return m_XRefs;
 	}
 
 }

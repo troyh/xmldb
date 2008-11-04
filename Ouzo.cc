@@ -109,53 +109,53 @@ namespace Ouzo
 						char* idxname_s=XMLString::transcode(idxname);
 						bfs::path idxpath(doctype.dataDirectory());
 						idxpath /= idxname_s;
-						XMLString::release(&idxname_s);
 						
 						Index* p;
 					
 						if (XMLString::equals(idxtype,X("string")))
 						{
-							p=new StringIndex(idxpath,idxkey_s,doctype.capacity());
+							p=new StringIndex(idxname_s, idxpath,idxkey_s,doctype.capacity());
 						}
 						else if (XMLString::equals(idxtype,X("uint32")))
 						{
-							p=new UIntIndex<uint32_t>(idxpath,idxkey_s,doctype.capacity());
+							p=new UIntIndex<uint32_t>(idxname_s, idxpath,idxkey_s,doctype.capacity());
 						}
 						else if (XMLString::equals(idxtype,X("uint16")))
 						{
-							p=new UIntIndex<uint16_t>(idxpath,idxkey_s,doctype.capacity());
+							p=new UIntIndex<uint16_t>(idxname_s, idxpath,idxkey_s,doctype.capacity());
 						}
 						else if (XMLString::equals(idxtype,X("uint8")))
 						{
-							p=new UIntIndex<uint8_t>(idxpath,idxkey_s,doctype.capacity());
+							p=new UIntIndex<uint8_t>(idxname_s, idxpath,idxkey_s,doctype.capacity());
 						}
 						else if (XMLString::equals(idxtype,X("sint32")))
 						{
-							p=new IntIndex<int32_t>(idxpath,idxkey_s,doctype.capacity());
+							p=new IntIndex<int32_t>(idxname_s, idxpath,idxkey_s,doctype.capacity());
 						}
 						else if (XMLString::equals(idxtype,X("sint16")))
 						{
-							p=new IntIndex<int16_t>(idxpath,idxkey_s,doctype.capacity());
+							p=new IntIndex<int16_t>(idxname_s, idxpath,idxkey_s,doctype.capacity());
 						}
 						else if (XMLString::equals(idxtype,X("sint8")))
 						{
-							p=new IntIndex<int8_t>(idxpath,idxkey_s,doctype.capacity());
+							p=new IntIndex<int8_t>(idxname_s, idxpath,idxkey_s,doctype.capacity());
 						}
 						else if (XMLString::equals(idxtype,X("date")))
 						{
-							p=new DateIndex(idxpath,idxkey_s,doctype.capacity());
+							p=new DateIndex(idxname_s, idxpath,idxkey_s,doctype.capacity());
 						}
 						else if (XMLString::equals(idxtype,X("time")))
 						{
-							p=new TimeIndex(idxpath,idxkey_s,doctype.capacity());
+							p=new TimeIndex(idxname_s, idxpath,idxkey_s,doctype.capacity());
 						}
 						else if (XMLString::equals(idxtype,X("float")))
 						{
-							p=new FloatIndex(idxpath,idxkey_s,doctype.capacity());
+							p=new FloatIndex(idxname_s, idxpath,idxkey_s,doctype.capacity());
 						}
 						
 						doctype.addIndex(p);
 						
+						XMLString::release(&idxname_s);
 						XMLString::release(&idxkey_s);
 					}
 		        }
@@ -250,7 +250,69 @@ namespace Ouzo
 		// Terminate Xerces-C and XQilla using XQillaPlatformUtils
 		XQillaPlatformUtils::terminate();
 		
-		// TODO: make cross-referencing connections between the index groups
+		////////////////////////////////////////////////////////////////
+		// Make cross-referencing connections between the index groups
+		////////////////////////////////////////////////////////////////
+		
+		// Iterate the indexes in each DocBase collecting Indexes by name, the name is
+		// the key for cross-referencing between DocBases
+		std::map< std::string, std::vector<const Index*> > xrefs;
+
+		map<bfs::path,DocumentBase*>::const_iterator itr=m_doctypes.begin();
+		map<bfs::path,DocumentBase*>::const_iterator itr_end=m_doctypes.end();
+		for (; itr!=itr_end; ++itr)
+		{
+			DocumentBase* pDB=itr->second;
+			for (size_t i=0;i < pDB->indexCount(); ++i) // Iterate indexes
+			{
+				const Index* idx=pDB->getIndex(i);
+				xrefs[idx->name()].push_back(idx);
+			}
+		}
+		
+		// {
+		// 	std::map< std::string, std::vector<const Index*> >::const_iterator itr_end=xrefs.end();
+		// 	for (std::map< std::string, std::vector<const Index*> >::const_iterator itr=xrefs.begin(); itr!=itr_end; ++itr)
+		// 	{
+		// 		std::map< std::string, std::vector<Index*> >::size_type n=itr->second.size();
+		// 		if (n > 1)
+		// 		{
+		// 			for (std::map< std::string, std::vector<Index*> >::size_type i=0;i < n; ++i)
+		// 			{
+		// 				DocumentBase* db=itr->second[i]->getDocBase();
+		// 				XRefTable* tbl=db->getXRefTable();
+		// 				tbl->addColumn(itr->second[i]);
+		// 			}
+		// 		}
+		// 	}
+		// }
+
+
+		// Iterate the DocBases again, if any index is referenced more than once in xrefs, make an xref table for it
+		for (itr=m_doctypes.begin(); itr!=itr_end; ++itr)
+		{
+			DocumentBase* pDB=itr->second;
+			
+			// Iterate the indexes and see if any of them are referenced again elsewhere
+			for (size_t i=0;i < pDB->indexCount(); ++i)
+			{
+				const Index* idx=pDB->getIndex(i);
+				std::map< std::string, std::vector<Index*> >::size_type n=xrefs[idx->name()].size();
+				if (n > 1)
+				{
+					XRefTable* tbl=pDB->getXRefTable();
+		
+					for (std::map< std::string, std::vector<Index*> >::size_type i=0;i < n; ++i)
+					{
+						const Index* pIdx=xrefs[idx->name()][i];
+						if (pIdx!=idx)
+							tbl->addColumn(pIdx);
+					}
+				}
+				
+			}
+		}
+		
 	}
 	
 	Ouzo::~Ouzo()
@@ -296,6 +358,39 @@ namespace Ouzo
 		return NULL;
 	}
 	
+	void Ouzo::convertToDocBase(Query::Results& from, DocumentBase* pDBTo) const
+	{
+		DocumentBase* pDBFrom=from.docbase();
+		
+		if (pDBFrom==pDBTo)
+		{
+			// No need to do anything, they're already the same
+			return;
+		}
+		
+		// Get an Index that we can use to cross-reference
+		// Index* pIdx=findXRef(pDBFrom,pDBTo);
+		// if (pIdx)
+		// {
+		// 	// pIdx points to an Index whose keys correspond to docids that we have in ourselves (we're a DocSet)
+		// 	
+		// 	// Create a new DocSet to put the results in 
+		// 	Query::Results* newresults=new Query::Results(pDBTo);
+		// 	
+		// 	// Iterate my result documents, find the same docid in pIdx and combine the docset
+		// 	for (DocSet::size_type n=from.find_first(); n!=DocSet::npos; n=from.find_next(n))
+		// 	{
+		// 		docid_t docid=n+1; // +1 correct?
+		// 		pDBFrom->getDocBase();
+		// 		(*newresults)|=pIdx->get(key); // Combine them
+		// 	}
+		// 	
+		// 	// Convert ourselves to the newresults
+		// 	*this=newresults;
+		// }
+			
+	}
+	
 	void Ouzo::fetch(const Query::Node& q, Query::Results& results) const
 	{
 		const Query::TermNode* termnode=dynamic_cast<const Query::TermNode*>(&q);
@@ -312,9 +407,19 @@ namespace Ouzo
 		{
 			Query::Node* left=boolnode->left();
 			Query::Node* right=boolnode->right();
+			
+			if (!left)
+				throw Exception(__FILE__, __LINE__);
+			if (!right)
+				throw Exception(__FILE__, __LINE__);
 
 			DocumentBase* leftdb=getDocBase(left->getDocBaseName());
 			DocumentBase* rightdb=getDocBase(right->getDocBaseName());
+
+			if (!leftdb)
+				throw Exception(__FILE__, __LINE__);
+			if (!rightdb)
+				throw Exception(__FILE__, __LINE__);
 			
 			Query::Results l_results(leftdb);
 			Query::Results r_results(rightdb);
@@ -323,10 +428,10 @@ namespace Ouzo
 			fetch(*right, r_results);
 			
 			// convert r_results to the type we need (if not already)
-			r_results.convertToDocBase(results);
+			convertToDocBase(r_results,results.docbase());
 			
 			// convert l_results to the type we need (if not already)
-			l_results.convertToDocBase(results);
+			convertToDocBase(l_results,results.docbase());
 
 			switch(boolnode->oper())
 			{
@@ -362,7 +467,7 @@ namespace Ouzo
 		for (std::map<bfs::path,DocumentBase*>::const_iterator itr=ouzo.m_doctypes.begin(); itr!=itr_end; ++itr)
 		{
 			os << "======================" << endl
-			   << " Documents: " << itr->second->name() << endl
+			   << " DocumentBase: " << itr->second->name() << endl
 			   << "======================" << endl
 			   << *(itr->second) << endl;
 		}

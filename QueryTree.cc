@@ -29,18 +29,6 @@ namespace Ouzo
 			return *this;
 		}
 		
-		void Results::convertToDocBase(Results& model)
-		{
-			if (model.m_pDB==m_pDB)
-			{
-				// No need to do anything, they're already the same
-				return;
-			}
-			
-			// TODO: implement this
-			// Find the way to convert from this docbase to model's docbase
-			
-		}
-		
+	
 	}
 }

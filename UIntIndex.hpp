@@ -31,8 +31,8 @@ namespace Ouzo
 		typedef typename map_type::iterator iterator_type;
 		typedef typename map_type::const_iterator const_iterator_type;
 
-		UIntIndex(const bfs::path& index_file, const std::string& keyspec, uint32_t doccapacity) 
-			: Index(index_file, keyspec, doccapacity) {}
+		UIntIndex(const std::string& name, const bfs::path& index_file, const std::string& keyspec, uint32_t doccapacity) 
+			: Index(name, index_file, keyspec, doccapacity) {}
 
 		size_t keyCount() const { return m_map.size(); }
 
@@ -72,6 +72,15 @@ namespace Ouzo
 		{
 			const_iterator_type itr=m_map.find(key);
 			return itr->second;
+		}
+		const UINT_TYPE getKeyForLookupID(Index::lookupid_t lookupid) const
+		{
+			return static_cast<UINT_TYPE>(lookupid);
+		}
+		lookupid_t getLookupID(const char* val) const
+		{
+			UINT_TYPE n=strtoul(val,0,10);
+			return n;
 		}
 
 		void del(docid_t docid)
@@ -175,29 +184,29 @@ namespace Ouzo
 	class IntIndex : public UIntIndex<INT_TYPE>
 	{
 	public:
-		IntIndex(const bfs::path& index_file, const std::string& keyspec, uint32_t doccapacity) 
-			: UIntIndex<INT_TYPE>(index_file, keyspec, doccapacity) {}
+		IntIndex(const std::string& name, const bfs::path& index_file, const std::string& keyspec, uint32_t doccapacity) 
+			: UIntIndex<INT_TYPE>(name, index_file, keyspec, doccapacity) {}
 	};
 	
 	class DateIndex : public UIntIndex<uint32_t>
 	{
 	public:
-		DateIndex(const bfs::path& index_file, const std::string& keyspec, uint32_t doccapacity) 
-			: UIntIndex<uint32_t>(index_file, keyspec, doccapacity) {}
+		DateIndex(const std::string& name, const bfs::path& index_file, const std::string& keyspec, uint32_t doccapacity) 
+			: UIntIndex<uint32_t>(name, index_file, keyspec, doccapacity) {}
 	};
 	
 	class TimeIndex : public UIntIndex<time_t>
 	{
 	public:
-		TimeIndex(const bfs::path& index_file, const std::string& keyspec, uint32_t doccapacity) 
-			: UIntIndex<time_t>(index_file, keyspec, doccapacity) {}
+		TimeIndex(const std::string& name, const bfs::path& index_file, const std::string& keyspec, uint32_t doccapacity) 
+			: UIntIndex<time_t>(name, index_file, keyspec, doccapacity) {}
 	};
 	
 	class FloatIndex : public UIntIndex<double>
 	{
 	public:
-		FloatIndex(const bfs::path& index_file, const std::string& keyspec, uint32_t doccapacity) 
-			: UIntIndex<double>(index_file, keyspec, doccapacity) {}
+		FloatIndex(const std::string& name, const bfs::path& index_file, const std::string& keyspec, uint32_t doccapacity) 
+			: UIntIndex<double>(name, index_file, keyspec, doccapacity) {}
 	};
 
 }

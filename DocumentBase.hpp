@@ -10,6 +10,7 @@
 
 #include "Index.hpp"
 #include "QueryTree.hpp"
+#include "XRefTable.hpp"
 
 namespace Ouzo
 {
@@ -34,6 +35,7 @@ namespace Ouzo
 		std::map<docid_t,bfs::path> m_docidmap_reverse;
 		boost::dynamic_bitset<> m_avail_docids;
 		std::vector<Index*> m_indexes;
+		XRefTable* m_XRefs;
 
 		void addXMLDocument(bfs::path fname, docid_t docid);
 		void persist();
@@ -42,7 +44,7 @@ namespace Ouzo
 		DocumentBase(const DocumentBase&);
 		DocumentBase& operator=(const DocumentBase&);
 	public:	
-		DocumentBase(std::string name) : m_name(name), m_fileformat(UNKNOWN), m_capacity(0) {}
+		DocumentBase(std::string name) : m_name(name), m_fileformat(UNKNOWN), m_capacity(0), m_XRefs(NULL) {}
 		~DocumentBase() {}
 		
 		std::string name() const { return  m_name; }
@@ -63,6 +65,9 @@ namespace Ouzo
 		
 		void addIndex(Index*);
 		
+		std::vector<Index*>::size_type indexCount() const { return m_indexes.size(); }
+		const Index* getIndex(std::vector<Index*>::size_type n) const { return m_indexes[n]; }
+		
 		// Index* getIndex(uint32_t n);
 
 		void addDocument(bfs::path docfile);
@@ -76,7 +81,7 @@ namespace Ouzo
 		
 		void getDocFilenames(const Query::Results& results, std::vector<bfs::path>& docs);
 		
-		
+		XRefTable* getXRefTable();
 	};
 
 	ostream& operator<<(ostream& os, const DocumentBase& doctype);

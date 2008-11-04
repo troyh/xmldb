@@ -3,7 +3,7 @@
 <plist version="1.0">
 <dict>
 	<key>currentDocument</key>
-	<string>cli.cc</string>
+	<string>XRefTable.hpp</string>
 	<key>documents</key>
 	<array>
 		<dict>
@@ -38,7 +38,7 @@
 							<key>filename</key>
 							<string>Ouzo.cc</string>
 							<key>lastUsed</key>
-							<date>2008-10-24T22:47:29Z</date>
+							<date>2008-11-03T19:18:48Z</date>
 						</dict>
 						<dict>
 							<key>filename</key>
@@ -56,7 +56,15 @@
 							<key>filename</key>
 							<string>XMLDoc.cc</string>
 						</dict>
+						<dict>
+							<key>filename</key>
+							<string>XRefTable.cc</string>
+							<key>selected</key>
+							<true/>
+						</dict>
 					</array>
+					<key>expanded</key>
+					<true/>
 					<key>name</key>
 					<string>cc</string>
 				</dict>
@@ -74,12 +82,14 @@
 						<dict>
 							<key>filename</key>
 							<string>DocumentBase.hpp</string>
+							<key>lastUsed</key>
+							<date>2008-11-03T19:20:12Z</date>
 						</dict>
 						<dict>
 							<key>filename</key>
 							<string>Ouzo.hpp</string>
 							<key>lastUsed</key>
-							<date>2008-10-24T22:47:44Z</date>
+							<date>2008-11-03T19:18:06Z</date>
 						</dict>
 						<dict>
 							<key>filename</key>
@@ -121,7 +131,15 @@
 							<key>filename</key>
 							<string>XMLDoc.hpp</string>
 						</dict>
+						<dict>
+							<key>filename</key>
+							<string>XRefTable.hpp</string>
+							<key>lastUsed</key>
+							<date>2008-11-03T19:20:12Z</date>
+						</dict>
 					</array>
+					<key>expanded</key>
+					<true/>
 					<key>name</key>
 					<string>hpp</string>
 				</dict>
@@ -160,7 +178,7 @@
 					<key>filename</key>
 					<string>cli.cc</string>
 					<key>lastUsed</key>
-					<date>2008-10-24T22:49:06Z</date>
+					<date>2008-11-03T18:23:15Z</date>
 				</dict>
 			</array>
 			<key>expanded</key>
@@ -173,8 +191,6 @@
 			<string>Makefile</string>
 			<key>lastUsed</key>
 			<date>2008-10-24T22:46:43Z</date>
-			<key>selected</key>
-			<true/>
 		</dict>
 	</array>
 	<key>fileHierarchyDrawerWidth</key>
@@ -195,28 +211,42 @@
 			<key>firstVisibleLine</key>
 			<integer>0</integer>
 		</dict>
+		<key>DocumentBase.hpp</key>
+		<dict>
+			<key>caret</key>
+			<dict>
+				<key>column</key>
+				<integer>0</integer>
+				<key>line</key>
+				<integer>82</integer>
+			</dict>
+			<key>firstVisibleColumn</key>
+			<integer>0</integer>
+			<key>firstVisibleLine</key>
+			<integer>0</integer>
+		</dict>
 		<key>Ouzo.cc</key>
 		<dict>
 			<key>caret</key>
 			<dict>
 				<key>column</key>
-				<integer>32</integer>
+				<integer>77</integer>
 				<key>line</key>
-				<integer>289</integer>
+				<integer>340</integer>
 			</dict>
 			<key>firstVisibleColumn</key>
 			<integer>0</integer>
 			<key>firstVisibleLine</key>
-			<integer>199</integer>
+			<integer>290</integer>
 		</dict>
 		<key>Ouzo.hpp</key>
 		<dict>
 			<key>caret</key>
 			<dict>
 				<key>column</key>
-				<integer>15</integer>
+				<integer>70</integer>
 				<key>line</key>
-				<integer>33</integer>
+				<integer>41</integer>
 			</dict>
 			<key>firstVisibleColumn</key>
 			<integer>0</integer>
@@ -236,6 +266,20 @@
 			<integer>0</integer>
 			<key>firstVisibleLine</key>
 			<integer>34</integer>
+		</dict>
+		<key>XRefTable.hpp</key>
+		<dict>
+			<key>caret</key>
+			<dict>
+				<key>column</key>
+				<integer>0</integer>
+				<key>line</key>
+				<integer>10</integer>
+			</dict>
+			<key>firstVisibleColumn</key>
+			<integer>0</integer>
+			<key>firstVisibleLine</key>
+			<integer>0</integer>
 		</dict>
 		<key>cli.cc</key>
 		<dict>
@@ -269,6 +313,8 @@
 	<key>openDocuments</key>
 	<array>
 		<string>Ouzo.cc</string>
+		<string>DocumentBase.hpp</string>
+		<string>XRefTable.hpp</string>
 		<string>Ouzo.hpp</string>
 		<string>Config.hpp</string>
 		<string>StringIndex.cc</string>

@@ -12,11 +12,16 @@ namespace Ouzo
 {
 	using namespace std;
 	namespace bfs=boost::filesystem;
+	
+	class DocumentBase;
 
 	class Index
 	{
 	public:
-	
+		typedef uint32_t indexid_t;
+		typedef uint32_t lookupid_t;
+		static const lookupid_t lookupid_t_nil=static_cast<lookupid_t>(-1);
+		
 		typedef enum 
 		{
 			INDEX_TYPE_UNKNOWN	=0, 
@@ -55,23 +60,31 @@ namespace Ouzo
 		HeaderInfo m_headerinfo;
 		bfs::path m_filename;
 		std::string m_keyspec;
+		std::string m_name;
+		DocumentBase* m_db;
 
 		void writeMeta(ostream& ofs) const;
 		void readMeta(istream& ifs);
 	public:
 		
 		static index_type getType(const Index& idx);
+		static Index* getIndexFromID(indexid_t n) { return (Index*)n; }
 	
-		Index(bfs::path index_file, const std::string& keyspec, uint32_t doccapacity);
+		Index(const std::string& name, bfs::path index_file, const std::string& keyspec, uint32_t doccapacity);
 		virtual ~Index();
+		
+		indexid_t getID() const;
 	
 		uint32_t version() const { return m_version; };
 		virtual size_t documentCount() const { return m_headerinfo.doccount; }
 		virtual size_t documentCapacity() const { return m_headerinfo.doccapacity; }
 		virtual size_t keyCount() const=0;
 
+		const std::string& name() const { return m_name; }
 		const bfs::path& filename() const { return m_filename; }
 		const std::string& keyspec() const { return m_keyspec; }
+		DocumentBase* getDocBase() const { return m_db; }
+		void setDocBase(DocumentBase* p) { m_db=p; }
 
 		virtual void load()=0;
 	
@@ -82,6 +95,8 @@ namespace Ouzo
 		virtual void put(const char* key,docid_t docid)=0;
 		virtual const DocSet& get(const char* key) const=0;
 		virtual void del(docid_t docid)=0;
+		
+		virtual lookupid_t getLookupID(const char* val) const=0;
 		
 		friend ostream& operator<<(ostream& os, const Index& idx);
 	};
