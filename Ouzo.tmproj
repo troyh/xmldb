@@ -3,7 +3,7 @@
 <plist version="1.0">
 <dict>
 	<key>currentDocument</key>
-	<string>XRefTable.hpp</string>
+	<string>StringIndex.cc</string>
 	<key>documents</key>
 	<array>
 		<dict>
@@ -16,13 +16,15 @@
 							<key>filename</key>
 							<string>StringIndex.cc</string>
 							<key>lastUsed</key>
-							<date>2008-10-24T22:48:34Z</date>
+							<date>2008-11-04T22:36:22Z</date>
+							<key>selected</key>
+							<true/>
 						</dict>
 						<dict>
 							<key>filename</key>
 							<string>DocSet.cc</string>
 							<key>lastUsed</key>
-							<date>2008-10-23T21:48:56Z</date>
+							<date>2008-11-04T22:36:22Z</date>
 						</dict>
 						<dict>
 							<key>filename</key>
@@ -33,18 +35,20 @@
 						<dict>
 							<key>filename</key>
 							<string>DocumentBase.cc</string>
+							<key>lastUsed</key>
+							<date>2008-11-04T20:32:17Z</date>
 						</dict>
 						<dict>
 							<key>filename</key>
 							<string>Ouzo.cc</string>
 							<key>lastUsed</key>
-							<date>2008-11-03T19:18:48Z</date>
+							<date>2008-11-04T00:43:03Z</date>
 						</dict>
 						<dict>
 							<key>filename</key>
 							<string>Index.cc</string>
 							<key>lastUsed</key>
-							<date>2008-10-24T22:45:51Z</date>
+							<date>2008-11-04T20:50:52Z</date>
 						</dict>
 						<dict>
 							<key>filename</key>
@@ -59,8 +63,8 @@
 						<dict>
 							<key>filename</key>
 							<string>XRefTable.cc</string>
-							<key>selected</key>
-							<true/>
+							<key>lastUsed</key>
+							<date>2008-11-04T20:50:58Z</date>
 						</dict>
 					</array>
 					<key>expanded</key>
@@ -83,25 +87,25 @@
 							<key>filename</key>
 							<string>DocumentBase.hpp</string>
 							<key>lastUsed</key>
-							<date>2008-11-03T19:20:12Z</date>
+							<date>2008-11-04T19:36:36Z</date>
 						</dict>
 						<dict>
 							<key>filename</key>
 							<string>Ouzo.hpp</string>
 							<key>lastUsed</key>
-							<date>2008-11-03T19:18:06Z</date>
+							<date>2008-11-03T20:07:41Z</date>
 						</dict>
 						<dict>
 							<key>filename</key>
 							<string>Index.hpp</string>
 							<key>lastUsed</key>
-							<date>2008-10-24T22:45:57Z</date>
+							<date>2008-11-04T20:53:40Z</date>
 						</dict>
 						<dict>
 							<key>filename</key>
 							<string>DocSet.hpp</string>
 							<key>lastUsed</key>
-							<date>2008-10-24T22:45:57Z</date>
+							<date>2008-11-04T22:34:55Z</date>
 						</dict>
 						<dict>
 							<key>filename</key>
@@ -113,19 +117,19 @@
 							<key>filename</key>
 							<string>Config.hpp</string>
 							<key>lastUsed</key>
-							<date>2008-10-24T22:48:00Z</date>
+							<date>2008-11-03T21:48:44Z</date>
 						</dict>
 						<dict>
 							<key>filename</key>
 							<string>UIntIndex.hpp</string>
 							<key>lastUsed</key>
-							<date>2008-10-24T22:45:59Z</date>
+							<date>2008-11-04T22:28:43Z</date>
 						</dict>
 						<dict>
 							<key>filename</key>
 							<string>StringIndex.hpp</string>
 							<key>lastUsed</key>
-							<date>2008-10-24T22:45:58Z</date>
+							<date>2008-11-04T22:14:56Z</date>
 						</dict>
 						<dict>
 							<key>filename</key>
@@ -135,7 +139,7 @@
 							<key>filename</key>
 							<string>XRefTable.hpp</string>
 							<key>lastUsed</key>
-							<date>2008-11-03T19:20:12Z</date>
+							<date>2008-11-04T20:53:38Z</date>
 						</dict>
 					</array>
 					<key>expanded</key>
@@ -156,7 +160,7 @@
 					<key>filename</key>
 					<string>testlocks.cc</string>
 					<key>lastUsed</key>
-					<date>2008-10-24T22:49:06Z</date>
+					<date>2008-11-03T21:48:41Z</date>
 				</dict>
 				<dict>
 					<key>filename</key>
@@ -178,7 +182,7 @@
 					<key>filename</key>
 					<string>cli.cc</string>
 					<key>lastUsed</key>
-					<date>2008-11-03T18:23:15Z</date>
+					<date>2008-11-04T00:01:53Z</date>
 				</dict>
 			</array>
 			<key>expanded</key>
@@ -190,35 +194,41 @@
 			<key>filename</key>
 			<string>Makefile</string>
 			<key>lastUsed</key>
-			<date>2008-10-24T22:46:43Z</date>
+			<date>2008-11-04T22:34:32Z</date>
+		</dict>
+		<dict>
+			<key>filename</key>
+			<string>ouzo.conf</string>
+			<key>lastUsed</key>
+			<date>2008-11-04T20:53:42Z</date>
 		</dict>
 	</array>
 	<key>fileHierarchyDrawerWidth</key>
 	<integer>200</integer>
 	<key>metaData</key>
 	<dict>
-		<key>Config.hpp</key>
+		<key>DocumentBase.cc</key>
 		<dict>
 			<key>caret</key>
 			<dict>
 				<key>column</key>
-				<integer>1</integer>
+				<integer>29</integer>
 				<key>line</key>
-				<integer>14</integer>
+				<integer>267</integer>
 			</dict>
 			<key>firstVisibleColumn</key>
 			<integer>0</integer>
 			<key>firstVisibleLine</key>
-			<integer>0</integer>
+			<integer>197</integer>
 		</dict>
 		<key>DocumentBase.hpp</key>
 		<dict>
 			<key>caret</key>
 			<dict>
 				<key>column</key>
-				<integer>0</integer>
+				<integer>99</integer>
 				<key>line</key>
-				<integer>82</integer>
+				<integer>46</integer>
 			</dict>
 			<key>firstVisibleColumn</key>
 			<integer>0</integer>
@@ -230,14 +240,14 @@
 			<key>caret</key>
 			<dict>
 				<key>column</key>
-				<integer>77</integer>
+				<integer>12</integer>
 				<key>line</key>
-				<integer>340</integer>
+				<integer>306</integer>
 			</dict>
 			<key>firstVisibleColumn</key>
 			<integer>0</integer>
 			<key>firstVisibleLine</key>
-			<integer>290</integer>
+			<integer>223</integer>
 		</dict>
 		<key>Ouzo.hpp</key>
 		<dict>
@@ -258,51 +268,65 @@
 			<key>caret</key>
 			<dict>
 				<key>column</key>
-				<integer>36</integer>
+				<integer>2</integer>
 				<key>line</key>
-				<integer>96</integer>
+				<integer>145</integer>
 			</dict>
 			<key>firstVisibleColumn</key>
 			<integer>0</integer>
 			<key>firstVisibleLine</key>
-			<integer>34</integer>
+			<integer>83</integer>
+		</dict>
+		<key>StringIndex.hpp</key>
+		<dict>
+			<key>caret</key>
+			<dict>
+				<key>column</key>
+				<integer>27</integer>
+				<key>line</key>
+				<integer>31</integer>
+			</dict>
+			<key>firstVisibleColumn</key>
+			<integer>0</integer>
+			<key>firstVisibleLine</key>
+			<integer>0</integer>
+		</dict>
+		<key>UIntIndex.hpp</key>
+		<dict>
+			<key>caret</key>
+			<dict>
+				<key>column</key>
+				<integer>12</integer>
+				<key>line</key>
+				<integer>97</integer>
+			</dict>
+			<key>firstVisibleColumn</key>
+			<integer>0</integer>
+			<key>firstVisibleLine</key>
+			<integer>68</integer>
+		</dict>
+		<key>XRefTable.cc</key>
+		<dict>
+			<key>caret</key>
+			<dict>
+				<key>column</key>
+				<integer>18</integer>
+				<key>line</key>
+				<integer>16</integer>
+			</dict>
+			<key>firstVisibleColumn</key>
+			<integer>0</integer>
+			<key>firstVisibleLine</key>
+			<integer>0</integer>
 		</dict>
 		<key>XRefTable.hpp</key>
 		<dict>
 			<key>caret</key>
 			<dict>
 				<key>column</key>
-				<integer>0</integer>
+				<integer>41</integer>
 				<key>line</key>
-				<integer>10</integer>
-			</dict>
-			<key>firstVisibleColumn</key>
-			<integer>0</integer>
-			<key>firstVisibleLine</key>
-			<integer>0</integer>
-		</dict>
-		<key>cli.cc</key>
-		<dict>
-			<key>caret</key>
-			<dict>
-				<key>column</key>
-				<integer>2</integer>
-				<key>line</key>
-				<integer>26</integer>
-			</dict>
-			<key>firstVisibleColumn</key>
-			<integer>0</integer>
-			<key>firstVisibleLine</key>
-			<integer>0</integer>
-		</dict>
-		<key>testlocks.cc</key>
-		<dict>
-			<key>caret</key>
-			<dict>
-				<key>column</key>
 				<integer>16</integer>
-				<key>line</key>
-				<integer>30</integer>
 			</dict>
 			<key>firstVisibleColumn</key>
 			<integer>0</integer>
@@ -313,17 +337,18 @@
 	<key>openDocuments</key>
 	<array>
 		<string>Ouzo.cc</string>
+		<string>Ouzo.hpp</string>
+		<string>DocumentBase.cc</string>
 		<string>DocumentBase.hpp</string>
 		<string>XRefTable.hpp</string>
-		<string>Ouzo.hpp</string>
-		<string>Config.hpp</string>
+		<string>XRefTable.cc</string>
+		<string>StringIndex.hpp</string>
 		<string>StringIndex.cc</string>
-		<string>testlocks.cc</string>
-		<string>cli.cc</string>
+		<string>UIntIndex.hpp</string>
 	</array>
 	<key>showFileHierarchyDrawer</key>
 	<true/>
 	<key>windowFrame</key>
-	<string>{{689, 197}, {942, 1381}}</string>
+	<string>{{688, 447}, {942, 1131}}</string>
 </dict>
 </plist>

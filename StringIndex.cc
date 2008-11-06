@@ -26,7 +26,7 @@ void StringIndex::put(const char* key, docid_t docid)
 	}
 	else
 	{ // Update existing docset in index
-		std::map<lookupid_t,DocSet> itr=m_map.find(lookupid);
+		map_type::iterator itr=m_map.find(lookupid);
 		if (itr==m_map.end())
 			throw Exception(__FILE__,__LINE__);
 			
@@ -40,16 +40,16 @@ const DocSet& StringIndex::get(const char* key) const
 {
 	lookupid_t lookupid=getLookupID(key);
 	
-	std::map<lookupid_t,DocSet>::const_iterator itr=m_map.find(lookupid);
+	map_type::const_iterator itr=m_map.find(lookupid);
 	if (itr==m_map.end())
 		throw Exception(__FILE__,__LINE__);
 		
 	return itr->second;
 }
 
-Index::lookupid_t StringIndex::getLookupID(const char* val) const
+Index::lookupid_t StringIndex::getLookupID(const char* key) const
 {
-	std::map<std::string,lookupid_t>::const_iterator itr=m_lookup_table.find(key);
+	lookup_table_type::const_iterator itr=m_lookup_table.find(key);
 	if (itr==m_lookup_table.end())
 		return 0;
 	return itr->second;
@@ -58,8 +58,8 @@ Index::lookupid_t StringIndex::getLookupID(const char* val) const
 void StringIndex::del(docid_t docid)
 {
 	// Iterate the keys
-	std::map<lookupid_t,DocSet>::iterator itr_end=m_map.end();
-	for(std::map<lookupid_t,DocSet>::iterator itr=m_map.begin(); itr!=itr_end; ++itr)
+	map_type::iterator itr_end=m_map.end();
+	for(map_type::iterator itr=m_map.begin(); itr!=itr_end; ++itr)
 	{
 		// Remove the docid from the DocSet
 		if (itr->second.test(docid)) // If the bit is set
@@ -67,10 +67,11 @@ void StringIndex::del(docid_t docid)
 			itr->second.clr(docid);
 			
 			// Remove it from m_lookup_table
-			for (std::map<std::string,lookupid_t> itr2=m_lookup_table.begin(); itr2!=itr2_end; ++itr2)
+			lookup_table_type::const_iterator itr2_end=m_lookup_table.end();
+			for (lookup_table_type::const_iterator itr2=m_lookup_table.begin(); itr2!=itr2_end; ++itr2)
 			{
 				if (itr2->second==itr->first)
-					m_lookup_table.clear(itr2->first);
+					m_lookup_table.erase(itr2->first);
 			}
 		}
 	}
@@ -80,48 +81,45 @@ void StringIndex::load()
 {
 	Mutex<boost::interprocess::file_lock> mutex(this->filename().string(),false);
 	
-	// Clear out m_map
-	if (!m_map.empty())
-		m_map.clear();
-		
 	std::ifstream ifs(m_filename.string().c_str());
+
+	UIntIndex<uint32_t>::load_data(ifs);
+	
+	if (!m_lookup_table.empty())
+		m_lookup_table.clear();
+		
 	if (ifs.good())
 	{
-		readMeta(ifs);
-		
-		if (ifs.good())
+		if (m_headerinfo.type==INDEX_TYPE_UNKNOWN && m_headerinfo.keycount==0)
+			m_headerinfo.type=INDEX_TYPE_STRING;
+		else if (m_headerinfo.type!=INDEX_TYPE_STRING)
+			throw Exception(__FILE__,__LINE__);
+
+		for(uint32_t i = 0; i < m_headerinfo.keycount; ++i)
 		{
-			if (m_headerinfo.type==INDEX_TYPE_UNKNOWN && m_headerinfo.keycount==0)
-				m_headerinfo.type=INDEX_TYPE_STRING;
-			else if (m_headerinfo.type!=INDEX_TYPE_STRING)
+			// Read key
+			char buf[256];
+			size_t len;
+			ifs.read((char*)&len,sizeof(len));
+			if (!ifs.good())
+				throw Exception(__FILE__,__LINE__);
+			if (len>=sizeof(buf))
+				throw Exception(__FILE__,__LINE__);
+		
+			ifs.read(buf,len);
+			if (!ifs.good())
 				throw Exception(__FILE__,__LINE__);
 
-			for(uint32_t i = 0; i < m_headerinfo.keycount; ++i)
-			{
-				// Read key
-				std::string key;
-				char buf[256];
-				size_t len;
-				ifs.read((char*)&len,sizeof(len));
-				if (!ifs.good())
-					throw Exception(__FILE__,__LINE__);
+			buf[len]='\0';
+			std::string key=buf;
 			
-				ifs.read(buf,len);
-				if (!ifs.good())
-					throw Exception(__FILE__,__LINE__);
+			lookupid_t lookupid;
+			ifs.read((char*)&lookupid,sizeof(lookupid));
+			if (!ifs.good())
+				throw Exception(__FILE__,__LINE__);
 
-				buf[len]='\0';
-				key=buf;
-	
-				// Read DocSet
-				DocSet ds(m_headerinfo.doccapacity);
-				ds.load(ifs);
-
-				m_headerinfo.keysize=ds.sizeInBytes();
-
-				// Put into index
-				m_map.insert(make_pair(key,ds));
-			}
+			// Put into index
+			m_lookup_table.insert(make_pair(key,lookupid));
 		}
 	}
 	
@@ -133,36 +131,42 @@ void StringIndex::save() const
 
 	std::ofstream ofs(m_filename.string().c_str());
 	
-	// Write index meta info
-	writeMeta(ofs);
+	UIntIndex<uint32_t>::save_data(ofs);
 	
-	uint32_t cKeys=m_map.size();
+	size_t ckeys=0;
 	
-	std::map<std::string,DocSet>::const_iterator itr_end=m_map.end();
-	for(std::map<std::string,DocSet>::const_iterator itr = m_map.begin(); itr != itr_end; ++itr)
+	// Write the lookup table
+	lookup_table_type::const_iterator itr_end=m_lookup_table.end();
+	for (lookup_table_type::const_iterator itr=m_lookup_table.begin(); itr!=itr_end; ++itr)
 	{
-		// Write key
-		std::string key=itr->first;
-		size_t len=key.size();
+		size_t len=itr->first.length();
+		ofs.write((char*)&len, sizeof(len));
+		if (!ofs.good())
+			throw Exception(__FILE__,__LINE__);
 		
-		ofs.write((char*)&len,sizeof(len));
-		ofs.write(key.c_str(),len);
+		ofs.write(itr->first.c_str(),len);
+		if (!ofs.good())
+			throw Exception(__FILE__,__LINE__);
 		
-		// Write DocSet
-		itr->second.save(ofs);
+		lookupid_t lookupid=itr->second;
+		ofs.write((char*)&lookupid, sizeof(lookupid));
+		if (!ofs.good())
+			throw Exception(__FILE__,__LINE__);
+			
+		++ckeys;
 	}
+	
+	if (ckeys!=m_headerinfo.keycount)
+		throw Exception(__FILE__,__LINE__);
+	
 }
 
 ostream& operator<<(ostream& os, const StringIndex& idx)
 {
-	os << (Index&)idx << endl;
-	StringIndex& idx2=(StringIndex&)(idx); // cast away const-ness because C++ is kinda dumb this way
-	std::map<std::string,DocSet>::const_iterator itr_end=idx.m_map.end();
-	for(std::map<std::string,DocSet>::const_iterator itr = idx.m_map.begin(); itr != itr_end; ++itr)
-	{
-		const DocSet& ds=idx2.get(itr->first.c_str());
-		os << itr->first << ':' << ds << endl;
-	}
+	os << dynamic_cast< const UIntIndex<uint32_t>& >(idx);
+	
+	// TODO: output lookup table
+
 	return os;
 }
 

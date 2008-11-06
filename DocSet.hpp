@@ -50,6 +50,8 @@ namespace Ouzo
 		set_type type() const { return m_type; }
 		size_t size() const;
 		uint32_t sizeInBytes() const;
+		
+		bool test(docid_t docno);
 	
 		void set(docid_t docno);
 		void clr(docid_t docno);

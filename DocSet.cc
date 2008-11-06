@@ -70,12 +70,25 @@ size_t DocSet::size() const
 	}
 }
 
+bool DocSet::test(docid_t docno)
+{
+	switch (this->type())
+	{
+	case bitmap:
+		return m_docs_bitmap->test(docno-1);
+		break;
+	default:
+		throw Exception(__FILE__,__LINE__);
+		break;
+	}
+}
+
 void DocSet::set(docid_t docno)
 {
 	switch (this->type())
 	{
 	case bitmap:
-		m_docs_bitmap->set(docno);
+		m_docs_bitmap->set(docno-1);
 		break;
 	// case arr:
 	// {
@@ -112,7 +125,7 @@ void DocSet::clr(docid_t docno)
 {
 	if (this->type()==bitmap)
 	{
-		m_docs_bitmap->reset(docno);
+		m_docs_bitmap->reset(docno-1);
 	}
 	else if (this->type()==docid)
 	{
@@ -295,12 +308,18 @@ void DocSet::save(ostream& os) const
 
 DocSet::size_type DocSet::find_first() const
 {
-	return m_docs_bitmap->find_first();
+	DocSet::size_type n=m_docs_bitmap->find_first();
+	if (n==DocSet::npos)
+		return 0;
+	return n+1;
 }
 
 DocSet::size_type DocSet::find_next(size_type n) const
 {
-	return m_docs_bitmap->find_next(n);
+	n=m_docs_bitmap->find_next(n);
+	if (n==DocSet::npos)
+		return 0;
+	return n+1;
 }
 
 
@@ -375,7 +394,7 @@ void DocSet::convertToType(set_type t)
 		{
 			if (m_type==docid) // Convert from docid to bitmap
 			{
-				m_docs_bitmap->set(m_docs_docid);
+				m_docs_bitmap->set(m_docs_docid-1);
 			}
 			// else // Convert from vector to bitmap
 			// {

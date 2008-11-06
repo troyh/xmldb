@@ -2,6 +2,7 @@
 #define _OUZO_UINTINDEX_HPP
 
 #include <iostream>
+#include <fstream>
 #include <map>
 
 #include <boost/filesystem.hpp>
@@ -23,8 +24,9 @@ namespace Ouzo
 	template<typename UINT_TYPE=uint32_t>
 	class UIntIndex : public Index
 	{
+	public:
 		typedef std::map< UINT_TYPE, DocSet > map_type;
-
+	protected:
 		map_type m_map;
 	public:
 
@@ -46,17 +48,15 @@ namespace Ouzo
 		inline const_iterator_type lower_bound(const std::string& key) const { return m_map.lower_bound(strtoul(key.c_str(),0,10)); }
 		inline const_iterator_type lower_bound(UINT_TYPE key) const { return m_map.lower_bound(key); }
 		
-		void put(const char* key,docid_t docid)
+		void put(UINT_TYPE key,docid_t docid)
 		{
-			UINT_TYPE val=strtoul(key,0,10);
-
-			iterator_type itr=m_map.find(val);
+			iterator_type itr=m_map.find(key);
 			if (itr==m_map.end())
 			{ // Doesn't yet exist in index
 				DocSet docset(m_headerinfo.doccapacity);
 				docset.set(docid);
 
-				m_map.insert(make_pair(val,docset));
+				m_map.insert(make_pair(key,docset));
 				m_headerinfo.doccount++;
 				m_headerinfo.keycount++;
 			}
@@ -65,6 +65,12 @@ namespace Ouzo
 				DocSet& docset=itr->second;
 				docset.set(docid);
 			}
+		}
+		
+		void put(const char* key,docid_t docid)
+		{
+			UINT_TYPE val=strtoul(key,0,10);
+			put(val,docid);
 		}
 		
 		const DocSet& get(const char* key) const { return get(strtoul(key,0,10)); }
@@ -97,12 +103,18 @@ namespace Ouzo
 		void load()
 		{
 			Mutex<boost::interprocess::file_lock> mutex(this->filename().string(),false);
-
+			
+			std::ifstream ifs(m_filename.string().c_str());
+			
+			load_data(ifs);
+		}
+		
+		void load_data(istream& ifs)
+		{
 			// Clear out m_map
 			if (!m_map.empty())
 				m_map.clear();
 
-			std::ifstream ifs(m_filename.string().c_str());
 			if (ifs.good())
 			{
 				readMeta(ifs);
@@ -137,11 +149,8 @@ namespace Ouzo
 			}
 		}
 		
-		void save() const
+		void save_data(ostream& ofs) const
 		{
-			Mutex<boost::interprocess::file_lock> mutex(this->filename().string(),true);
-
-			std::ofstream ofs(m_filename.string().c_str());
 			if (!ofs.good())
 				throw Exception(__FILE__,__LINE__);
 
@@ -160,6 +169,15 @@ namespace Ouzo
 				// Write DocSet
 				itr->second.save(ofs);
 			}
+		}
+		
+		void save() const
+		{
+			Mutex<boost::interprocess::file_lock> mutex(this->filename().string(),true);
+
+			std::ofstream ofs(m_filename.string().c_str());
+			
+			save_data(ofs);
 		}
 	
 		friend ostream& operator<< <UINT_TYPE> (ostream& os, const UIntIndex<UINT_TYPE>& idx);

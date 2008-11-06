@@ -5,22 +5,22 @@ CXXFLAGS=-g -I/usr/local/include/boost-1_36/ -I/usr/include/libxml++-2.6 -I/usr/
 all: odeps.mk ouzo index kvpairs split query
 
 odeps.mk: *.cc *.hpp
-	gcc -MM *.cc > $@
+	$(CC) -MM *.cc > $@
 
 ouzo: cli.o libouzo.a
-	g++ -o $@ $^ -lxml++-2.6 -lxml2 -lxqilla -lboost_filesystem-gcc43-mt -lboost_serialization-gcc43-mt -L. -louzo
+	$(CC) -o $@ $^ -lxml++-2.6 -lxml2 -lxqilla -lboost_filesystem-gcc43-mt -lboost_serialization-gcc43-mt -L. -louzo
 
 index: index.o XMLDoc.o
-	g++ -o $@ $^ -lxml++-2.6 -lxml2 -lxqilla -lboost_filesystem-gcc43-mt -lboost_serialization-gcc43-mt
+	$(CC) -o $@ $^ -lxml++-2.6 -lxml2 -lxqilla -lboost_filesystem-gcc43-mt -lboost_serialization-gcc43-mt
 
 kvpairs: kvpairs.o XMLDoc.o
-	g++ -o $@ $^ -lxml++-2.6 -lxml2 -lxqilla -lboost_filesystem-gcc43-mt
+	$(CC) -o $@ $^ -lxml++-2.6 -lxml2 -lxqilla -lboost_filesystem-gcc43-mt
 	
 split: split.o
-	g++ -o $@ $^ -lxml++-2.6 -lxml2 -lxqilla
+	$(CC) -o $@ $^ -lxml++-2.6 -lxml2 -lxqilla
 
 query: query.o
-	g++ -o $@ $^ -lxml++-2.6 -lxml2 -lboost_filesystem-gcc43-mt -lboost_serialization-gcc43-mt
+	$(CC) -o $@ $^ -lxml++-2.6 -lxml2 -lboost_filesystem-gcc43-mt -lboost_serialization-gcc43-mt
 
 libouzo.a: Ouzo.o DocSet.o Index.o StringIndex.o UIntIndex.o Config.o DocumentBase.o Exception.o QueryTree.o XRefTable.o
 	rm -f $@
