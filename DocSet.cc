@@ -51,7 +51,7 @@ DocSet& DocSet::operator=(const DocSet& ds)
 	return *this; 
 }
 
-size_t DocSet::size() const
+DocSet::size_type DocSet::size() const
 {
 	switch (m_type)
 	{
@@ -70,7 +70,7 @@ size_t DocSet::size() const
 	}
 }
 
-bool DocSet::test(docid_t docno)
+bool DocSet::test(docid_t docno) const
 {
 	switch (this->type())
 	{

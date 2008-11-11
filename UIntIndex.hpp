@@ -1,6 +1,7 @@
 #ifndef _OUZO_UINTINDEX_HPP
 #define _OUZO_UINTINDEX_HPP
 
+/*
 #include <iostream>
 #include <fstream>
 #include <map>
@@ -72,6 +73,12 @@ namespace Ouzo
 			UINT_TYPE val=strtoul(key,0,10);
 			put(val,docid);
 		}
+		
+		void put(const std::string& key,docid_t docid)
+		{ 
+			put(key.c_str(), docid); 
+		}
+		
 		
 		const DocSet& get(const char* key) const { return get(strtoul(key,0,10)); }
 		const DocSet& get(UINT_TYPE key) const
@@ -228,5 +235,6 @@ namespace Ouzo
 	};
 
 }
+*/
 
 #endif

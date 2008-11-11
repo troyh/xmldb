@@ -9,6 +9,8 @@
 #include <xercesc/dom/DOM.hpp>
 #include <xercesc/framework/StdOutFormatTarget.hpp>
 
+#include <boost/interprocess/sync/file_lock.hpp>
+
 #include <xqilla/xqilla-dom3.hpp>
 
 #include "Ouzo.hpp"
@@ -118,27 +120,27 @@ namespace Ouzo
 						}
 						else if (XMLString::equals(idxtype,X("uint32")))
 						{
-							p=new UIntIndex<uint32_t>(idxname_s, idxpath,idxkey_s,doctype.capacity());
+							p=new Index(idxname_s, idxpath,idxkey_s,doctype.capacity());
 						}
 						else if (XMLString::equals(idxtype,X("uint16")))
 						{
-							p=new UIntIndex<uint16_t>(idxname_s, idxpath,idxkey_s,doctype.capacity());
+							p=new Index(idxname_s, idxpath,idxkey_s,doctype.capacity());
 						}
 						else if (XMLString::equals(idxtype,X("uint8")))
 						{
-							p=new UIntIndex<uint8_t>(idxname_s, idxpath,idxkey_s,doctype.capacity());
+							p=new Index(idxname_s, idxpath,idxkey_s,doctype.capacity());
 						}
 						else if (XMLString::equals(idxtype,X("sint32")))
 						{
-							p=new IntIndex<int32_t>(idxname_s, idxpath,idxkey_s,doctype.capacity());
+							p=new Index(idxname_s, idxpath,idxkey_s,doctype.capacity());
 						}
 						else if (XMLString::equals(idxtype,X("sint16")))
 						{
-							p=new IntIndex<int16_t>(idxname_s, idxpath,idxkey_s,doctype.capacity());
+							p=new Index(idxname_s, idxpath,idxkey_s,doctype.capacity());
 						}
 						else if (XMLString::equals(idxtype,X("sint8")))
 						{
-							p=new IntIndex<int8_t>(idxname_s, idxpath,idxkey_s,doctype.capacity());
+							p=new Index(idxname_s, idxpath,idxkey_s,doctype.capacity());
 						}
 						else if (XMLString::equals(idxtype,X("date")))
 						{

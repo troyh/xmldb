@@ -5,72 +5,67 @@
 namespace Ouzo
 {
 
-void StringIndex::put(const char* key, docid_t docid)
+void StringIndex::put(const Key& key, docid_t docid)
 {
-	lookupid_t lookupid=getLookupID(key);
-	if (lookupid==0)
+	std::string keystr((const char*)key);
+	const_iterator itr=m_lookup_table.find(keystr);
+	if (itr==m_lookup_table.end())
 	{ // Doesn't yet exist in index
 	
 		// Add it to the m_lookup_table by creating a lookupid
 		// TODO: lock m_lookup_table
-		lookupid=m_lookup_table.size();
-		m_lookup_table.insert(make_pair(key,lookupid));
+		size_type lookupid=m_lookup_table.size();
+		m_lookup_table.insert(make_pair(keystr,lookupid));
 		// TODO: unlock m_lookup_table
 	
-		DocSet docset(m_headerinfo.doccapacity);
-		docset.set(docid);
-		
-		m_map.insert(make_pair(lookupid,docset));
-		m_headerinfo.doccount++;
-		m_headerinfo.keycount++;
+		Key idxkey=(uint32_t)lookupid;
+		Index::put(idxkey,docid);
 	}
 	else
 	{ // Update existing docset in index
-		map_type::iterator itr=m_map.find(lookupid);
-		if (itr==m_map.end())
+		DocSet ds=Index::get(itr->second);
+		if (ds.isNil())
 			throw Exception(__FILE__,__LINE__);
 			
-		DocSet& docset(itr->second);
-		docset.set(docid);
+		// DocSet& docset(itr2->second);
+		ds.set(docid);
 	}
 	
 }
 
-const DocSet& StringIndex::get(const char* key) const
+DocSet& StringIndex::get(const Key& key)
 {
-	lookupid_t lookupid=getLookupID(key);
+	std::string keystr((const char*)key);
+	const_iterator itr=m_lookup_table.find(keystr);
+	if (itr==m_lookup_table.end())
+	{
+		return Index::nil_docset;
+	}
 	
-	map_type::const_iterator itr=m_map.find(lookupid);
-	if (itr==m_map.end())
-		throw Exception(__FILE__,__LINE__);
-		
-	return itr->second;
+	return Index::get(itr->second);
 }
 
-Index::lookupid_t StringIndex::getLookupID(const char* key) const
+const DocSet& StringIndex::get(const Key& key) const
 {
-	lookup_table_type::const_iterator itr=m_lookup_table.find(key);
-	if (itr==m_lookup_table.end())
-		return 0;
-	return itr->second;
+	return ((StringIndex*)(this))->get(key); // Cast away const-ness and use the non-const version
 }
 
 void StringIndex::del(docid_t docid)
 {
 	// Iterate the keys
-	map_type::iterator itr_end=m_map.end();
-	for(map_type::iterator itr=m_map.begin(); itr!=itr_end; ++itr)
+	Iterator itr_end=Index::end();
+	for(Iterator itr=Index::begin(); itr!=itr_end; ++itr)
 	{
 		// Remove the docid from the DocSet
-		if (itr->second.test(docid)) // If the bit is set
+		if (itr.docset().test(docid)) // If the bit is set
 		{
-			itr->second.clr(docid);
+			itr.docset().clr(docid);
 			
 			// Remove it from m_lookup_table
 			lookup_table_type::const_iterator itr2_end=m_lookup_table.end();
 			for (lookup_table_type::const_iterator itr2=m_lookup_table.begin(); itr2!=itr2_end; ++itr2)
 			{
-				if (itr2->second==itr->first)
+				if (itr2->second==itr.key())
 					m_lookup_table.erase(itr2->first);
 			}
 		}
@@ -83,17 +78,17 @@ void StringIndex::load()
 	
 	std::ifstream ifs(m_filename.string().c_str());
 
-	UIntIndex<uint32_t>::load_data(ifs);
+	Index::load_data(ifs);
 	
 	if (!m_lookup_table.empty())
 		m_lookup_table.clear();
 		
 	if (ifs.good())
 	{
-		if (m_headerinfo.type==INDEX_TYPE_UNKNOWN && m_headerinfo.keycount==0)
-			m_headerinfo.type=INDEX_TYPE_STRING;
-		else if (m_headerinfo.type!=INDEX_TYPE_STRING)
-			throw Exception(__FILE__,__LINE__);
+		// if (m_headerinfo.type==INDEX_TYPE_UNKNOWN && m_headerinfo.keycount==0)
+		// 	m_headerinfo.type=INDEX_TYPE_STRING;
+		// else if (m_headerinfo.type!=INDEX_TYPE_STRING)
+		// 	throw Exception(__FILE__,__LINE__);
 
 		for(uint32_t i = 0; i < m_headerinfo.keycount; ++i)
 		{
@@ -113,13 +108,13 @@ void StringIndex::load()
 			buf[len]='\0';
 			std::string key=buf;
 			
-			lookupid_t lookupid;
-			ifs.read((char*)&lookupid,sizeof(lookupid));
+			Key idxkey;
+			ifs.read(idxkey,sizeof(idxkey));
 			if (!ifs.good())
 				throw Exception(__FILE__,__LINE__);
 
 			// Put into index
-			m_lookup_table.insert(make_pair(key,lookupid));
+			m_lookup_table.insert(make_pair(key,idxkey));
 		}
 	}
 	
@@ -131,7 +126,7 @@ void StringIndex::save() const
 
 	std::ofstream ofs(m_filename.string().c_str());
 	
-	UIntIndex<uint32_t>::save_data(ofs);
+	Index::save_data(ofs);
 	
 	size_t ckeys=0;
 	
@@ -148,8 +143,8 @@ void StringIndex::save() const
 		if (!ofs.good())
 			throw Exception(__FILE__,__LINE__);
 		
-		lookupid_t lookupid=itr->second;
-		ofs.write((char*)&lookupid, sizeof(lookupid));
+		Key key=itr->second;
+		ofs.write(key, sizeof(key));
 		if (!ofs.good())
 			throw Exception(__FILE__,__LINE__);
 			
@@ -161,13 +156,10 @@ void StringIndex::save() const
 	
 }
 
-ostream& operator<<(ostream& os, const StringIndex& idx)
+void StringIndex::output(ostream& os) const
 {
-	os << dynamic_cast< const UIntIndex<uint32_t>& >(idx);
-	
-	// TODO: output lookup table
-
-	return os;
+	// TODO: output m_lookup_table
+	Index::output(os);
 }
 
 

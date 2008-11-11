@@ -294,14 +294,14 @@ namespace Ouzo
 	
 	void DocumentBase::query(const Query::TermNode& q, Query::Results& results)
 	{
-		string idxname=q.key();
+		string idxname=q.indexname();
 		Index* idx=getIndex(idxname);
 		idx->load();
 
 		boost::timer t;
 		if (q.eqop()==Query::TermNode::eq || q.eqop()==Query::TermNode::ne || q.eqop()==Query::TermNode::lt || q.eqop()==Query::TermNode::gte)
 		{
-			const DocSet& ds=idx->get(q.val().c_str());
+			const DocSet& ds=idx->get(q.val());
 			results=ds;
 		}
 
@@ -313,121 +313,12 @@ namespace Ouzo
 		{
 			Query::Results gt_results(results.docbase());
 
-			switch (Index::getType(*idx))
+			q.val();
+			Index::Iterator itr=idx->lower_bound(q.val());
+			Index::Iterator itr_end=idx->end();
+			for (itr++; itr!=itr_end; itr++)
 			{
-				case Index::INDEX_TYPE_UNKNOWN:
-					break;
-				case Index::INDEX_TYPE_STRING : 
-				{
-					StringIndex* sidx=dynamic_cast<StringIndex*>(idx);
-					StringIndex::const_iterator_type itr=sidx->lower_bound(q.val());
-					StringIndex::const_iterator_type itr_end=sidx->end();
-					for (itr++; itr!=itr_end; itr++)
-					{
-						gt_results|=itr->second;
-					}
-					break;
-				}
-				case Index::INDEX_TYPE_UINT8  : 
-				{
-					UIntIndex<uint8_t>* uiidx=dynamic_cast< UIntIndex<uint8_t>* >(idx);
-					UIntIndex<uint8_t>::const_iterator_type itr=uiidx->lower_bound(q.val());
-					UIntIndex<uint8_t>::const_iterator_type itr_end=uiidx->end();
-					for (itr++; itr!=itr_end; itr++)
-					{
-						gt_results|=itr->second;
-					}
-					break;
-				}
-				case Index::INDEX_TYPE_UINT16 : 
-				{
-					UIntIndex<uint16_t>* uiidx=dynamic_cast< UIntIndex<uint16_t>* >(idx);
-					UIntIndex<uint16_t>::const_iterator_type itr=uiidx->lower_bound(q.val());
-					UIntIndex<uint16_t>::const_iterator_type itr_end=uiidx->end();
-					for (itr++; itr!=itr_end; itr++)
-					{
-						gt_results|=itr->second;
-					}
-					break;
-				}
-				case Index::INDEX_TYPE_UINT32 : 
-				{
-					UIntIndex<uint32_t>* uiidx=dynamic_cast< UIntIndex<uint32_t>* >(idx);
-					UIntIndex<uint32_t>::const_iterator_type itr=uiidx->lower_bound(q.val());
-					UIntIndex<uint32_t>::const_iterator_type itr_end=uiidx->end();
-					for (itr++; itr!=itr_end; itr++)
-					{
-						gt_results|=itr->second;
-					}
-					break;
-				}
-				case Index::INDEX_TYPE_FLOAT  :
-				{
-					FloatIndex* fidx=dynamic_cast<FloatIndex*>(idx);
-					FloatIndex::const_iterator_type itr=fidx->lower_bound(q.val());
-					FloatIndex::const_iterator_type itr_end=fidx->end();
-					for (itr++; itr!=itr_end; itr++)
-					{
-						gt_results|=itr->second;
-					}
-					break;
-				}
-				case Index::INDEX_TYPE_DATE   :
-				{
-					DateIndex* fidx=dynamic_cast<DateIndex*>(idx);
-					DateIndex::const_iterator_type itr=fidx->lower_bound(q.val());
-					DateIndex::const_iterator_type itr_end=fidx->end();
-					for (itr++; itr!=itr_end; itr++)
-					{
-						gt_results|=itr->second;
-					}
-					break;
-				}
-				case Index::INDEX_TYPE_TIME   :
-				{
-					TimeIndex* fidx=dynamic_cast<TimeIndex*>(idx);
-					TimeIndex::const_iterator_type itr=fidx->lower_bound(q.val());
-					TimeIndex::const_iterator_type itr_end=fidx->end();
-					for (itr++; itr!=itr_end; itr++)
-					{
-						gt_results|=itr->second;
-					}
-					break;
-				}
-				case Index::INDEX_TYPE_SINT8  : 
-				{
-					UIntIndex<int8_t>* fidx=dynamic_cast< UIntIndex<int8_t>* >(idx);
-					UIntIndex<int8_t>::const_iterator_type itr=fidx->lower_bound(q.val());
-					UIntIndex<int8_t>::const_iterator_type itr_end=fidx->end();
-					for (itr++; itr!=itr_end; itr++)
-					{
-						gt_results|=itr->second;
-					}
-					break;
-				}
-				case Index::INDEX_TYPE_SINT16 : 
-				{
-					UIntIndex<int16_t>* fidx=dynamic_cast< UIntIndex<int16_t>* >(idx);
-					UIntIndex<int16_t>::const_iterator_type itr=fidx->lower_bound(q.val());
-					UIntIndex<int16_t>::const_iterator_type itr_end=fidx->end();
-					for (itr++; itr!=itr_end; itr++)
-					{
-						gt_results|=itr->second;
-					}
-					break;
-				}
-				case Index::INDEX_TYPE_SINT32 :
-				{
-					UIntIndex<int32_t>* fidx=dynamic_cast< UIntIndex<int32_t>* >(idx);
-					UIntIndex<int32_t>::const_iterator_type itr=fidx->lower_bound(q.val());
-					UIntIndex<int32_t>::const_iterator_type itr_end=fidx->end();
-					for (itr++; itr!=itr_end; itr++)
-					{
-						gt_results|=itr->second;
-					}
-					break;
-				}
-				
+				gt_results|=itr.docset();
 			}
 
 			if (q.eqop()==Query::TermNode::gt)

@@ -2,7 +2,9 @@
 #include <boost/filesystem.hpp>
 #include <boost/progress.hpp>
 #include <glob.h>
+
 #include "Ouzo.hpp"
+#include "Index.hpp"
 
 // TODO: support reindex command
 
@@ -121,13 +123,13 @@ int main(int argc,char* argv[])
 				
 				std::string dbname("recipe_reviews");
 				
-				std::string key("chef_id");
-				std::string val("2312");
-				Ouzo::Query::TermNode* query=new Ouzo::Query::TermNode(dbname,key,Ouzo::Query::TermNode::eq,val);
+				std::string idxname("chef_id");
+				Ouzo::Key val("2312");
+				Ouzo::Query::TermNode* query=new Ouzo::Query::TermNode(dbname,idxname,Ouzo::Query::TermNode::eq,val);
 				
-				std::string key2("review_rating");
-				std::string val2("5");
-				Ouzo::Query::TermNode* query2=new Ouzo::Query::TermNode(dbname,key2,Ouzo::Query::TermNode::eq,val2);
+				std::string idxname2("review_rating");
+				Ouzo::Key val2("5");
+				Ouzo::Query::TermNode* query2=new Ouzo::Query::TermNode(dbname,idxname2,Ouzo::Query::TermNode::eq,val2);
 				
 				Ouzo::Query::BooleanNode* boolop=new Ouzo::Query::BooleanNode(dbname,Ouzo::Query::BooleanNode::AND);
 				boolop->left(query);

@@ -48,10 +48,13 @@ namespace Ouzo
 		DocSet& operator=(const DocSet& ds);
 	
 		set_type type() const { return m_type; }
-		size_t size() const;
+		size_type size() const;
 		uint32_t sizeInBytes() const;
+		size_type count() const { return m_docs_bitmap->count(); }
 		
-		bool test(docid_t docno);
+		bool isNil() const { return count()==0; }
+		
+		bool test(docid_t docno) const;
 	
 		void set(docid_t docno);
 		void clr(docid_t docno);

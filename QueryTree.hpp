@@ -1,6 +1,7 @@
 #ifndef _OUZO_QUERYTREE_HPP
 #define _OUZO_QUERYTREE_HPP
 
+#include "Index.hpp"
 #include "DocSet.hpp"
 
 
@@ -67,21 +68,21 @@ namespace Ouzo
 		public:
 			typedef enum {eq,ne,lt,lte,gt,gte} equality_op;
 		private:
-			string m_key;
+			string m_idxname;
 			equality_op m_eqop;
-			string m_val;
+			Key m_val;
 		public:
-			TermNode(string& dbname,string& key,equality_op eqop, string& val) 
-				: Node(dbname), m_key(key), m_eqop(eqop), m_val(val) {}
+			TermNode(string& dbname,string& indexname,equality_op eqop, Key& val) 
+				: Node(dbname), m_idxname(indexname), m_eqop(eqop), m_val(val) {}
 	
 			bool isTermNode() const { return true; }
 			bool isOperNode() const { return false; }
 
 			void getResult(boost::dynamic_bitset<>& result);
 	
-			const string& key() const { return m_key; }
+			const string& indexname() const { return m_idxname; }
 			equality_op eqop() const { return m_eqop; }
-			const string& val() const { return m_val; }
+			const Key& val() const { return m_val; }
 		
 		};
 	

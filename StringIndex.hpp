@@ -10,41 +10,46 @@
 
 namespace Ouzo
 {
-	class StringIndex : public UIntIndex<uint32_t>
+	class StringIndex : public Index
 	{
 	public:
-		typedef std::map<std::string, lookupid_t> 				  lookup_table_type;
+		typedef std::map<std::string, Key> 				  lookup_table_type;
+		typedef lookup_table_type::size_type			  size_type;
 
-		typedef std::map<std::string, lookupid_t>::iterator 	  iterator_type;
-		typedef std::map<std::string, lookupid_t>::const_iterator const_iterator_type;
+		typedef lookup_table_type::iterator 	  iterator;
+		typedef lookup_table_type::const_iterator const_iterator;
 		
 	private:
 		lookup_table_type m_lookup_table;
 	public:
 	
 		StringIndex(const std::string& name, const bfs::path& index_file, const std::string& keyspec, uint32_t doccapacity) 
-			: UIntIndex<uint32_t>(name, index_file, keyspec, doccapacity) {}
+			: Index(name, index_file, keyspec, doccapacity) {}
 	
-		inline iterator_type       begin() 									 { return m_lookup_table.begin(); }
-		inline iterator_type 	   end() 									 { return m_lookup_table.end(); }
-		inline const_iterator_type begin() const 							 { return m_lookup_table.begin(); }
-		inline const_iterator_type end() const 								 { return m_lookup_table.end(); }
-		inline iterator_type 	   lower_bound(const char* key) 			 { return m_lookup_table.lower_bound(key); }
-		inline iterator_type 	   lower_bound(const std::string& key) 		 { return m_lookup_table.lower_bound(key); }
-		inline const_iterator_type lower_bound(const std::string& key) const { return m_lookup_table.lower_bound(key); }
+		inline Iterator       begin();// 									 { return m_lookup_table.begin(); }
+		// inline const_iterator begin() const 							 { return m_lookup_table.begin(); }
+		inline Iterator 	  end();// 									 { return m_lookup_table.end(); }
+		// inline const_iterator end() const 								 { return m_lookup_table.end(); }
 
-		void put(const char* key,docid_t docid);
+		inline Iterator 	  lower_bound(const char* key);// 			 	 { return m_lookup_table.lower_bound(key); }
+		inline Iterator 	  lower_bound(const std::string& key);// 		 { return m_lookup_table.lower_bound(key); }
+		// inline const_iterator lower_bound(const char* key) const 		 { return m_lookup_table.lower_bound(key); }
+		// inline const_iterator lower_bound(const std::string& key) const  { return m_lookup_table.lower_bound(key); }
+
+		void put(const Key& key,docid_t docid);
+		
+		      DocSet& get(const Key& key);
+		const DocSet& get(const Key& key) const;
+		
 		void del(docid_t docid);
-		
-		const DocSet& get(const char* key) const;
-		const DocSet& get(lookupid_t lookupid) const;
-		
-		lookupid_t getLookupID(const char* val) const;
+
+		// const DocSet& get(lookupid_t lookupid) const;
+		// lookupid_t getLookupID(const char* val) const;
 		
 		void load();
 		void save() const;
-	
-		friend ostream& operator<<(ostream& os, const StringIndex& idx);
+
+		void output(ostream&) const;
 		
 	};
 
