@@ -33,10 +33,61 @@ int main(int argc,char* argv[])
 	
 	try
 	{
+		Ouzo::Ouzo ouzo("ouzo.conf");
+		
 		string cmd(argv[1]);
 		to_lower(cmd);
 	
-		if (cmd=="add")
+		if (cmd=="create")
+		{
+			/*
+			Syntax: create index <type> <capacity> <name>
+			*/
+			string obj=argv[2];
+			
+			if (obj=="index")
+			{
+				string type=argv[3];
+				uint32_t capacity=strtoul(argv[4], 0, 10);
+				string name=argv[5];
+				
+				Ouzo::Index* idx=new Ouzo::Index(name,type.c_str(),"",capacity);
+				cout << *idx << endl;
+				idx->save();
+				delete idx;
+			}
+		}
+		else if (cmd=="put")
+		{
+			/*
+			Syntax: put <name> <key> <docid>
+			*/
+			string name=argv[2];
+			Ouzo::docid_t docid=strtoul(argv[4],0,10);
+			
+			Ouzo::Index* idx=Ouzo::Index::loadFromFile(name);
+			
+			idx->put(argv[3],docid);
+			idx->save();
+			
+			delete idx;
+		}
+		else if (cmd=="show")
+		{
+			/*
+			Syntax: show index <name>
+			*/
+			string obj=argv[2];
+			if (obj=="index")
+			{
+				string name=argv[3];
+				
+				Ouzo::Index* idx=Ouzo::Index::loadFromFile(name);
+				cout << *idx << endl;
+			}
+			
+		}
+		else if (cmd=="add")
 		{
 			if (argc<3)
 			{
@@ -46,8 +97,6 @@ int main(int argc,char* argv[])
 			
 			try
 			{
-				Ouzo::Ouzo ouzo("ouzo.conf");
-
 				// std::cout << "Before:" << std::endl << ouzo << std::endl;
 
 				// This is kinda dumb to do the glob-ing twice, but I want to get a count of
@@ -101,8 +150,6 @@ int main(int argc,char* argv[])
 		{
 			try
 			{
-				Ouzo::Ouzo ouzo("ouzo.conf");
-
 				std::cout << "Before:" << std::endl << ouzo << std::endl;
 				ouzo.delDocument(argv[2]);
 				std::cout << "After:" << std::endl << ouzo << std::endl;
@@ -116,8 +163,6 @@ int main(int argc,char* argv[])
 		{
 			try
 			{
-				Ouzo::Ouzo ouzo("ouzo.conf");
-				
 				Ouzo::DocumentBase* pDB=ouzo.getDocBase("recipe_reviews");
 				Ouzo::Query::Results results(pDB);
 				
@@ -170,8 +215,6 @@ int main(int argc,char* argv[])
 		{
 			try
 			{
-				Ouzo::Ouzo ouzo("ouzo.conf");
-
 				if (argc>2)
 				{
 					string subcmd(argv[2]);

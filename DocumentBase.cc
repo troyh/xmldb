@@ -30,6 +30,7 @@
 #include "StringIndex.hpp"
 #include "Exception.hpp"
 #include "Mutex.hpp"
+#include "Ouzo.hpp"
 
 
 namespace Ouzo
@@ -244,6 +245,7 @@ namespace Ouzo
 			for (std::vector<Index*>::size_type i=0; i< m_indexes.size(); ++i)
 			{
 				Index* idx=m_indexes[i];
+				Key key=Ouzo::createKey(idx);
 
 				Mutex<boost::interprocess::file_lock> mutex(idx->filename().string(),true); // Make sure no one else can read/write the index
 
@@ -262,7 +264,9 @@ namespace Ouzo
 		        while(result->iterateNext())
 				{
 					const char* val=XMLString::transcode(result->asNode()->getTextContent());
-					idx->put(val,docid);
+					key=val;
+					
+					idx->put(key,docid);
 
 					// Add document to x-ref table
 					xref_tbl->putCell(docid,val);

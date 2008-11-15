@@ -10,8 +10,10 @@
 
 namespace Ouzo
 {
+	
 	class StringIndex : public Index
 	{
+		static Index::key_type STRING_TYPENAME;
 	public:
 		typedef std::map<std::string, Key> 				  lookup_table_type;
 		typedef lookup_table_type::size_type			  size_type;
@@ -23,8 +25,8 @@ namespace Ouzo
 		lookup_table_type m_lookup_table;
 	public:
 	
-		StringIndex(const std::string& name, const bfs::path& index_file, const std::string& keyspec, uint32_t doccapacity) 
-			: Index(name, index_file, keyspec, doccapacity) {}
+		StringIndex(const std::string& name, const std::string& keyspec, uint32_t doccapacity) 
+			: Index(name, STRING_TYPENAME, keyspec, doccapacity) {}
 	
 		inline Iterator       begin();// 									 { return m_lookup_table.begin(); }
 		// inline const_iterator begin() const 							 { return m_lookup_table.begin(); }

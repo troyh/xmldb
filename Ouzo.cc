@@ -1,3 +1,6 @@
+#include "Ouzo.hpp"
+#include "Index.hpp"
+
 #include <xercesc/framework/StdInInputSource.hpp>
 #include <xercesc/framework/Wrapper4InputSource.hpp>
 #include <xercesc/util/PlatformUtils.hpp>
@@ -13,18 +16,50 @@
 
 #include <xqilla/xqilla-dom3.hpp>
 
-#include "Ouzo.hpp"
 
 // TODO: For unique indexes, make DocSet efficient, i.e., store only one docid, not a bitset or vector
 // TODO: support queries
 // TODO: make it thread-safe
 // TODO: In DocSet, don't always allocate a vector and a dynamic_bitset, only the one you need
 
+
+
 namespace Ouzo
 {
+	std::map<std::string,keyfactory_func> Ouzo::s_keyfactories;
 
 	using namespace xercesc;
 	using namespace boost::interprocess;
+	
+	Key* stdkey(Index* idx)
+	{
+		if (!strcasecmp(idx->keyType(),"uint8" )) return new Key((uint8_t)0);
+		if (!strcasecmp(idx->keyType(),"uint16")) return new Key((uint16_t)0);
+		if (!strcasecmp(idx->keyType(),"uint32")) return new Key((uint32_t)0);
+		if (!strcasecmp(idx->keyType(),"uint64")) return new Key((uint64_t)0);
+		if (!strcasecmp(idx->keyType(),"int8"  )) return new Key((int8_t)0);
+		if (!strcasecmp(idx->keyType(),"int16" )) return new Key((int16_t)0);
+		if (!strcasecmp(idx->keyType(),"int32" )) return new Key((int32_t)0);
+		if (!strcasecmp(idx->keyType(),"int64" )) return new Key((int64_t)0);
+		if (!strcasecmp(idx->keyType(),"double")) return new Key((double)0);
+		if (!strcasecmp(idx->keyType(),"char8" )) return new Key((const char*)"        ");
+		
+		return new Key();
+	}
+	
+	Key* stringkey(Index* idx)
+	{
+		return new StringKey();
+	}
+	
+	Key* Ouzo::createKey(Index* idx)
+	{
+		std::map<std::string,keyfactory_func>::const_iterator itr=s_keyfactories.find(idx->keyType());
+		if (itr==s_keyfactories.end())
+			throw Exception(__FILE__,__LINE__);
+		return itr->second(idx);
+	}
+	
 
 	char* getXPathVal(const char* xpath, DOMDocument* document, const DOMNode* node)
 	{
@@ -105,58 +140,31 @@ namespace Ouzo
 					const XMLCh* idxtype=pElem->getAttribute(X("type"));
 					const XMLCh* idxuniq=pElem->getAttribute(X("unique")); // TODO: support this
 					
+					char* idxtype_s=XMLString::transcode(idxtype);
+					
 					char* idxkey_s=getXPathVal("./key",document,pElem);
 					if (idxkey_s)
 					{
 						char* idxname_s=XMLString::transcode(idxname);
-						bfs::path idxpath(doctype.dataDirectory());
-						idxpath /= idxname_s;
 						
 						Index* p;
 					
 						if (XMLString::equals(idxtype,X("string")))
 						{
-							p=new StringIndex(idxname_s, idxpath,idxkey_s,doctype.capacity());
+							p=new StringIndex(idxname_s, idxkey_s, doctype.capacity());
 						}
-						else if (XMLString::equals(idxtype,X("uint32")))
+						else
 						{
-							p=new Index(idxname_s, idxpath,idxkey_s,doctype.capacity());
+							p=new Index(idxname_s, idxtype_s, idxkey_s, doctype.capacity());
 						}
-						else if (XMLString::equals(idxtype,X("uint16")))
-						{
-							p=new Index(idxname_s, idxpath,idxkey_s,doctype.capacity());
-						}
-						else if (XMLString::equals(idxtype,X("uint8")))
-						{
-							p=new Index(idxname_s, idxpath,idxkey_s,doctype.capacity());
-						}
-						else if (XMLString::equals(idxtype,X("sint32")))
-						{
-							p=new Index(idxname_s, idxpath,idxkey_s,doctype.capacity());
-						}
-						else if (XMLString::equals(idxtype,X("sint16")))
-						{
-							p=new Index(idxname_s, idxpath,idxkey_s,doctype.capacity());
-						}
-						else if (XMLString::equals(idxtype,X("sint8")))
-						{
-							p=new Index(idxname_s, idxpath,idxkey_s,doctype.capacity());
-						}
-						else if (XMLString::equals(idxtype,X("date")))
-						{
-							p=new DateIndex(idxname_s, idxpath,idxkey_s,doctype.capacity());
-						}
-						else if (XMLString::equals(idxtype,X("time")))
-						{
-							p=new TimeIndex(idxname_s, idxpath,idxkey_s,doctype.capacity());
-						}
-						else if (XMLString::equals(idxtype,X("float")))
-						{
-							p=new FloatIndex(idxname_s, idxpath,idxkey_s,doctype.capacity());
-						}
+						
+						bfs::path idxpath(doctype.dataDirectory());
+						idxpath /= idxname_s;
+						p->setFilename(idxpath);
 						
 						doctype.addIndex(p);
 						
+						XMLString::release(&idxtype_s);
 						XMLString::release(&idxname_s);
 						XMLString::release(&idxkey_s);
 					}
@@ -173,6 +181,20 @@ namespace Ouzo
 	Ouzo::Ouzo(bfs::path config_file)
 		: m_config_file(config_file)
 	{
+		// Create the standard key types
+		s_keyfactories.clear();
+		s_keyfactories.insert(make_pair("string",stringkey));
+		s_keyfactories.insert(make_pair("uint8" ,stdkey));
+		s_keyfactories.insert(make_pair("uint16",stdkey));
+		s_keyfactories.insert(make_pair("uint32",stdkey));
+		s_keyfactories.insert(make_pair("uint64",stdkey));
+		s_keyfactories.insert(make_pair("int8"  ,stdkey));
+		s_keyfactories.insert(make_pair("int16" ,stdkey));
+		s_keyfactories.insert(make_pair("int32" ,stdkey));
+		s_keyfactories.insert(make_pair("int64" ,stdkey));
+		s_keyfactories.insert(make_pair("double",stdkey));
+		s_keyfactories.insert(make_pair("char8" ,stdkey));
+
 		// Initialise Xerces-C and XQilla using XQillaPlatformUtils
 		XQillaPlatformUtils::initialize();
 

@@ -5,6 +5,8 @@
 namespace Ouzo
 {
 
+Index::key_type StringIndex::STRING_TYPENAME="string";
+
 void StringIndex::put(const Key& key, docid_t docid)
 {
 	std::string keystr((const char*)key);

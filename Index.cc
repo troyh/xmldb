@@ -4,45 +4,304 @@
 
 namespace Ouzo
 {
+	
+DocSet Index::nil_docset(1); // Used to return "bad" DocSet from Index::get()
 
-// Index::indexid_t Index::getID() const 
-// {
-// 	return (indexid_t)this;
-// }
+Key& Key::operator=(int8_t   x)
+{
+	switch (m_type)
+	{
+		case KEY_TYPE_INT8:   m_val.int8  =  (int8_t)x;break;
+		case KEY_TYPE_INT16:  m_val.int16 = (int16_t)x;break;
+		case KEY_TYPE_INT32:  m_val.int32 = (int32_t)x;break;
+		case KEY_TYPE_INT64:  m_val.int64 = (int64_t)x;break;
+		case KEY_TYPE_UINT8:  m_val.uint8 = (uint8_t)x;break;
+		case KEY_TYPE_UINT16: m_val.uint16=(uint16_t)x;break;
+		case KEY_TYPE_UINT32: m_val.uint32=(uint32_t)x;break;
+		case KEY_TYPE_UINT64: m_val.uint64=(uint64_t)x;break;
+		case KEY_TYPE_DBL:    m_val.dbl   =(double)x;break;
+		case KEY_TYPE_PTR:    m_val.ptr=0; break;
+		case KEY_TYPE_CH:     
+		{
+			sprintf(m_val.ch,"%d",x);
+			break;
+		}
+	}
+	
+	return *this;
+}
 
-// Index::index_type Index::getType(const Index& idx)
-// {
-// 	Index::index_type t=Index::INDEX_TYPE_UNKNOWN;
-// 	
-// 	if (dynamic_cast<const StringIndex*>(&idx))
-// 		t=Index::INDEX_TYPE_STRING;
-// 	else if (dynamic_cast<const FloatIndex*>(&idx))
-// 		t=Index::INDEX_TYPE_FLOAT;
-// 	else if (dynamic_cast<const DateIndex*>(&idx))
-// 		t=Index::INDEX_TYPE_DATE;
-// 	else if (dynamic_cast<const TimeIndex*>(&idx))
-// 		t=Index::INDEX_TYPE_TIME;
-// 	else if (dynamic_cast<const IntIndex<int8_t>* >(&idx))
-// 		t=Index::INDEX_TYPE_SINT8;
-// 	else if (dynamic_cast<const IntIndex<int16_t>* >(&idx))
-// 		t=Index::INDEX_TYPE_SINT16;
-// 	else if (dynamic_cast<const IntIndex<int32_t>* >(&idx))
-// 		t=Index::INDEX_TYPE_SINT32;
-// 	else if (dynamic_cast<const UIntIndex<uint8_t>* >(&idx))
-// 		t=Index::INDEX_TYPE_UINT8;
-// 	else if (dynamic_cast<const UIntIndex<uint16_t>* >(&idx))
-// 		t=Index::INDEX_TYPE_UINT16;
-// 	else if (dynamic_cast<const UIntIndex<uint32_t>* >(&idx))
-// 		t=Index::INDEX_TYPE_UINT32;
-// 
-// 	return t;
-// }
-// 
+Key& Key::operator=(int16_t  x)
+{
+	switch (m_type)
+	{
+		case KEY_TYPE_INT8:   m_val.int8  =  (int8_t)x;break;
+		case KEY_TYPE_INT16:  m_val.int16 = (int16_t)x;break;
+		case KEY_TYPE_INT32:  m_val.int32 = (int32_t)x;break;
+		case KEY_TYPE_INT64:  m_val.int64 = (int64_t)x;break;
+		case KEY_TYPE_UINT8:  m_val.uint8 = (uint8_t)x;break;
+		case KEY_TYPE_UINT16: m_val.uint16=(uint16_t)x;break;
+		case KEY_TYPE_UINT32: m_val.uint32=(uint32_t)x;break;
+		case KEY_TYPE_UINT64: m_val.uint64=(uint64_t)x;break;
+		case KEY_TYPE_DBL:    m_val.dbl   =(double)x;break;
+		case KEY_TYPE_PTR:    m_val.ptr=0; break;
+		case KEY_TYPE_CH:     
+		{
+			sprintf(m_val.ch,"%d",x);
+			break;
+		}
+	}
+	
+	return *this;
+}
+
+Key& Key::operator=(int32_t  x)
+{
+	switch (m_type)
+	{
+		case KEY_TYPE_INT8:   m_val.int8  =  (int8_t)x;break;
+		case KEY_TYPE_INT16:  m_val.int16 = (int16_t)x;break;
+		case KEY_TYPE_INT32:  m_val.int32 = (int32_t)x;break;
+		case KEY_TYPE_INT64:  m_val.int64 = (int64_t)x;break;
+		case KEY_TYPE_UINT8:  m_val.uint8 = (uint8_t)x;break;
+		case KEY_TYPE_UINT16: m_val.uint16=(uint16_t)x;break;
+		case KEY_TYPE_UINT32: m_val.uint32=(uint32_t)x;break;
+		case KEY_TYPE_UINT64: m_val.uint64=(uint64_t)x;break;
+		case KEY_TYPE_DBL:    m_val.dbl   =(double)x;break;
+		case KEY_TYPE_PTR:    m_val.ptr=0; break;
+		case KEY_TYPE_CH:     
+		{
+			sprintf(m_val.ch,"%d",x);
+			break;
+		}
+	}
+	
+	return *this;
+}
+
+Key& Key::operator=(int64_t  x)
+{
+	switch (m_type)
+	{
+		case KEY_TYPE_INT8:   m_val.int8  =  (int8_t)x;break;
+		case KEY_TYPE_INT16:  m_val.int16 = (int16_t)x;break;
+		case KEY_TYPE_INT32:  m_val.int32 = (int32_t)x;break;
+		case KEY_TYPE_INT64:  m_val.int64 = (int64_t)x;break;
+		case KEY_TYPE_UINT8:  m_val.uint8 = (uint8_t)x;break;
+		case KEY_TYPE_UINT16: m_val.uint16=(uint16_t)x;break;
+		case KEY_TYPE_UINT32: m_val.uint32=(uint32_t)x;break;
+		case KEY_TYPE_UINT64: m_val.uint64=(uint64_t)x;break;
+		case KEY_TYPE_DBL:    m_val.dbl   =(double)x;break;
+		case KEY_TYPE_PTR:    m_val.ptr=0; break;
+		case KEY_TYPE_CH:     
+		{
+			sprintf(m_val.ch,"%d",x);
+			break;
+		}
+	}
+	
+	return *this;
+}
+
+Key& Key::operator=(uint8_t  x)
+{
+	switch (m_type)
+	{
+		case KEY_TYPE_INT8:   m_val.int8  =  (int8_t)x;break;
+		case KEY_TYPE_INT16:  m_val.int16 = (int16_t)x;break;
+		case KEY_TYPE_INT32:  m_val.int32 = (int32_t)x;break;
+		case KEY_TYPE_INT64:  m_val.int64 = (int64_t)x;break;
+		case KEY_TYPE_UINT8:  m_val.uint8 = (uint8_t)x;break;
+		case KEY_TYPE_UINT16: m_val.uint16=(uint16_t)x;break;
+		case KEY_TYPE_UINT32: m_val.uint32=(uint32_t)x;break;
+		case KEY_TYPE_UINT64: m_val.uint64=(uint64_t)x;break;
+		case KEY_TYPE_DBL:    m_val.dbl   =(double)x;break;
+		case KEY_TYPE_PTR:    m_val.ptr=0; break;
+		case KEY_TYPE_CH:     
+		{
+			sprintf(m_val.ch,"%u",x);
+			break;
+		}
+	}
+	
+	return *this;
+}
+
+Key& Key::operator=(uint16_t x)
+{
+	switch (m_type)
+	{
+		case KEY_TYPE_INT8:   m_val.int8  =  (int8_t)x;break;
+		case KEY_TYPE_INT16:  m_val.int16 = (int16_t)x;break;
+		case KEY_TYPE_INT32:  m_val.int32 = (int32_t)x;break;
+		case KEY_TYPE_INT64:  m_val.int64 = (int64_t)x;break;
+		case KEY_TYPE_UINT8:  m_val.uint8 = (uint8_t)x;break;
+		case KEY_TYPE_UINT16: m_val.uint16=(uint16_t)x;break;
+		case KEY_TYPE_UINT32: m_val.uint32=(uint32_t)x;break;
+		case KEY_TYPE_UINT64: m_val.uint64=(uint64_t)x;break;
+		case KEY_TYPE_DBL:    m_val.dbl   =(double)x;break;
+		case KEY_TYPE_PTR:    m_val.ptr=0; break;
+		case KEY_TYPE_CH:     
+		{
+			sprintf(m_val.ch,"%u",x);
+			break;
+		}
+	}
+	
+	return *this;
+}
+
+Key& Key::operator=(uint32_t x)
+{
+	switch (m_type)
+	{
+		case KEY_TYPE_INT8:   m_val.int8  =  (int8_t)x;break;
+		case KEY_TYPE_INT16:  m_val.int16 = (int16_t)x;break;
+		case KEY_TYPE_INT32:  m_val.int32 = (int32_t)x;break;
+		case KEY_TYPE_INT64:  m_val.int64 = (int64_t)x;break;
+		case KEY_TYPE_UINT8:  m_val.uint8 = (uint8_t)x;break;
+		case KEY_TYPE_UINT16: m_val.uint16=(uint16_t)x;break;
+		case KEY_TYPE_UINT32: m_val.uint32=(uint32_t)x;break;
+		case KEY_TYPE_UINT64: m_val.uint64=(uint64_t)x;break;
+		case KEY_TYPE_DBL:    m_val.dbl   =(double)x;break;
+		case KEY_TYPE_PTR:    m_val.ptr=0; break;
+		case KEY_TYPE_CH:     
+		{
+			sprintf(m_val.ch,"%u",x);
+			break;
+		}
+	}
+	
+	return *this;
+}
+
+Key& Key::operator=(uint64_t x)
+{
+	switch (m_type)
+	{
+		case KEY_TYPE_INT8:   m_val.int8  =  (int8_t)x;break;
+		case KEY_TYPE_INT16:  m_val.int16 = (int16_t)x;break;
+		case KEY_TYPE_INT32:  m_val.int32 = (int32_t)x;break;
+		case KEY_TYPE_INT64:  m_val.int64 = (int64_t)x;break;
+		case KEY_TYPE_UINT8:  m_val.uint8 = (uint8_t)x;break;
+		case KEY_TYPE_UINT16: m_val.uint16=(uint16_t)x;break;
+		case KEY_TYPE_UINT32: m_val.uint32=(uint32_t)x;break;
+		case KEY_TYPE_UINT64: m_val.uint64=(uint64_t)x;break;
+		case KEY_TYPE_DBL:    m_val.dbl   =(double)x;break;
+		case KEY_TYPE_PTR:    m_val.ptr=0; break;
+		case KEY_TYPE_CH:     
+		{
+			sprintf(m_val.ch,"%u",x);
+			break;
+		}
+	}
+	
+	return *this;
+}
+
+Key& Key::operator=(double   x)
+{
+	switch (m_type)
+	{
+		case KEY_TYPE_INT8:   m_val.int8  =  (int8_t)x;break;
+		case KEY_TYPE_INT16:  m_val.int16 = (int16_t)x;break;
+		case KEY_TYPE_INT32:  m_val.int32 = (int32_t)x;break;
+		case KEY_TYPE_INT64:  m_val.int64 = (int64_t)x;break;
+		case KEY_TYPE_UINT8:  m_val.uint8 = (uint8_t)x;break;
+		case KEY_TYPE_UINT16: m_val.uint16=(uint16_t)x;break;
+		case KEY_TYPE_UINT32: m_val.uint32=(uint32_t)x;break;
+		case KEY_TYPE_UINT64: m_val.uint64=(uint64_t)x;break;
+		case KEY_TYPE_DBL:    m_val.dbl   =(double)x;break;
+		case KEY_TYPE_PTR:    m_val.ptr=0; break;
+		case KEY_TYPE_CH:     
+		{
+			sprintf(m_val.ch,"%f",x);
+			break;
+		}
+	}
+	
+	return *this;
+}
+
+Key& Key::operator=(const char*    x)     
+{ 
+	switch (m_type)
+	{
+		case KEY_TYPE_INT8:   m_val.int8  =  (int8_t)strtol(x,0,10);break;
+		case KEY_TYPE_INT16:  m_val.int16 = (int16_t)strtol(x,0,10);break;
+		case KEY_TYPE_INT32:  m_val.int32 = (int32_t)strtol(x,0,10);break;
+		case KEY_TYPE_INT64:  m_val.int64 = (int64_t)strtol(x,0,10);break;
+		case KEY_TYPE_UINT8:  m_val.uint8 = (uint8_t)strtoul(x,0,10);break;
+		case KEY_TYPE_UINT16: m_val.uint16=(uint16_t)strtoul(x,0,10);break;
+		case KEY_TYPE_UINT32: m_val.uint32=(uint32_t)strtoul(x,0,10);break;
+		case KEY_TYPE_UINT64: m_val.uint64=(uint64_t)strtoul(x,0,10);break;
+		case KEY_TYPE_DBL:    m_val.dbl   =strtof(x,0);break;
+		case KEY_TYPE_CH:     memcpy(m_val.ch,x,sizeof(m_val.ch)); break;
+		case KEY_TYPE_PTR:    m_val.ptr=(void*)x; break;
+	}
+	
+	return *this;
+}
+
+Key& Key::operator=(void*	x)     { m_type=KEY_TYPE_PTR   ; m_val.ptr   =x;  return *this; } 
+
+bool Key::operator<(const Key& key) const
+{
+	if (m_type!=key.m_type)
+		return false;
+		
+	switch (m_type)
+	{
+		case KEY_TYPE_INT8:   return m_val.int8   < key.m_val.int8;   break;
+		case KEY_TYPE_INT16:  return m_val.int16  < key.m_val.int16;  break;
+		case KEY_TYPE_INT32:  return m_val.int32  < key.m_val.int32;  break;
+		case KEY_TYPE_INT64:  return m_val.int64  < key.m_val.int64;  break;
+		case KEY_TYPE_UINT8:  return m_val.uint8  < key.m_val.uint8;  break;
+		case KEY_TYPE_UINT16: return m_val.uint16 < key.m_val.uint16; break;
+		case KEY_TYPE_UINT32: return m_val.uint32 < key.m_val.uint32; break;
+		case KEY_TYPE_UINT64: return m_val.uint64 < key.m_val.uint64; break;
+		case KEY_TYPE_DBL:    return m_val.dbl    < key.m_val.dbl;    break;
+		case KEY_TYPE_CH:     return m_val.ch     < key.m_val.ch;     break;
+		case KEY_TYPE_PTR:    return m_val.ptr    < key.m_val.ptr;    break;
+	}
+
+}
+
+void Key::output(ostream& os) const
+{
+	switch (m_type)
+	{
+		case KEY_TYPE_INT8:   os << m_val.int8  ; break;
+		case KEY_TYPE_INT16:  os << m_val.int16 ; break;
+		case KEY_TYPE_INT32:  os << m_val.int32 ; break;
+		case KEY_TYPE_INT64:  os << m_val.int64 ; break;
+		case KEY_TYPE_UINT8:  os << m_val.uint8 ; break;
+		case KEY_TYPE_UINT16: os << m_val.uint16; break;
+		case KEY_TYPE_UINT32: os << m_val.uint32; break;
+		case KEY_TYPE_UINT64: os << m_val.uint64; break;
+		case KEY_TYPE_DBL:    os << m_val.dbl   ; break;
+		case KEY_TYPE_CH:     os << m_val.ch    ; break;
+		case KEY_TYPE_PTR:    os << m_val.ptr   ; break;
+	}
+	
+}
+
+
+
+Index* Index::loadFromFile(bfs::path filename)
+{
+	Index* idx=new Index("","","",0);
+	idx->setFilename(filename);
+	idx->load();
+	return idx;
+}
 
 	
-Index::Index(const std::string& name, bfs::path index_file, const std::string& keyspec, uint32_t doccapacity)
-	: m_name(name), m_filename(bfs::change_extension(index_file,".index")), m_keyspec(keyspec)
+Index::Index(const std::string& name, const key_type kt, const std::string& keyspec, uint32_t doccapacity)
+	: m_name(name), m_keyspec(keyspec)
 {
+	memcpy(m_headerinfo.type,kt,sizeof(m_headerinfo.type));
+	setFilename(name);
 	if (!bfs::exists(m_filename))
 	{
 		ofstream f(m_filename.string().c_str()); // Create it
@@ -50,8 +309,10 @@ Index::Index(const std::string& name, bfs::path index_file, const std::string& k
 			throw Exception(__FILE__,__LINE__);  // Unable to create it
 	}
 	
+	m_headerinfo.doccount=0;
+	m_headerinfo.keycount=0;
+	m_headerinfo.keysize=0;
 	m_headerinfo.doccapacity=doccapacity;
-	// m_headerinfo.type=getType(*this);
 }
 
 Index::~Index()
@@ -94,7 +355,7 @@ void Index::readMeta(istream& ifs)
 	m_headerinfo.keyspeclen=0;
 	m_headerinfo.keycount=0;
 	m_headerinfo.keysize=0;
-	// m_headerinfo.type=INDEX_TYPE_UNKNOWN;
+	memcpy(m_headerinfo.type,"unknown",sizeof(m_headerinfo.type));
 
 	ifs.read((char*)&verinfo,sizeof(verinfo));
 	if (!ifs.good())
@@ -112,7 +373,7 @@ void Index::readMeta(istream& ifs)
 			m_headerinfo.keyspeclen=0;
 			m_headerinfo.keycount=0;
 			m_headerinfo.keysize=0;
-			// m_headerinfo.type=INDEX_TYPE_UNKNOWN;
+			memcpy(m_headerinfo.type,"unknown",sizeof(m_headerinfo.type));
 		}
 		else
 		{
@@ -123,17 +384,25 @@ void Index::readMeta(istream& ifs)
 		}
 	}
 	
-	// m_version=verinfo.version;
-	m_headerinfo.doccapacity=config_info.doccapacity; // Always ignore the capacity specified in the file and use the one specified at run-time
+	m_version=verinfo.version;
+	// m_headerinfo.doccapacity=config_info.doccapacity; // Always ignore the capacity specified in the file and use the one specified at run-time
 
 	// if (m_headerinfo.type==INDEX_TYPE_UNKNOWN)	// If the file doesn't have a type, take the type we're configured to have
 	// 	m_headerinfo.type=getType(*this);
 		
-	if (orig_keyspec!=m_keyspec)
-	{
-		// TODO: handle this discrepancy between the file's keyspec and the conf's keyspec
-		m_keyspec=orig_keyspec;
-	}
+	// if (orig_keyspec!=m_keyspec)
+	// {
+	// 	// TODO: handle this discrepancy between the file's keyspec and the conf's keyspec
+	// 	m_keyspec=orig_keyspec;
+	// }
+}
+
+void Index::put(const char* s, docid_t docid)
+{
+	// Force key to be the correct type
+	Key key=Ouzo::createKey(this);
+	key=s;
+	put(key,docid);
 }
 
 void Index::put(const Key& key, docid_t docid)
@@ -155,9 +424,19 @@ void Index::put(const Key& key, docid_t docid)
 	}
 }
 
+DocSet& Index::get(const Key& key)
+{
+	map_iterator itr=m_map.find(key);
+	if (itr==m_map.end())
+		return nil_docset;
+	return itr->second;
+}
+
 const DocSet& Index::get(const Key& key) const
 {
 	const_map_iterator itr=m_map.find(key);
+	if (itr==m_map.end())
+		return nil_docset;
 	return itr->second;
 }
 
@@ -171,6 +450,7 @@ void Index::del(docid_t docid)
 		itr->second.clr(docid);
 	}
 }
+
 
 void Index::load()
 {
@@ -252,91 +532,47 @@ void Index::save_data(ostream& ofs) const
 	}
 }
 
-
-
 void Index::output(ostream& os) const
 {
 	os	<< "Version  : " << version() << endl
 		<< "Filename : " << m_filename << endl
-		<< "Type	 : std" << endl
 		<< "Documents: " << documentCount() << endl
 		<< "Capacity : " << documentCapacity() << endl
+		<< "Key Type : " << m_headerinfo.type << endl
 		<< "Key Spec : " << m_keyspec << endl
 		<< "Key Count: " << keyCount() << endl
 		<< "Key Size : " << m_headerinfo.keysize << endl
 		<< endl;
 		
 	// Output keys
-	const_map_iterator itr_end=m_map.end();
-	for (const_map_iterator itr=m_map.begin(); itr!=itr_end; ++itr)
+	Iterator itr_end=((Index*)this)->end();
+	for (Iterator itr=((Index*)this)->begin(); itr!=itr_end; ++itr)
 	{
-		os << (uint64_t)(itr->first) << ':' << itr->second << endl;
+		os << itr.key() << ':' << itr.docset() << endl;
 	}
 	
 }
 
-void DateIndex::output(ostream& os) const
+void DateKey::output(ostream& os) const
 {
-	os	<< "Version  : " << version() << endl
-		<< "Filename : " << m_filename << endl
-		<< "Type	 : date" << endl
-		<< "Documents: " << documentCount() << endl
-		<< "Capacity : " << documentCapacity() << endl
-		<< "Key Spec : " << m_keyspec << endl
-		<< "Key Count: " << keyCount() << endl
-		<< "Key Size : " << m_headerinfo.keysize << endl
-		<< endl;
-		
-	// Output keys
-	const_map_iterator itr_end=m_map.end();
-	for (const_map_iterator itr=m_map.begin(); itr!=itr_end; ++itr)
-	{
-		time_t t=(uint32_t)(itr->first);
-		struct tm* ptm=localtime(&t);
-		
-		os << ptm->tm_year << '-' << ptm->tm_mon << '-' << ptm->tm_mday << ':' << itr->second << endl;
-	}
+	struct tm* ptm=localtime((time_t*)&m_val.uint32);
+	os << ptm->tm_year << '-' << ptm->tm_mon << '-' << ptm->tm_mday;
 }
 
-void TimeIndex::output(ostream& os) const
+void TimeKey::output(ostream& os) const
 {
-	os	<< "Version  : " << version() << endl
-		<< "Filename : " << m_filename << endl
-		<< "Type	 : time" << endl
-		<< "Documents: " << documentCount() << endl
-		<< "Capacity : " << documentCapacity() << endl
-		<< "Key Spec : " << m_keyspec << endl
-		<< "Key Count: " << keyCount() << endl
-		<< "Key Size : " << m_headerinfo.keysize << endl
-		<< endl;
-		
-	// Output keys
-	const_map_iterator itr_end=m_map.end();
-	for (const_map_iterator itr=m_map.begin(); itr!=itr_end; ++itr)
-	{
-		time_t t=(uint32_t)(itr->first);
-		os << ctime(&t) << ':' << itr->second << endl;
-	}
+	struct tm* ptm=localtime((time_t*)&m_val.uint32);
+	os << ptm->tm_year << '-' << ptm->tm_mon << '-' << ptm->tm_mday << ' ' << ptm->tm_hour << ':' << ptm->tm_min << ':' << ptm->tm_sec;
 }
 
-void FloatIndex::output(ostream& os) const
+void FloatKey::output(ostream& os) const
 {
-	os	<< "Version  : " << version() << endl
-		<< "Filename : " << m_filename << endl
-		<< "Type	 : time" << endl
-		<< "Documents: " << documentCount() << endl
-		<< "Capacity : " << documentCapacity() << endl
-		<< "Key Spec : " << m_keyspec << endl
-		<< "Key Count: " << keyCount() << endl
-		<< "Key Size : " << m_headerinfo.keysize << endl
-		<< endl;
-		
-	// Output keys
-	const_map_iterator itr_end=m_map.end();
-	for (const_map_iterator itr=m_map.begin(); itr!=itr_end; ++itr)
-	{
-		os << (double)(itr->first) << ':' << itr->second << endl;
-	}
+	os << m_val.dbl;
+}
+
+void StringKey::output(ostream& os) const
+{
+	os << m_s;
 }
 
 // ostream& operator<<(ostream& os, const Index::index_type t)

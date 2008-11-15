@@ -15,9 +15,10 @@ namespace Ouzo
 	namespace bfs=boost::filesystem;
 	
 	class DocumentBase;
-
+	
 	class Key
 	{
+	protected:
 		union
 		{
 			int8_t   int8;
@@ -33,58 +34,87 @@ namespace Ouzo
 			void*	 ptr;
 		} m_val;
 
+		enum
+		{
+			KEY_TYPE_INT8 = 1,
+			KEY_TYPE_INT16 =2,
+			KEY_TYPE_INT32 =3,
+			KEY_TYPE_INT64 =4,
+			KEY_TYPE_UINT8 =5,
+			KEY_TYPE_UINT16=6,
+			KEY_TYPE_UINT32=7,
+			KEY_TYPE_UINT64=8,
+			KEY_TYPE_DBL   =9,
+			KEY_TYPE_CH    =10,
+			KEY_TYPE_PTR   =11
+		} m_type;
+		
 	public:
-		Key() { m_val.uint64=0; }
-		Key(const Key& key) { m_val=key.m_val; }
-		Key(int8_t   x) { m_val.int8  =x; }
-		Key(int16_t  x) { m_val.int16 =x; }
-		Key(int32_t  x) { m_val.int32 =x; }
-		Key(int64_t  x) { m_val.int64 =x; }
-		Key(uint8_t  x) { m_val.uint8 =x; }
-		Key(uint16_t x) { m_val.uint16=x; }
-		Key(uint32_t x) { m_val.uint32=x; }
-		Key(uint64_t x) { m_val.uint64=x; }
-		Key(double   x) { m_val.dbl   =x; }
-		Key(const char* x) { memcpy(m_val.ch,x,sizeof(m_val.ch)); }
-		Key(void*	 x) { m_val.ptr   =x; } 
+		Key(const Key& key) : m_type(key.m_type     ) { m_val=key.m_val; }
+		Key(const Key* key) : m_type(key->m_type    ) { m_val=key->m_val; }
+		Key()               : m_type(KEY_TYPE_UINT64) { m_val.uint64=0;  }
+		Key(int8_t   x)     : m_type(KEY_TYPE_INT8  ) { m_val.int8  =x;  }
+		Key(int16_t  x)     : m_type(KEY_TYPE_INT16 ) { m_val.int16 =x;  }
+		Key(int32_t  x)     : m_type(KEY_TYPE_INT32 ) { m_val.int32 =x;  }
+		Key(int64_t  x)     : m_type(KEY_TYPE_INT64 ) { m_val.int64 =x;  }
+		Key(uint8_t  x)     : m_type(KEY_TYPE_UINT8 ) { m_val.uint8 =x;  }
+		Key(uint16_t x)     : m_type(KEY_TYPE_UINT16) { m_val.uint16=x;  }
+		Key(uint32_t x)     : m_type(KEY_TYPE_UINT32) { m_val.uint32=x;  }
+		Key(uint64_t x)     : m_type(KEY_TYPE_UINT64) { m_val.uint64=x;  }
+		Key(double   x)     : m_type(KEY_TYPE_DBL   ) { m_val.dbl   =x;  }
+		Key(const char* x)  : m_type(KEY_TYPE_CH    ) { memcpy(m_val.ch,x,sizeof(m_val.ch)); }
+		Key(void*	 x)     : m_type(KEY_TYPE_PTR   ) { m_val.ptr   =x;  } 
 		
-		Key& operator=(const Key& key) { m_val=key.m_val; return *this; }
-		Key& operator=(int8_t   x) { m_val.int8  =x; return *this; }
-		Key& operator=(int16_t  x) { m_val.int16 =x; return *this; }
-		Key& operator=(int32_t  x) { m_val.int32 =x; return *this; }
-		Key& operator=(int64_t  x) { m_val.int64 =x; return *this; }
-		Key& operator=(uint8_t  x) { m_val.uint8 =x; return *this; }
-		Key& operator=(uint16_t x) { m_val.uint16=x; return *this; }
-		Key& operator=(uint32_t x) { m_val.uint32=x; return *this; }
-		Key& operator=(uint64_t x) { m_val.uint64=x; return *this; }
-		Key& operator=(double   x) { m_val.dbl   =x; return *this; }
-		Key& operator=(char*    x) { memcpy(m_val.ch,x,sizeof(m_val.ch)); return *this; }
-		Key& operator=(void*	x) { m_val.ptr   =x; return *this; } 
+		virtual ~Key() {}
 		
-		operator       char*()       { return m_val.ch; }
-		operator const char*() const { return (const char*)m_val.ch; }
+		int getType() const { return m_type; }
+		
+		virtual Key& operator=(const Key& key) { m_type=key.m_type; m_val=key.m_val; return *this; }
+		virtual Key& operator=(int8_t   x)     ;//{ m_type=KEY_TYPE_INT8  ; m_val.int8  =x;  return *this; }
+		virtual Key& operator=(int16_t  x)     ;//{ m_type=KEY_TYPE_INT16 ; m_val.int16 =x;  return *this; }
+		virtual Key& operator=(int32_t  x)     ;//{ m_type=KEY_TYPE_INT32 ; m_val.int32 =x;  return *this; }
+		virtual Key& operator=(int64_t  x)     ;//{ m_type=KEY_TYPE_INT64 ; m_val.int64 =x;  return *this; }
+		virtual Key& operator=(uint8_t  x)     ;//{ m_type=KEY_TYPE_UINT8 ; m_val.uint8 =x;  return *this; }
+		virtual Key& operator=(uint16_t x)     ;//{ m_type=KEY_TYPE_UINT16; m_val.uint16=x;  return *this; }
+		virtual Key& operator=(uint32_t x)     ;//{ m_type=KEY_TYPE_UINT32; m_val.uint32=x;  return *this; }
+		virtual Key& operator=(uint64_t x)     ;//{ m_type=KEY_TYPE_UINT64; m_val.uint64=x;  return *this; }
+		virtual Key& operator=(double   x)     ;//{ m_type=KEY_TYPE_DBL   ; m_val.dbl   =x;  return *this; }
+		virtual Key& operator=(const char*    x)     ;//{ m_type=KEY_TYPE_CH    ; memcpy(m_val.ch,x,sizeof(m_val.ch)); return *this; }
+		virtual Key& operator=(void*	x)     ;//{ m_type=KEY_TYPE_PTR   ; m_val.ptr   =x;  return *this; } 
+		
+		virtual operator       char*()       { return m_val.ch; }
+		virtual operator const char*() const { return (const char*)m_val.ch; }
 
-		operator int8_t()   const { return m_val.int8;   }
-		operator int16_t()  const { return m_val.int16;  }
-		operator int32_t()  const { return m_val.int32;  }
-		operator int64_t()  const { return m_val.int64;  }
-		operator uint8_t()  const { return m_val.uint8;  }
-		operator uint16_t() const { return m_val.uint16; }
-		operator uint32_t() const { return m_val.uint32; }
-		operator uint64_t() const { return m_val.uint64; }
-		operator double()   const { return m_val.dbl;    }
-		operator void*()    const { return m_val.ptr;    }
+		virtual operator int8_t()   const { return m_val.int8;   }
+		virtual operator int16_t()  const { return m_val.int16;  }
+		virtual operator int32_t()  const { return m_val.int32;  }
+		virtual operator int64_t()  const { return m_val.int64;  }
+		virtual operator uint8_t()  const { return m_val.uint8;  }
+		virtual operator uint16_t() const { return m_val.uint16; }
+		virtual operator uint32_t() const { return m_val.uint32; }
+		virtual operator uint64_t() const { return m_val.uint64; }
+		virtual operator double()   const { return m_val.dbl;    }
+		virtual operator void*()    const { return m_val.ptr;    }
 		
-		       bool operator< (const Key& key) const;
-		inline bool operator<=(const Key& key) const { return   m_val.uint64==key.m_val.uint64 || *this<key; }
-		inline bool operator> (const Key& key) const { return !(m_val.uint64==key.m_val.uint64 || *this<key); }
-		inline bool operator>=(const Key& key) const { return !(*this<key); }
-		inline bool operator==(const Key& key) const { return m_val.uint64==key.m_val.uint64; }
-		inline bool operator!=(const Key& key) const { return m_val.uint64!=key.m_val.uint64; }
+		       virtual bool operator< (const Key& key) const;
+		inline virtual bool operator<=(const Key& key) const { return *this==key || *this<key; }
+		inline virtual bool operator> (const Key& key) const { return !(m_val.uint64==key.m_val.uint64 || *this<key); }
+		inline virtual bool operator>=(const Key& key) const { return !(*this<key); }
+		inline virtual bool operator==(const Key& key) const { return m_val.uint64==key.m_val.uint64; }
+		inline virtual bool operator!=(const Key& key) const { return m_val.uint64!=key.m_val.uint64; }
+		
+		virtual void output(ostream& os) const;// { os << m_val.uint64; }
 	};
+	
+	inline ostream& operator<<(ostream& os, const Key& key) { key.output(os); return os; }
+	
+
 	
 	class Index
 	{
+	public:
+		typedef char key_type[32];
+	private:
 		static const uint32_t FILEVERSION=3;
 		struct VersionInfo
 		{
@@ -99,7 +129,7 @@ namespace Ouzo
 			uint16_t keyspeclen;
 			uint32_t keycount;
 			uint32_t keysize;
-			// index_type type;
+			char     type[32];
 		};
 		
 		
@@ -128,58 +158,38 @@ namespace Ouzo
 	public:
 		static DocSet nil_docset;
 		
-		typedef uint32_t indexid_t;
-		// typedef uint32_t lookupid_t;
-		// static const lookupid_t lookupid_t_nil=static_cast<lookupid_t>(-1);
-		
-		// typedef enum 
-		// {
-		// 	INDEX_TYPE_UNKNOWN	=0, 
-		// 	INDEX_TYPE_STRING	=1, 
-		// 	INDEX_TYPE_UINT8	=2, 
-		// 	INDEX_TYPE_UINT16	=3, 
-		// 	INDEX_TYPE_UINT32	=4, 
-		// 	INDEX_TYPE_FLOAT	=5,
-		// 	INDEX_TYPE_DATE		=6,
-		// 	INDEX_TYPE_TIME		=7,
-		// 	INDEX_TYPE_SINT8	=8, 
-		// 	INDEX_TYPE_SINT16	=9, 
-		// 	INDEX_TYPE_SINT32	=10
-		// } index_type;
-
-		// static index_type getType(const Index& idx);
-		// static Index* getIndexFromID(indexid_t n) { return (Index*)n; }
-		// static Index* loadIndexFromFile(bfs::path filename);
-		
+		static Index* loadFromFile(bfs::path filename);
 
 		class Iterator
 		{
 			Index* m_idx;
+			Index::map_type::iterator m_itr;
 			
 		public:
-			Iterator(const Iterator&);
-			Iterator& operator=(const Iterator&);
-			Iterator(Index* idx) : m_idx(idx) {}
+			Iterator(const Iterator& itr) : m_idx(itr.m_idx), m_itr(itr.m_itr) {}
+			Iterator& operator=(const Iterator& itr) { m_idx=itr.m_idx; m_itr=itr.m_itr; return *this; }
+			Iterator(Index* idx, Index::map_type::iterator itr) : m_idx(idx), m_itr(itr) {}
 			~Iterator() {}
 			
-			bool operator==(const Iterator& itr);
-			bool operator!=(const Iterator& itr);
+			bool operator==(const Iterator& itr) { return m_itr==itr.m_itr; }
+			bool operator!=(const Iterator& itr) { return m_itr!=itr.m_itr; }
 			
-			Iterator& operator++();
-			Iterator& operator++(int);
+			Iterator& operator++()    { m_itr++; return *this; }
+			Iterator& operator++(int) { m_itr++; return *this; }
 			
-			Key key() const;
-			DocSet& docset();
+			Key key() const  { return m_itr->first; }
+			DocSet& docset() { return m_itr->second; }
 		};
 		
 	
-		Index(const std::string& name, bfs::path index_file, const std::string& keyspec, uint32_t doccapacity);
+		Index(const std::string& name, const key_type kt, const std::string& keyspec, uint32_t doccapacity);
 		virtual ~Index();
 		
 		uint32_t version() const { return m_version; };
 		virtual size_t documentCount() const { return m_headerinfo.doccount; }
 		virtual size_t documentCapacity() const { return m_headerinfo.doccapacity; }
 		virtual size_t keyCount() const { return m_map.size(); }
+		virtual const char* keyType() const { return m_headerinfo.type; }
 
 		const std::string& name() const 				{ return m_name; }
 		const bfs::path&   filename() const 			{ return m_filename; }
@@ -190,6 +200,7 @@ namespace Ouzo
 		virtual void load();
 		virtual void save() const;
 	
+		virtual void put(const char* s, docid_t docid);
 		virtual void put(const Key&	key, docid_t docid);
 		
 		virtual       DocSet& get(const Key& key);
@@ -197,10 +208,14 @@ namespace Ouzo
 		
 		virtual void del(docid_t docid);
 		
-		Iterator			begin();// 		{ return m_map.begin(); }
-		Iterator			end();// 	 		{ return m_map.end(); 	}
-
-		Iterator       lower_bound(const Key& key);// 		{ return m_map.lower_bound(key); }
+		      Iterator begin() 					 		 { return Iterator(this,m_map.begin()); }
+		// const Iterator begin() const		 			 { return Iterator(this,m_map.begin()); }
+		      Iterator end()   					 		 { return Iterator(this,m_map.end());   }
+		// const Iterator end() const  					 { return Iterator(this,m_map.end());   }
+		      Iterator lower_bound(const Key& key) 		 { return Iterator(this,m_map.lower_bound(key)); }
+		// const Iterator lower_bound(const Key& key) const { return Iterator(this,m_map.lower_bound(key)); }
+		
+		void setFilename(bfs::path fname) { m_filename=bfs::change_extension(fname,".index");  }
 		
 		virtual void output(ostream&) const;
 		
@@ -208,36 +223,76 @@ namespace Ouzo
 
 	ostream& operator<<(ostream& os, const Index& idx);
 
-	class DateIndex : public Index
+	class DateKey : public Key
 	{
+		uint32_t normalizeNoon(time_t);
 	public:	
-		DateIndex(const std::string& name, bfs::path index_file, const std::string& keyspec, uint32_t doccapacity)
-			: Index(name,index_file,keyspec,doccapacity) {}
-		~DateIndex() {}
+		DateKey() : Key() {}
+		DateKey(time_t t) : Key(normalizeNoon(t)) {}
+		~DateKey() {}
 		
-		void output(ostream&) const;
-		
+		Key& operator=(time_t t) { m_val.uint32=normalizeNoon(t); return *this; } 
+
+		operator time_t()   const { return (time_t)m_val.uint32; }
+
+		void output(ostream& os) const;
 	};
 	
-	class TimeIndex : public Index
+	inline ostream& operator<<(ostream& os, const DateKey& key) { key.output(os); return os; }
+
+
+	class TimeKey : public Key
 	{
 	public:	
-		TimeIndex(const std::string& name, bfs::path index_file, const std::string& keyspec, uint32_t doccapacity)
-			: Index(name,index_file,keyspec,doccapacity) {}
-		~TimeIndex() {}
+		TimeKey() : Key() {}
+		TimeKey(time_t t) : Key((uint32_t)t) {}
+		~TimeKey() {}
+		
+		Key& operator=(time_t t) { m_val.uint32=(uint32_t)t; return *this; } 
 
-		void output(ostream&) const;
+		operator time_t()   const { return (time_t)m_val.uint32; }
+
+		void output(ostream& os) const;
 	};
 
-	class FloatIndex : public Index
+	inline ostream& operator<<(ostream& os, const TimeKey& key) { key.output(os); return os; }
+
+
+	class FloatKey : public Key
 	{
 	public:	
-		FloatIndex(const std::string& name, bfs::path index_file, const std::string& keyspec, uint32_t doccapacity)
-			: Index(name,index_file,keyspec,doccapacity) {}
-		~FloatIndex() {}
+		FloatKey() : Key() {}
+		FloatKey(double n) : Key(n) {}
+		FloatKey(float n) : Key((double)n) {}
+		~FloatKey() {}
+		
+		Key& operator=(double n) { m_val.dbl=n; return *this; } 
+		Key& operator=(float n) { m_val.dbl=n; return *this; } 
 
-		void output(ostream&) const;
+		operator double()   const { return m_val.dbl; }
+		operator float()   const { return m_val.dbl; }
+
+		void output(ostream& os) const;
 	};
+
+	inline ostream& operator<<(ostream& os, const FloatKey& key) { key.output(os); return os; }
+
+	class StringKey : public Key
+	{
+		std::string m_s;
+	public:	
+		StringKey() : Key() {}
+		StringKey(const char* s) : Key(0), m_s(s) {}
+		~StringKey() {}
+		
+		Key& operator=(const char* s) { m_s=s; return *this; } 
+
+		operator const char*()   const { return m_s.c_str(); }
+
+		void output(ostream& os) const;
+	};
+
+	inline ostream& operator<<(ostream& os, const StringKey& key) { key.output(os); return os; }
 	
 }
 

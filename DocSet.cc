@@ -358,7 +358,7 @@ ostream& operator<<(ostream& os, const DocSet& ds)
 			{
 				if (!first)
 					os << ' ';
-				os << n;
+				os << (n+1);
 				first=false;
 			}
 			break;
