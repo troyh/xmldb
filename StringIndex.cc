@@ -5,23 +5,59 @@
 namespace Ouzo
 {
 
-Index::key_type StringIndex::STRING_TYPENAME="string";
-
-void StringIndex::put(const Key& key, docid_t docid)
+bool StringIndex::stringkey_t::operator< (const key_t& key) const
 {
-	std::string keystr((const char*)key);
-	const_iterator itr=m_lookup_table.find(keystr);
+	if (m_idx!=key.getIndex())
+		return false;
+
+	return m_idx->compareKeys(*this,key) < 0;
+}
+
+Index::Iterator* StringIndex::begin()
+{
+	return new StringIterator(this,m_lookup_table.begin());
+}
+
+Index::Iterator* StringIndex::end()
+{
+	return new StringIterator(this,m_lookup_table.end());
+}
+
+Index::Iterator* StringIndex::lower_bound(const char* key)
+{
+	return new StringIterator(this,m_lookup_table.lower_bound(key));
+}
+
+Index::Iterator* StringIndex::lower_bound(const std::string& key)
+{
+	return new StringIterator(this,m_lookup_table.lower_bound(key));
+}
+
+
+void StringIndex::put(const key_t& key, docid_t docid)
+{
+	if (key.getIndex()!=this)
+		throw Exception(__FILE__,__LINE__);
+		
+	std::string* s=(std::string*)key.m_val.ptr;
+	if (!s)
+		throw Exception(__FILE__,__LINE__);
+	
+	const_iterator itr=m_lookup_table.find(*s);
 	if (itr==m_lookup_table.end())
 	{ // Doesn't yet exist in index
 	
 		// Add it to the m_lookup_table by creating a lookupid
 		// TODO: lock m_lookup_table
-		size_type lookupid=m_lookup_table.size();
-		m_lookup_table.insert(make_pair(keystr,lookupid));
+
+		uint32key_t idxkey(this,m_lookup_table.size());
+
+		m_lookup_table.insert(make_pair(*s,idxkey));
 		// TODO: unlock m_lookup_table
-	
-		Key idxkey=(uint32_t)lookupid;
+		
 		Index::put(idxkey,docid);
+		
+		delete idxkey;
 	}
 	else
 	{ // Update existing docset in index
@@ -35,10 +71,14 @@ void StringIndex::put(const Key& key, docid_t docid)
 	
 }
 
-DocSet& StringIndex::get(const Key& key)
+DocSet& StringIndex::get(const key_t& key)
 {
-	std::string keystr((const char*)key);
-	const_iterator itr=m_lookup_table.find(keystr);
+	const stringkey_t* skey=dynamic_cast<const stringkey_t*>(&key);
+	if (!skey)
+		throw Exception(__FILE__,__LINE__);
+		
+	const std::string* s=skey->string();
+	const_iterator itr=m_lookup_table.find(*s);
 	if (itr==m_lookup_table.end())
 	{
 		return Index::nil_docset;
@@ -47,7 +87,7 @@ DocSet& StringIndex::get(const Key& key)
 	return Index::get(itr->second);
 }
 
-const DocSet& StringIndex::get(const Key& key) const
+const DocSet& StringIndex::get(const key_t& key) const
 {
 	return ((StringIndex*)(this))->get(key); // Cast away const-ness and use the non-const version
 }
@@ -55,23 +95,27 @@ const DocSet& StringIndex::get(const Key& key) const
 void StringIndex::del(docid_t docid)
 {
 	// Iterate the keys
-	Iterator itr_end=Index::end();
-	for(Iterator itr=Index::begin(); itr!=itr_end; ++itr)
+	Iterator* itr    =Index::begin();
+	Iterator* itr_end=Index::end();
+	for(; *itr!=*itr_end; ++(*itr))
 	{
 		// Remove the docid from the DocSet
-		if (itr.docset().test(docid)) // If the bit is set
+		if (itr->docset().test(docid)) // If the bit is set
 		{
-			itr.docset().clr(docid);
+			itr->docset().clr(docid);
 			
 			// Remove it from m_lookup_table
 			lookup_table_type::const_iterator itr2_end=m_lookup_table.end();
 			for (lookup_table_type::const_iterator itr2=m_lookup_table.begin(); itr2!=itr2_end; ++itr2)
 			{
-				if (itr2->second==itr.key())
+				if (itr2->second==itr->key())
 					m_lookup_table.erase(itr2->first);
 			}
 		}
 	}
+	
+	delete itr_end;
+	delete itr;
 }
 
 void StringIndex::load()
@@ -110,7 +154,7 @@ void StringIndex::load()
 			buf[len]='\0';
 			std::string key=buf;
 			
-			Key idxkey;
+			key_t idxkey(this);
 			ifs.read(idxkey,sizeof(idxkey));
 			if (!ifs.good())
 				throw Exception(__FILE__,__LINE__);
@@ -145,8 +189,8 @@ void StringIndex::save() const
 		if (!ofs.good())
 			throw Exception(__FILE__,__LINE__);
 		
-		Key key=itr->second;
-		ofs.write(key, sizeof(key));
+		key_t key=itr->second;
+		ofs.write(key, key.size());
 		if (!ofs.good())
 			throw Exception(__FILE__,__LINE__);
 			
@@ -158,11 +202,18 @@ void StringIndex::save() const
 	
 }
 
+
 void StringIndex::output(ostream& os) const
 {
 	// TODO: output m_lookup_table
 	Index::output(os);
+	lookup_table_type::const_iterator itr_end=m_lookup_table.end();
+	for (lookup_table_type::const_iterator itr=m_lookup_table.begin(); itr!=itr_end; ++itr)
+	{
+		os << itr->first << ':';
+		itr->second.output(os);
+		os << endl;
+	}
 }
-
 
 }

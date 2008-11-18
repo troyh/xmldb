@@ -6,11 +6,13 @@ namespace Ouzo
 	
 void XRefTable::addColumn(const Index* idx)
 {
+	Index::key_t* k=idx->createKey();
 	if (m_table[0].find(idx)==m_table[0].end()) // Avoid adding duplicates
-		m_table[0][idx]=0; // 0 is a dummy key
+		m_table[0][idx]=*k; // k is a dummy key
+	delete k;
 }
 
-void XRefTable::putCell(docid_t row, const Key& key)
+void XRefTable::putCell(docid_t row, const Index::key_t& key)
 {
 	// Iterate the indexes that are represented in the columns, get their lookupid and store it in the cell
 	columns_type::iterator itr_end=m_table[row].end();
@@ -21,14 +23,15 @@ void XRefTable::putCell(docid_t row, const Key& key)
 	}
 }
 
-Key XRefTable::getCell(docid_t row, Index* col) const
+Index::key_t XRefTable::getCell(docid_t row, Index* col) const
 {
 	table_type::const_iterator itr=m_table.find(row);
 	if (itr==m_table.end())
-		return Key();
-	if (itr->second.find(col)==itr->second.end())
-		return Key();
-	return itr->second.find(col)->second;
+		return Index::key_t(col);
+	columns_type::const_iterator itr2=itr->second.find(col);
+	if (itr2==itr->second.end())
+		return Index::key_t(col);
+	return Index::key_t(itr2->second);
 }
 
 ostream& operator<<(ostream& os, const XRefTable& tbl)

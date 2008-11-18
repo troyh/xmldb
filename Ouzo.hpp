@@ -28,10 +28,10 @@ namespace Ouzo
 
 	class Index;
 	
-	typedef Key* (*keyfactory_func)(Index*);
-	
-	Key* stdkey(Index*);
-	Key* stringkey(Index*);
+	// typedef key_t* (*keyfactory_func)(Index*);
+	// 
+	// key_t* stdkey(Index*);
+	// key_t* stringkey(Index*);
 	
 	class Ouzo
 	{
@@ -39,7 +39,7 @@ namespace Ouzo
 
 		map<bfs::path,DocumentBase*> m_doctypes;
 		bfs::path m_config_file;
-		static std::map<std::string,keyfactory_func> s_keyfactories;
+		// static std::map<std::string,keyfactory_func> s_keyfactories;
 
 		DocumentBase& findDocType(const bfs::path& docfile);
 		// const char* getNodeValue(const DOMNode* node,const char* tag);
@@ -49,7 +49,7 @@ namespace Ouzo
 		
 	public:	
 		
-		static Key* createKey(Index*);
+		// static key_t* createKey(Index*);
 		
 		Ouzo(bfs::path config_file);
 		~Ouzo();

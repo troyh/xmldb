@@ -13,7 +13,7 @@ namespace Ouzo
 	{
 		friend ostream& operator<<(ostream& os, const XRefTable& tbl);
 
-		typedef std::map<const Index*, Key> columns_type;
+		typedef std::map<const Index*, Index::key_t> columns_type;
 		typedef std::map<docid_t,columns_type> table_type;
 		typedef table_type::size_type size_type;
 
@@ -26,8 +26,8 @@ namespace Ouzo
 
 		void addColumn(const Index* idx);
 
-		void putCell(docid_t row, const Key& key);
-		Key getCell(docid_t row, Index* col) const;
+		void putCell(docid_t row, const Index::key_t& key);
+		Index::key_t getCell(docid_t row, Index* col) const;
 	};
 }
 

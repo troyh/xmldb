@@ -7,286 +7,78 @@ namespace Ouzo
 	
 DocSet Index::nil_docset(1); // Used to return "bad" DocSet from Index::get()
 
-Key& Key::operator=(int8_t   x)
-{
-	switch (m_type)
-	{
-		case KEY_TYPE_INT8:   m_val.int8  =  (int8_t)x;break;
-		case KEY_TYPE_INT16:  m_val.int16 = (int16_t)x;break;
-		case KEY_TYPE_INT32:  m_val.int32 = (int32_t)x;break;
-		case KEY_TYPE_INT64:  m_val.int64 = (int64_t)x;break;
-		case KEY_TYPE_UINT8:  m_val.uint8 = (uint8_t)x;break;
-		case KEY_TYPE_UINT16: m_val.uint16=(uint16_t)x;break;
-		case KEY_TYPE_UINT32: m_val.uint32=(uint32_t)x;break;
-		case KEY_TYPE_UINT64: m_val.uint64=(uint64_t)x;break;
-		case KEY_TYPE_DBL:    m_val.dbl   =(double)x;break;
-		case KEY_TYPE_PTR:    m_val.ptr=0; break;
-		case KEY_TYPE_CH:     
-		{
-			sprintf(m_val.ch,"%d",x);
-			break;
-		}
-	}
-	
-	return *this;
-}
-
-Key& Key::operator=(int16_t  x)
-{
-	switch (m_type)
-	{
-		case KEY_TYPE_INT8:   m_val.int8  =  (int8_t)x;break;
-		case KEY_TYPE_INT16:  m_val.int16 = (int16_t)x;break;
-		case KEY_TYPE_INT32:  m_val.int32 = (int32_t)x;break;
-		case KEY_TYPE_INT64:  m_val.int64 = (int64_t)x;break;
-		case KEY_TYPE_UINT8:  m_val.uint8 = (uint8_t)x;break;
-		case KEY_TYPE_UINT16: m_val.uint16=(uint16_t)x;break;
-		case KEY_TYPE_UINT32: m_val.uint32=(uint32_t)x;break;
-		case KEY_TYPE_UINT64: m_val.uint64=(uint64_t)x;break;
-		case KEY_TYPE_DBL:    m_val.dbl   =(double)x;break;
-		case KEY_TYPE_PTR:    m_val.ptr=0; break;
-		case KEY_TYPE_CH:     
-		{
-			sprintf(m_val.ch,"%d",x);
-			break;
-		}
-	}
-	
-	return *this;
-}
-
-Key& Key::operator=(int32_t  x)
-{
-	switch (m_type)
-	{
-		case KEY_TYPE_INT8:   m_val.int8  =  (int8_t)x;break;
-		case KEY_TYPE_INT16:  m_val.int16 = (int16_t)x;break;
-		case KEY_TYPE_INT32:  m_val.int32 = (int32_t)x;break;
-		case KEY_TYPE_INT64:  m_val.int64 = (int64_t)x;break;
-		case KEY_TYPE_UINT8:  m_val.uint8 = (uint8_t)x;break;
-		case KEY_TYPE_UINT16: m_val.uint16=(uint16_t)x;break;
-		case KEY_TYPE_UINT32: m_val.uint32=(uint32_t)x;break;
-		case KEY_TYPE_UINT64: m_val.uint64=(uint64_t)x;break;
-		case KEY_TYPE_DBL:    m_val.dbl   =(double)x;break;
-		case KEY_TYPE_PTR:    m_val.ptr=0; break;
-		case KEY_TYPE_CH:     
-		{
-			sprintf(m_val.ch,"%d",x);
-			break;
-		}
-	}
-	
-	return *this;
-}
-
-Key& Key::operator=(int64_t  x)
-{
-	switch (m_type)
-	{
-		case KEY_TYPE_INT8:   m_val.int8  =  (int8_t)x;break;
-		case KEY_TYPE_INT16:  m_val.int16 = (int16_t)x;break;
-		case KEY_TYPE_INT32:  m_val.int32 = (int32_t)x;break;
-		case KEY_TYPE_INT64:  m_val.int64 = (int64_t)x;break;
-		case KEY_TYPE_UINT8:  m_val.uint8 = (uint8_t)x;break;
-		case KEY_TYPE_UINT16: m_val.uint16=(uint16_t)x;break;
-		case KEY_TYPE_UINT32: m_val.uint32=(uint32_t)x;break;
-		case KEY_TYPE_UINT64: m_val.uint64=(uint64_t)x;break;
-		case KEY_TYPE_DBL:    m_val.dbl   =(double)x;break;
-		case KEY_TYPE_PTR:    m_val.ptr=0; break;
-		case KEY_TYPE_CH:     
-		{
-			sprintf(m_val.ch,"%d",x);
-			break;
-		}
-	}
-	
-	return *this;
-}
-
-Key& Key::operator=(uint8_t  x)
-{
-	switch (m_type)
-	{
-		case KEY_TYPE_INT8:   m_val.int8  =  (int8_t)x;break;
-		case KEY_TYPE_INT16:  m_val.int16 = (int16_t)x;break;
-		case KEY_TYPE_INT32:  m_val.int32 = (int32_t)x;break;
-		case KEY_TYPE_INT64:  m_val.int64 = (int64_t)x;break;
-		case KEY_TYPE_UINT8:  m_val.uint8 = (uint8_t)x;break;
-		case KEY_TYPE_UINT16: m_val.uint16=(uint16_t)x;break;
-		case KEY_TYPE_UINT32: m_val.uint32=(uint32_t)x;break;
-		case KEY_TYPE_UINT64: m_val.uint64=(uint64_t)x;break;
-		case KEY_TYPE_DBL:    m_val.dbl   =(double)x;break;
-		case KEY_TYPE_PTR:    m_val.ptr=0; break;
-		case KEY_TYPE_CH:     
-		{
-			sprintf(m_val.ch,"%u",x);
-			break;
-		}
-	}
-	
-	return *this;
-}
-
-Key& Key::operator=(uint16_t x)
-{
-	switch (m_type)
-	{
-		case KEY_TYPE_INT8:   m_val.int8  =  (int8_t)x;break;
-		case KEY_TYPE_INT16:  m_val.int16 = (int16_t)x;break;
-		case KEY_TYPE_INT32:  m_val.int32 = (int32_t)x;break;
-		case KEY_TYPE_INT64:  m_val.int64 = (int64_t)x;break;
-		case KEY_TYPE_UINT8:  m_val.uint8 = (uint8_t)x;break;
-		case KEY_TYPE_UINT16: m_val.uint16=(uint16_t)x;break;
-		case KEY_TYPE_UINT32: m_val.uint32=(uint32_t)x;break;
-		case KEY_TYPE_UINT64: m_val.uint64=(uint64_t)x;break;
-		case KEY_TYPE_DBL:    m_val.dbl   =(double)x;break;
-		case KEY_TYPE_PTR:    m_val.ptr=0; break;
-		case KEY_TYPE_CH:     
-		{
-			sprintf(m_val.ch,"%u",x);
-			break;
-		}
-	}
-	
-	return *this;
-}
-
-Key& Key::operator=(uint32_t x)
-{
-	switch (m_type)
-	{
-		case KEY_TYPE_INT8:   m_val.int8  =  (int8_t)x;break;
-		case KEY_TYPE_INT16:  m_val.int16 = (int16_t)x;break;
-		case KEY_TYPE_INT32:  m_val.int32 = (int32_t)x;break;
-		case KEY_TYPE_INT64:  m_val.int64 = (int64_t)x;break;
-		case KEY_TYPE_UINT8:  m_val.uint8 = (uint8_t)x;break;
-		case KEY_TYPE_UINT16: m_val.uint16=(uint16_t)x;break;
-		case KEY_TYPE_UINT32: m_val.uint32=(uint32_t)x;break;
-		case KEY_TYPE_UINT64: m_val.uint64=(uint64_t)x;break;
-		case KEY_TYPE_DBL:    m_val.dbl   =(double)x;break;
-		case KEY_TYPE_PTR:    m_val.ptr=0; break;
-		case KEY_TYPE_CH:     
-		{
-			sprintf(m_val.ch,"%u",x);
-			break;
-		}
-	}
-	
-	return *this;
-}
-
-Key& Key::operator=(uint64_t x)
-{
-	switch (m_type)
-	{
-		case KEY_TYPE_INT8:   m_val.int8  =  (int8_t)x;break;
-		case KEY_TYPE_INT16:  m_val.int16 = (int16_t)x;break;
-		case KEY_TYPE_INT32:  m_val.int32 = (int32_t)x;break;
-		case KEY_TYPE_INT64:  m_val.int64 = (int64_t)x;break;
-		case KEY_TYPE_UINT8:  m_val.uint8 = (uint8_t)x;break;
-		case KEY_TYPE_UINT16: m_val.uint16=(uint16_t)x;break;
-		case KEY_TYPE_UINT32: m_val.uint32=(uint32_t)x;break;
-		case KEY_TYPE_UINT64: m_val.uint64=(uint64_t)x;break;
-		case KEY_TYPE_DBL:    m_val.dbl   =(double)x;break;
-		case KEY_TYPE_PTR:    m_val.ptr=0; break;
-		case KEY_TYPE_CH:     
-		{
-			sprintf(m_val.ch,"%u",x);
-			break;
-		}
-	}
-	
-	return *this;
-}
-
-Key& Key::operator=(double   x)
-{
-	switch (m_type)
-	{
-		case KEY_TYPE_INT8:   m_val.int8  =  (int8_t)x;break;
-		case KEY_TYPE_INT16:  m_val.int16 = (int16_t)x;break;
-		case KEY_TYPE_INT32:  m_val.int32 = (int32_t)x;break;
-		case KEY_TYPE_INT64:  m_val.int64 = (int64_t)x;break;
-		case KEY_TYPE_UINT8:  m_val.uint8 = (uint8_t)x;break;
-		case KEY_TYPE_UINT16: m_val.uint16=(uint16_t)x;break;
-		case KEY_TYPE_UINT32: m_val.uint32=(uint32_t)x;break;
-		case KEY_TYPE_UINT64: m_val.uint64=(uint64_t)x;break;
-		case KEY_TYPE_DBL:    m_val.dbl   =(double)x;break;
-		case KEY_TYPE_PTR:    m_val.ptr=0; break;
-		case KEY_TYPE_CH:     
-		{
-			sprintf(m_val.ch,"%f",x);
-			break;
-		}
-	}
-	
-	return *this;
-}
-
-Key& Key::operator=(const char*    x)     
+Index::key_t::key_t(const key_t& k) 
+	: m_idx(k.m_idx)
 { 
-	switch (m_type)
-	{
-		case KEY_TYPE_INT8:   m_val.int8  =  (int8_t)strtol(x,0,10);break;
-		case KEY_TYPE_INT16:  m_val.int16 = (int16_t)strtol(x,0,10);break;
-		case KEY_TYPE_INT32:  m_val.int32 = (int32_t)strtol(x,0,10);break;
-		case KEY_TYPE_INT64:  m_val.int64 = (int64_t)strtol(x,0,10);break;
-		case KEY_TYPE_UINT8:  m_val.uint8 = (uint8_t)strtoul(x,0,10);break;
-		case KEY_TYPE_UINT16: m_val.uint16=(uint16_t)strtoul(x,0,10);break;
-		case KEY_TYPE_UINT32: m_val.uint32=(uint32_t)strtoul(x,0,10);break;
-		case KEY_TYPE_UINT64: m_val.uint64=(uint64_t)strtoul(x,0,10);break;
-		case KEY_TYPE_DBL:    m_val.dbl   =strtof(x,0);break;
-		case KEY_TYPE_CH:     memcpy(m_val.ch,x,sizeof(m_val.ch)); break;
-		case KEY_TYPE_PTR:    m_val.ptr=(void*)x; break;
-	}
-	
-	return *this;
+	m_val=k.m_val;
 }
 
-Key& Key::operator=(void*	x)     { m_type=KEY_TYPE_PTR   ; m_val.ptr   =x;  return *this; } 
-
-bool Key::operator<(const Key& key) const
+bool   Index::key_t::operator< (const key_t& key) const
 {
-	if (m_type!=key.m_type)
+	if (m_idx!=key.m_idx)
+		return false;
+	
+	return m_idx->compareKeys(*this,key) < 0;
+}
+
+bool Index::key_t::operator==(const key_t& k) const
+{
+	if (m_idx!=k.m_idx)
 		return false;
 		
-	switch (m_type)
+	     if (!strcasecmp(m_idx->keyType(),"int8"))    { return m_val.int8  ==k.m_val.int8  ; }
+	else if (!strcasecmp(m_idx->keyType(),"int16"))   { return m_val.int16 ==k.m_val.int16 ; }
+	else if (!strcasecmp(m_idx->keyType(),"int32"))   { return m_val.int32 ==k.m_val.int32 ; }
+	else if (!strcasecmp(m_idx->keyType(),"int64"))   { return m_val.int64 ==k.m_val.int64 ; }
+	else if (!strcasecmp(m_idx->keyType(),"uint8"))   { return m_val.uint8 ==k.m_val.uint8 ; }
+	else if (!strcasecmp(m_idx->keyType(),"uint16"))  { return m_val.uint16==k.m_val.uint16; }
+	else if (!strcasecmp(m_idx->keyType(),"uint32"))  { return m_val.uint32==k.m_val.uint32; }
+	else if (!strcasecmp(m_idx->keyType(),"uint64"))  { return m_val.uint64==k.m_val.uint64; }
+	else if (!strcasecmp(m_idx->keyType(),"dbl"))     { return m_val.dbl   ==k.m_val.dbl   ; }
+	else if (!strcasecmp(m_idx->keyType(),"char8"))   { return strncmp(m_val.ch, k.m_val.ch, sizeof(m_val.ch))==0; }
+	else
 	{
-		case KEY_TYPE_INT8:   return m_val.int8   < key.m_val.int8;   break;
-		case KEY_TYPE_INT16:  return m_val.int16  < key.m_val.int16;  break;
-		case KEY_TYPE_INT32:  return m_val.int32  < key.m_val.int32;  break;
-		case KEY_TYPE_INT64:  return m_val.int64  < key.m_val.int64;  break;
-		case KEY_TYPE_UINT8:  return m_val.uint8  < key.m_val.uint8;  break;
-		case KEY_TYPE_UINT16: return m_val.uint16 < key.m_val.uint16; break;
-		case KEY_TYPE_UINT32: return m_val.uint32 < key.m_val.uint32; break;
-		case KEY_TYPE_UINT64: return m_val.uint64 < key.m_val.uint64; break;
-		case KEY_TYPE_DBL:    return m_val.dbl    < key.m_val.dbl;    break;
-		case KEY_TYPE_CH:     return m_val.ch     < key.m_val.ch;     break;
-		case KEY_TYPE_PTR:    return m_val.ptr    < key.m_val.ptr;    break;
+		throw Exception(__FILE__,__LINE__);
 	}
-
 }
 
-void Key::output(ostream& os) const
+void Index::key_t::output(ostream& os) const
 {
-	switch (m_type)
+	     if (!strcasecmp(m_idx->keyType(),"int8"))    { os << m_val.int8  ; }
+	else if (!strcasecmp(m_idx->keyType(),"int16"))   { os << m_val.int16 ; }
+	else if (!strcasecmp(m_idx->keyType(),"int32"))   { os << m_val.int32 ; }
+	else if (!strcasecmp(m_idx->keyType(),"int64"))   { os << m_val.int64 ; }
+	else if (!strcasecmp(m_idx->keyType(),"uint8"))   { os << m_val.uint8 ; }
+	else if (!strcasecmp(m_idx->keyType(),"uint16"))  { os << m_val.uint16; }
+	else if (!strcasecmp(m_idx->keyType(),"uint32"))  { os << m_val.uint32; }
+	else if (!strcasecmp(m_idx->keyType(),"uint64"))  { os << m_val.uint64; }
+	else if (!strcasecmp(m_idx->keyType(),"dbl"))     { os << m_val.dbl   ; }
+	else if (!strcasecmp(m_idx->keyType(),"char8"))   { os.write(m_val.ch, sizeof(m_val.ch)); }
+	else
 	{
-		case KEY_TYPE_INT8:   os << m_val.int8  ; break;
-		case KEY_TYPE_INT16:  os << m_val.int16 ; break;
-		case KEY_TYPE_INT32:  os << m_val.int32 ; break;
-		case KEY_TYPE_INT64:  os << m_val.int64 ; break;
-		case KEY_TYPE_UINT8:  os << m_val.uint8 ; break;
-		case KEY_TYPE_UINT16: os << m_val.uint16; break;
-		case KEY_TYPE_UINT32: os << m_val.uint32; break;
-		case KEY_TYPE_UINT64: os << m_val.uint64; break;
-		case KEY_TYPE_DBL:    os << m_val.dbl   ; break;
-		case KEY_TYPE_CH:     os << m_val.ch    ; break;
-		case KEY_TYPE_PTR:    os << m_val.ptr   ; break;
+		throw Exception(__FILE__,__LINE__);
 	}
-	
 }
 
+int Index::compareKeys(const key_t& key1, const key_t& key2) const
+{
+	     if (!strcasecmp(keyType(),"int8"))    { return key1.m_val.int8   - key2.m_val.int8; }
+	else if (!strcasecmp(keyType(),"int16"))   { return key1.m_val.int16  - key2.m_val.int16; }
+	else if (!strcasecmp(keyType(),"int32"))   { return key1.m_val.int32  - key2.m_val.int32; }
+	else if (!strcasecmp(keyType(),"int64"))   { return key1.m_val.int64  - key2.m_val.int64; }
+	else if (!strcasecmp(keyType(),"uint8"))   { return key1.m_val.uint8  - key2.m_val.uint8 ; }
+	else if (!strcasecmp(keyType(),"uint16"))  { return key1.m_val.uint16 - key2.m_val.uint16; }
+	else if (!strcasecmp(keyType(),"uint32"))  { return key1.m_val.uint32 - key2.m_val.uint32; }
+	else if (!strcasecmp(keyType(),"uint64"))  { return key1.m_val.uint64 - key2.m_val.uint64; }
+	else if (!strcasecmp(keyType(),"dbl"))     { return key1.m_val.dbl    - key2.m_val.dbl   ; }
+	else if (!strcasecmp(keyType(),"char8"))   { return strncmp(key1.m_val.ch, key2.m_val.ch, sizeof(key1.m_val.ch)); }
+	else
+	{
+		throw Exception(__FILE__,__LINE__);
+	}
 
+	return 0;
+}
 
 Index* Index::loadFromFile(bfs::path filename)
 {
@@ -397,16 +189,27 @@ void Index::readMeta(istream& ifs)
 	// }
 }
 
-void Index::put(const char* s, docid_t docid)
+Index::key_t* Index::createKey() const
 {
-	// Force key to be the correct type
-	Key key=Ouzo::createKey(this);
-	key=s;
-	put(key,docid);
+	     if (!strcasecmp(keyType(),"int8"))    { return new   int8key_t(this); }
+	else if (!strcasecmp(keyType(),"int16"))   { return new  int16key_t(this); }
+	else if (!strcasecmp(keyType(),"int32"))   { return new  int32key_t(this); }
+	else if (!strcasecmp(keyType(),"int64"))   { return new  int64key_t(this); }
+	else if (!strcasecmp(keyType(),"uint8"))   { return new  uint8key_t(this); }
+	else if (!strcasecmp(keyType(),"uint16"))  { return new uint16key_t(this); }
+	else if (!strcasecmp(keyType(),"uint32"))  { return new uint32key_t(this); }
+	else if (!strcasecmp(keyType(),"uint64"))  { return new uint64key_t(this); }
+	else if (!strcasecmp(keyType(),"dbl"))     { return new doublekey_t(this); }
+	else if (!strcasecmp(keyType(),"char8"))   { return new  char8key_t(this); }
+	else
+	{
+		throw Exception(__FILE__,__LINE__);
+	}
 }
 
-void Index::put(const Key& key, docid_t docid)
+void Index::put(const key_t& key, docid_t docid)
 {
+	// TODO: Force key to be the correct type
 	map_iterator itr=m_map.find(key);
 	if (itr==m_map.end())
 	{ // Doesn't yet exist in index
@@ -424,7 +227,7 @@ void Index::put(const Key& key, docid_t docid)
 	}
 }
 
-DocSet& Index::get(const Key& key)
+DocSet& Index::get(const key_t& key)
 {
 	map_iterator itr=m_map.find(key);
 	if (itr==m_map.end())
@@ -432,7 +235,7 @@ DocSet& Index::get(const Key& key)
 	return itr->second;
 }
 
-const DocSet& Index::get(const Key& key) const
+const DocSet& Index::get(const key_t& key) const
 {
 	const_map_iterator itr=m_map.find(key);
 	if (itr==m_map.end())
@@ -491,8 +294,8 @@ void Index::load_data(istream& ifs)
 			for (uint32_t i=0;i<m_headerinfo.keycount;++i)
 			{
 				// Read key
-				Key key;
-				ifs.read(key,sizeof(key));
+				key_t key(this);
+				ifs.read(key,key.size());
 
 				if (!ifs.good())
 					throw Exception(__FILE__,__LINE__);
@@ -522,8 +325,8 @@ void Index::save_data(ostream& ofs) const
 	for(const_map_iterator itr = m_map.begin(); itr != itr_end; ++itr)
 	{
 		// Write key
-		Key key=itr->first;
-		ofs.write(key,sizeof(key));
+		key_t key=itr->first;
+		ofs.write(key,key.size());
 		if (!ofs.good())
 			throw Exception(__FILE__,__LINE__);
 
@@ -545,35 +348,39 @@ void Index::output(ostream& os) const
 		<< endl;
 		
 	// Output keys
-	Iterator itr_end=((Index*)this)->end();
-	for (Iterator itr=((Index*)this)->begin(); itr!=itr_end; ++itr)
+	Iterator* itr    =((Index*)this)->begin();
+	Iterator* itr_end=((Index*)this)->end();
+	for (; *itr!=*itr_end; ++(*itr))
 	{
-		os << itr.key() << ':' << itr.docset() << endl;
+		os << itr->key() << ':' << itr->docset() << endl;
 	}
+	
+	delete itr_end;
+	delete itr;
 	
 }
 
-void DateKey::output(ostream& os) const
-{
-	struct tm* ptm=localtime((time_t*)&m_val.uint32);
-	os << ptm->tm_year << '-' << ptm->tm_mon << '-' << ptm->tm_mday;
-}
-
-void TimeKey::output(ostream& os) const
-{
-	struct tm* ptm=localtime((time_t*)&m_val.uint32);
-	os << ptm->tm_year << '-' << ptm->tm_mon << '-' << ptm->tm_mday << ' ' << ptm->tm_hour << ':' << ptm->tm_min << ':' << ptm->tm_sec;
-}
-
-void FloatKey::output(ostream& os) const
-{
-	os << m_val.dbl;
-}
-
-void StringKey::output(ostream& os) const
-{
-	os << m_s;
-}
+// void DateKey::output(ostream& os) const
+// {
+// 	struct tm* ptm=localtime((time_t*)&m_val.uint32);
+// 	os << ptm->tm_year << '-' << ptm->tm_mon << '-' << ptm->tm_mday;
+// }
+// 
+// void TimeKey::output(ostream& os) const
+// {
+// 	struct tm* ptm=localtime((time_t*)&m_val.uint32);
+// 	os << ptm->tm_year << '-' << ptm->tm_mon << '-' << ptm->tm_mday << ' ' << ptm->tm_hour << ':' << ptm->tm_min << ':' << ptm->tm_sec;
+// }
+// 
+// void FloatKey::output(ostream& os) const
+// {
+// 	os << m_val.dbl;
+// }
+// 
+// void StringKey::output(ostream& os) const
+// {
+// 	os << m_s;
+// }
 
 // ostream& operator<<(ostream& os, const Index::index_type t)
 // {
@@ -601,6 +408,12 @@ void StringKey::output(ostream& os) const
 ostream& operator<<(ostream& os, const Index& idx)
 {
 	idx.output(os);
+	return os;
+}
+
+ostream& operator<<(ostream& os, const Index::key_t& key) 
+{ 
+	key.output(os); 
 	return os;
 }
 

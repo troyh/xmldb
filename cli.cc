@@ -67,9 +67,13 @@ int main(int argc,char* argv[])
 			
 			Ouzo::Index* idx=Ouzo::Index::loadFromFile(name);
 			
-			idx->put(argv[3],docid);
+			Ouzo::Index::key_t* k=idx->createKey();
+			k->assign(argv[3]);
+			idx->put(*k,docid);
+			
 			idx->save();
 			
+			delete k;
 			delete idx;
 		}
 		else if (cmd=="show")
@@ -84,6 +88,7 @@ int main(int argc,char* argv[])
 				
 				Ouzo::Index* idx=Ouzo::Index::loadFromFile(name);
 				cout << *idx << endl;
+				delete idx;
 			}
 			
 		}
@@ -169,11 +174,13 @@ int main(int argc,char* argv[])
 				std::string dbname("recipe_reviews");
 				
 				std::string idxname("chef_id");
-				Ouzo::Key val("2312");
+				Ouzo::Index* idx=pDB->getIndex(idxname);
+				Ouzo::uint32key_t val(idx,2312);
 				Ouzo::Query::TermNode* query=new Ouzo::Query::TermNode(dbname,idxname,Ouzo::Query::TermNode::eq,val);
 				
 				std::string idxname2("review_rating");
-				Ouzo::Key val2("5");
+				idx=pDB->getIndex(idxname2);
+				Ouzo::uint8key_t val2(idx,5);
 				Ouzo::Query::TermNode* query2=new Ouzo::Query::TermNode(dbname,idxname2,Ouzo::Query::TermNode::eq,val2);
 				
 				Ouzo::Query::BooleanNode* boolop=new Ouzo::Query::BooleanNode(dbname,Ouzo::Query::BooleanNode::AND);

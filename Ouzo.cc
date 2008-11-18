@@ -26,39 +26,39 @@
 
 namespace Ouzo
 {
-	std::map<std::string,keyfactory_func> Ouzo::s_keyfactories;
+	// std::map<std::string,keyfactory_func> Ouzo::s_keyfactories;
 
 	using namespace xercesc;
 	using namespace boost::interprocess;
 	
-	Key* stdkey(Index* idx)
-	{
-		if (!strcasecmp(idx->keyType(),"uint8" )) return new Key((uint8_t)0);
-		if (!strcasecmp(idx->keyType(),"uint16")) return new Key((uint16_t)0);
-		if (!strcasecmp(idx->keyType(),"uint32")) return new Key((uint32_t)0);
-		if (!strcasecmp(idx->keyType(),"uint64")) return new Key((uint64_t)0);
-		if (!strcasecmp(idx->keyType(),"int8"  )) return new Key((int8_t)0);
-		if (!strcasecmp(idx->keyType(),"int16" )) return new Key((int16_t)0);
-		if (!strcasecmp(idx->keyType(),"int32" )) return new Key((int32_t)0);
-		if (!strcasecmp(idx->keyType(),"int64" )) return new Key((int64_t)0);
-		if (!strcasecmp(idx->keyType(),"double")) return new Key((double)0);
-		if (!strcasecmp(idx->keyType(),"char8" )) return new Key((const char*)"        ");
-		
-		return new Key();
-	}
-	
-	Key* stringkey(Index* idx)
-	{
-		return new StringKey();
-	}
-	
-	Key* Ouzo::createKey(Index* idx)
-	{
-		std::map<std::string,keyfactory_func>::const_iterator itr=s_keyfactories.find(idx->keyType());
-		if (itr==s_keyfactories.end())
-			throw Exception(__FILE__,__LINE__);
-		return itr->second(idx);
-	}
+	// key_t* stdkey(Index* idx)
+	// {
+	// 	if (!strcasecmp(idx->keyType(),"uint8" )) return new Key((uint8_t)0);
+	// 	if (!strcasecmp(idx->keyType(),"uint16")) return new Key((uint16_t)0);
+	// 	if (!strcasecmp(idx->keyType(),"uint32")) return new Key((uint32_t)0);
+	// 	if (!strcasecmp(idx->keyType(),"uint64")) return new Key((uint64_t)0);
+	// 	if (!strcasecmp(idx->keyType(),"int8"  )) return new Key((int8_t)0);
+	// 	if (!strcasecmp(idx->keyType(),"int16" )) return new Key((int16_t)0);
+	// 	if (!strcasecmp(idx->keyType(),"int32" )) return new Key((int32_t)0);
+	// 	if (!strcasecmp(idx->keyType(),"int64" )) return new Key((int64_t)0);
+	// 	if (!strcasecmp(idx->keyType(),"double")) return new Key((double)0);
+	// 	if (!strcasecmp(idx->keyType(),"char8" )) return new Key((const char*)"        ");
+	// 	
+	// 	return new Key();
+	// }
+	// 
+	// Key* stringkey(Index* idx)
+	// {
+	// 	return new StringKey();
+	// }
+	// 
+	// Key* Ouzo::createKey(Index* idx)
+	// {
+	// 	std::map<std::string,keyfactory_func>::const_iterator itr=s_keyfactories.find(idx->keyType());
+	// 	if (itr==s_keyfactories.end())
+	// 		throw Exception(__FILE__,__LINE__);
+	// 	return itr->second(idx);
+	// }
 	
 
 	char* getXPathVal(const char* xpath, DOMDocument* document, const DOMNode* node)
@@ -151,7 +151,7 @@ namespace Ouzo
 					
 						if (XMLString::equals(idxtype,X("string")))
 						{
-							p=new StringIndex(idxname_s, idxkey_s, doctype.capacity());
+							p=new StringIndex(idxname_s, idxtype_s, idxkey_s, doctype.capacity());
 						}
 						else
 						{
@@ -182,18 +182,18 @@ namespace Ouzo
 		: m_config_file(config_file)
 	{
 		// Create the standard key types
-		s_keyfactories.clear();
-		s_keyfactories.insert(make_pair("string",stringkey));
-		s_keyfactories.insert(make_pair("uint8" ,stdkey));
-		s_keyfactories.insert(make_pair("uint16",stdkey));
-		s_keyfactories.insert(make_pair("uint32",stdkey));
-		s_keyfactories.insert(make_pair("uint64",stdkey));
-		s_keyfactories.insert(make_pair("int8"  ,stdkey));
-		s_keyfactories.insert(make_pair("int16" ,stdkey));
-		s_keyfactories.insert(make_pair("int32" ,stdkey));
-		s_keyfactories.insert(make_pair("int64" ,stdkey));
-		s_keyfactories.insert(make_pair("double",stdkey));
-		s_keyfactories.insert(make_pair("char8" ,stdkey));
+		// s_keyfactories.clear();
+		// s_keyfactories.insert(make_pair("string",stringkey));
+		// s_keyfactories.insert(make_pair("uint8" ,stdkey));
+		// s_keyfactories.insert(make_pair("uint16",stdkey));
+		// s_keyfactories.insert(make_pair("uint32",stdkey));
+		// s_keyfactories.insert(make_pair("uint64",stdkey));
+		// s_keyfactories.insert(make_pair("int8"  ,stdkey));
+		// s_keyfactories.insert(make_pair("int16" ,stdkey));
+		// s_keyfactories.insert(make_pair("int32" ,stdkey));
+		// s_keyfactories.insert(make_pair("int64" ,stdkey));
+		// s_keyfactories.insert(make_pair("double",stdkey));
+		// s_keyfactories.insert(make_pair("char8" ,stdkey));
 
 		// Initialise Xerces-C and XQilla using XQillaPlatformUtils
 		XQillaPlatformUtils::initialize();

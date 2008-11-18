@@ -26,7 +26,7 @@ split: split.o
 query: query.o
 	$(CC) -o $@ $^ -lxml++-2.6 -lxml2 -lboost_filesystem-gcc43-mt -lboost_serialization-gcc43-mt
 
-libouzo.a: Ouzo.o DocSet.o Index.o StringIndex.o UIntIndex.o Config.o DocumentBase.o Exception.o QueryTree.o XRefTable.o
+libouzo.a: Ouzo.o DocSet.o Index.o StringIndex.o UIntIndex.o Config.o DocumentBase.o Exception.o QueryTree.o XRefTable.o Keys.o
 	rm -f $@
 	ar rcs $@ $^
 

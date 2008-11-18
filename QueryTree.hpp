@@ -70,9 +70,9 @@ namespace Ouzo
 		private:
 			string m_idxname;
 			equality_op m_eqop;
-			Key m_val;
+			Index::key_t m_val;
 		public:
-			TermNode(string& dbname,string& indexname,equality_op eqop, Key& val) 
+			TermNode(string& dbname,string& indexname,equality_op eqop, Index::key_t& val) 
 				: Node(dbname), m_idxname(indexname), m_eqop(eqop), m_val(val) {}
 	
 			bool isTermNode() const { return true; }
@@ -82,7 +82,7 @@ namespace Ouzo
 	
 			const string& indexname() const { return m_idxname; }
 			equality_op eqop() const { return m_eqop; }
-			const Key& val() const { return m_val; }
+			const Index::key_t& val() const { return m_val; }
 		
 		};
 	

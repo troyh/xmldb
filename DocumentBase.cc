@@ -245,7 +245,6 @@ namespace Ouzo
 			for (std::vector<Index*>::size_type i=0; i< m_indexes.size(); ++i)
 			{
 				Index* idx=m_indexes[i];
-				Key key=Ouzo::createKey(idx);
 
 				Mutex<boost::interprocess::file_lock> mutex(idx->filename().string(),true); // Make sure no one else can read/write the index
 
@@ -264,12 +263,14 @@ namespace Ouzo
 		        while(result->iterateNext())
 				{
 					const char* val=XMLString::transcode(result->asNode()->getTextContent());
-					key=val;
 					
-					idx->put(key,docid);
+					Index::key_t* k=idx->createKey();
+					k->assign(val);
+					
+					idx->put(*k,docid);
 
 					// Add document to x-ref table
-					xref_tbl->putCell(docid,val);
+					// xref_tbl->putCell(docid,idx);
 
 					XMLString::release((char**)&val);
 		        }
@@ -318,13 +319,16 @@ namespace Ouzo
 			Query::Results gt_results(results.docbase());
 
 			q.val();
-			Index::Iterator itr=idx->lower_bound(q.val());
-			Index::Iterator itr_end=idx->end();
-			for (itr++; itr!=itr_end; itr++)
+			Index::Iterator* itr=idx->lower_bound(q.val());
+			Index::Iterator* itr_end=idx->end();
+			for ((*itr)++; *itr!=*itr_end; (*itr)++)
 			{
-				gt_results|=itr.docset();
+				gt_results|=itr->docset();
 			}
 
+			delete itr_end;
+			delete itr;
+			
 			if (q.eqop()==Query::TermNode::gt)
 			{
 				// Do nothing
