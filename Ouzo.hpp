@@ -50,6 +50,7 @@ namespace Ouzo
 	public:	
 		
 		// static key_t* createKey(Index*);
+		static Index* createIndex(Index::key_t::key_type kt, const char* name, const char* keyspec, uint32_t capacity);
 		
 		Ouzo(bfs::path config_file);
 		~Ouzo();

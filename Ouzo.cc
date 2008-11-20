@@ -60,6 +60,34 @@ namespace Ouzo
 	// 	return itr->second(idx);
 	// }
 	
+	Index* Ouzo::createIndex(Index::key_t::key_type kt, const char* name, const char* keyspec, uint32_t capacity)
+	{
+		switch (kt)
+		{
+			case Index::key_t::KEY_TYPE_INT8   :
+			case Index::key_t::KEY_TYPE_INT16  :
+			case Index::key_t::KEY_TYPE_INT32  :
+			case Index::key_t::KEY_TYPE_INT64  :
+			case Index::key_t::KEY_TYPE_UINT8  :
+			case Index::key_t::KEY_TYPE_UINT16 :
+			case Index::key_t::KEY_TYPE_UINT32 :
+			case Index::key_t::KEY_TYPE_UINT64 :
+			case Index::key_t::KEY_TYPE_DBL    :
+			case Index::key_t::KEY_TYPE_CHAR8  :
+			case Index::key_t::KEY_TYPE_DATE :
+			case Index::key_t::KEY_TYPE_TIME :
+			case Index::key_t::KEY_TYPE_FLOAT:
+				return new Index(name,kt,keyspec,capacity);
+				break;
+			case Index::key_t::KEY_TYPE_STRING :
+				return new StringIndex(name,keyspec,capacity);
+				break;
+			default:
+				return NULL;
+				break;
+		}
+	}
+	
 
 	char* getXPathVal(const char* xpath, DOMDocument* document, const DOMNode* node)
 	{
@@ -147,16 +175,7 @@ namespace Ouzo
 					{
 						char* idxname_s=XMLString::transcode(idxname);
 						
-						Index* p;
-					
-						if (XMLString::equals(idxtype,X("string")))
-						{
-							p=new StringIndex(idxname_s, idxtype_s, idxkey_s, doctype.capacity());
-						}
-						else
-						{
-							p=new Index(idxname_s, idxtype_s, idxkey_s, doctype.capacity());
-						}
+						Index* p=Ouzo::createIndex(Index::key_t::getKeyType(idxtype_s), idxname_s, idxkey_s, doctype.capacity());
 						
 						bfs::path idxpath(doctype.dataDirectory());
 						idxpath /= idxname_s;

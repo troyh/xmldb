@@ -8,34 +8,47 @@ namespace Ouzo
 DocSet Index::nil_docset(1); // Used to return "bad" DocSet from Index::get()
 
 Index::key_t::key_t(const key_t& k) 
-	: m_idx(k.m_idx)
+	: m_type(k.m_type)
 { 
 	m_val=k.m_val;
 }
 
 bool   Index::key_t::operator< (const key_t& key) const
 {
-	if (m_idx!=key.m_idx)
-		return false;
-	
-	return m_idx->compareKeys(*this,key) < 0;
+	if (m_type!=key.m_type)
+		throw Exception(__FILE__,__LINE__);
+
+	     if (m_type==KEY_TYPE_INT8)    { return m_val.int8   < key.m_val.int8; }
+	else if (m_type==KEY_TYPE_INT16)   { return m_val.int16  < key.m_val.int16; }
+	else if (m_type==KEY_TYPE_INT32)   { return m_val.int32  < key.m_val.int32; }
+	else if (m_type==KEY_TYPE_INT64)   { return m_val.int64  < key.m_val.int64; }
+	else if (m_type==KEY_TYPE_UINT8)   { return m_val.uint8  < key.m_val.uint8 ; }
+	else if (m_type==KEY_TYPE_UINT16)  { return m_val.uint16 < key.m_val.uint16; }
+	else if (m_type==KEY_TYPE_UINT32)  { return m_val.uint32 < key.m_val.uint32; }
+	else if (m_type==KEY_TYPE_UINT64)  { return m_val.uint64 < key.m_val.uint64; }
+	else if (m_type==KEY_TYPE_DBL)     { return m_val.dbl    < key.m_val.dbl   ; }
+	else if (m_type==KEY_TYPE_CHAR8)   { return strncmp(m_val.ch, key.m_val.ch, sizeof(m_val.ch)) < 0; }
+	else
+	{
+		throw Exception(__FILE__,__LINE__);
+	}
 }
 
 bool Index::key_t::operator==(const key_t& k) const
 {
-	if (m_idx!=k.m_idx)
+	if (m_type!=k.m_type)
 		return false;
 		
-	     if (!strcasecmp(m_idx->keyType(),"int8"))    { return m_val.int8  ==k.m_val.int8  ; }
-	else if (!strcasecmp(m_idx->keyType(),"int16"))   { return m_val.int16 ==k.m_val.int16 ; }
-	else if (!strcasecmp(m_idx->keyType(),"int32"))   { return m_val.int32 ==k.m_val.int32 ; }
-	else if (!strcasecmp(m_idx->keyType(),"int64"))   { return m_val.int64 ==k.m_val.int64 ; }
-	else if (!strcasecmp(m_idx->keyType(),"uint8"))   { return m_val.uint8 ==k.m_val.uint8 ; }
-	else if (!strcasecmp(m_idx->keyType(),"uint16"))  { return m_val.uint16==k.m_val.uint16; }
-	else if (!strcasecmp(m_idx->keyType(),"uint32"))  { return m_val.uint32==k.m_val.uint32; }
-	else if (!strcasecmp(m_idx->keyType(),"uint64"))  { return m_val.uint64==k.m_val.uint64; }
-	else if (!strcasecmp(m_idx->keyType(),"dbl"))     { return m_val.dbl   ==k.m_val.dbl   ; }
-	else if (!strcasecmp(m_idx->keyType(),"char8"))   { return strncmp(m_val.ch, k.m_val.ch, sizeof(m_val.ch))==0; }
+	     if (m_type==KEY_TYPE_INT8  )  { return m_val.int8  ==k.m_val.int8  ; }
+	else if (m_type==KEY_TYPE_INT16 )  { return m_val.int16 ==k.m_val.int16 ; }
+	else if (m_type==KEY_TYPE_INT32 )  { return m_val.int32 ==k.m_val.int32 ; }
+	else if (m_type==KEY_TYPE_INT64 )  { return m_val.int64 ==k.m_val.int64 ; }
+	else if (m_type==KEY_TYPE_UINT8 )  { return m_val.uint8 ==k.m_val.uint8 ; }
+	else if (m_type==KEY_TYPE_UINT16)  { return m_val.uint16==k.m_val.uint16; }
+	else if (m_type==KEY_TYPE_UINT32)  { return m_val.uint32==k.m_val.uint32; }
+	else if (m_type==KEY_TYPE_UINT64)  { return m_val.uint64==k.m_val.uint64; }
+	else if (m_type==KEY_TYPE_DBL   )  { return m_val.dbl   ==k.m_val.dbl   ; }
+	else if (m_type==KEY_TYPE_CHAR8 )  { return strncmp(m_val.ch, k.m_val.ch, sizeof(m_val.ch))==0; }
 	else
 	{
 		throw Exception(__FILE__,__LINE__);
@@ -44,55 +57,96 @@ bool Index::key_t::operator==(const key_t& k) const
 
 void Index::key_t::output(ostream& os) const
 {
-	     if (!strcasecmp(m_idx->keyType(),"int8"))    { os << m_val.int8  ; }
-	else if (!strcasecmp(m_idx->keyType(),"int16"))   { os << m_val.int16 ; }
-	else if (!strcasecmp(m_idx->keyType(),"int32"))   { os << m_val.int32 ; }
-	else if (!strcasecmp(m_idx->keyType(),"int64"))   { os << m_val.int64 ; }
-	else if (!strcasecmp(m_idx->keyType(),"uint8"))   { os << m_val.uint8 ; }
-	else if (!strcasecmp(m_idx->keyType(),"uint16"))  { os << m_val.uint16; }
-	else if (!strcasecmp(m_idx->keyType(),"uint32"))  { os << m_val.uint32; }
-	else if (!strcasecmp(m_idx->keyType(),"uint64"))  { os << m_val.uint64; }
-	else if (!strcasecmp(m_idx->keyType(),"dbl"))     { os << m_val.dbl   ; }
-	else if (!strcasecmp(m_idx->keyType(),"char8"))   { os.write(m_val.ch, sizeof(m_val.ch)); }
+	     if (m_type==KEY_TYPE_INT8  )  { os << m_val.int8  << " (int8  )"; }
+	else if (m_type==KEY_TYPE_INT16 )  { os << m_val.int16 << " (int16 )"; }
+	else if (m_type==KEY_TYPE_INT32 )  { os << m_val.int32 << " (int32 )"; }
+	else if (m_type==KEY_TYPE_INT64 )  { os << m_val.int64 << " (int64 )"; }
+	else if (m_type==KEY_TYPE_UINT8 )  { os << m_val.uint8 << " (uint8 )"; }
+	else if (m_type==KEY_TYPE_UINT16)  { os << m_val.uint16<< " (uint16)"; }
+	else if (m_type==KEY_TYPE_UINT32)  { os << m_val.uint32<< " (uint32)"; }
+	else if (m_type==KEY_TYPE_UINT64)  { os << m_val.uint64<< " (uint64)"; }
+	else if (m_type==KEY_TYPE_DBL   )  { os << m_val.dbl   << " (dbl   )"; }
+	else if (m_type==KEY_TYPE_CHAR8 )  { os.write(m_val.ch, sizeof(m_val.ch)); }
 	else
 	{
 		throw Exception(__FILE__,__LINE__);
 	}
 }
 
-int Index::compareKeys(const key_t& key1, const key_t& key2) const
+void Index::key_t::outputBinary(ostream& os) const
 {
-	     if (!strcasecmp(keyType(),"int8"))    { return key1.m_val.int8   - key2.m_val.int8; }
-	else if (!strcasecmp(keyType(),"int16"))   { return key1.m_val.int16  - key2.m_val.int16; }
-	else if (!strcasecmp(keyType(),"int32"))   { return key1.m_val.int32  - key2.m_val.int32; }
-	else if (!strcasecmp(keyType(),"int64"))   { return key1.m_val.int64  - key2.m_val.int64; }
-	else if (!strcasecmp(keyType(),"uint8"))   { return key1.m_val.uint8  - key2.m_val.uint8 ; }
-	else if (!strcasecmp(keyType(),"uint16"))  { return key1.m_val.uint16 - key2.m_val.uint16; }
-	else if (!strcasecmp(keyType(),"uint32"))  { return key1.m_val.uint32 - key2.m_val.uint32; }
-	else if (!strcasecmp(keyType(),"uint64"))  { return key1.m_val.uint64 - key2.m_val.uint64; }
-	else if (!strcasecmp(keyType(),"dbl"))     { return key1.m_val.dbl    - key2.m_val.dbl   ; }
-	else if (!strcasecmp(keyType(),"char8"))   { return strncmp(key1.m_val.ch, key2.m_val.ch, sizeof(key1.m_val.ch)); }
-	else
-	{
-		throw Exception(__FILE__,__LINE__);
-	}
-
-	return 0;
+	os.write((char*)&m_val, sizeof(m_val));
 }
+
+void Index::key_t::inputBinary(istream& os)
+{
+	os.read((char*)&m_val, sizeof(m_val));
+}
+
+
+
 
 Index* Index::loadFromFile(bfs::path filename)
 {
-	Index* idx=new Index("","","",0);
+	VersionInfo verinfo;
+	HeaderInfo headerinfo;
+
+	// Init meta info
+	verinfo.version=0;
+	verinfo.metasize=0;
+
+	headerinfo.doccount=0;
+	headerinfo.doccapacity=0;
+	headerinfo.keyspeclen=0;
+	headerinfo.keycount=0;
+	headerinfo.keysize=0;
+	headerinfo.type=key_t::KEY_TYPE_UNKNOWN;
+
+	{
+	filename.replace_extension(".index");
+	ifstream ifs(filename.string().c_str());
+	ifs.read((char*)&verinfo,sizeof(verinfo));
+	if (!ifs.good())
+		throw Exception(__FILE__,__LINE__);
+	ifs.read((char*)&headerinfo,min(sizeof(headerinfo),verinfo.metasize));
+	if (!ifs.good())
+		throw Exception(__FILE__,__LINE__);
+	}
+
+	Index* idx=Ouzo::createIndex(headerinfo.type,"","",0);
+	if (!idx)
+		throw Exception(__FILE__,__LINE__);
+		
 	idx->setFilename(filename);
 	idx->load();
+	
 	return idx;
 }
 
+Index::key_t::key_type Index::key_t::getKeyType(const char* kt)
+{
+	     if (!strcasecmp(kt,"int8"  )) return KEY_TYPE_INT8  ;
+	else if (!strcasecmp(kt,"int16" )) return KEY_TYPE_INT16 ;
+	else if (!strcasecmp(kt,"int32" )) return KEY_TYPE_INT32 ;
+	else if (!strcasecmp(kt,"int64" )) return KEY_TYPE_INT64 ;
+	else if (!strcasecmp(kt,"uint8" )) return KEY_TYPE_UINT8 ;
+	else if (!strcasecmp(kt,"uint16")) return KEY_TYPE_UINT16;
+	else if (!strcasecmp(kt,"uint32")) return KEY_TYPE_UINT32;
+	else if (!strcasecmp(kt,"uint64")) return KEY_TYPE_UINT64;
+	else if (!strcasecmp(kt,"dbl"   )) return KEY_TYPE_DBL   ;
+	else if (!strcasecmp(kt,"char8" )) return KEY_TYPE_CHAR8 ;
+	else if (!strcasecmp(kt,"date"  )) return KEY_TYPE_DATE  ;
+	else if (!strcasecmp(kt,"time"  )) return KEY_TYPE_TIME  ;
+	else if (!strcasecmp(kt,"float" )) return KEY_TYPE_FLOAT ;
+	else if (!strcasecmp(kt,"string")) return KEY_TYPE_STRING;
+
+	return KEY_TYPE_UNKNOWN;
+}
+
 	
-Index::Index(const std::string& name, const key_type kt, const std::string& keyspec, uint32_t doccapacity)
+Index::Index(const std::string& name, key_t::key_type kt, const std::string& keyspec, uint32_t doccapacity)
 	: m_name(name), m_keyspec(keyspec)
 {
-	memcpy(m_headerinfo.type,kt,sizeof(m_headerinfo.type));
 	setFilename(name);
 	if (!bfs::exists(m_filename))
 	{
@@ -105,6 +159,7 @@ Index::Index(const std::string& name, const key_type kt, const std::string& keys
 	m_headerinfo.keycount=0;
 	m_headerinfo.keysize=0;
 	m_headerinfo.doccapacity=doccapacity;
+	m_headerinfo.type=kt;
 }
 
 Index::~Index()
@@ -147,7 +202,7 @@ void Index::readMeta(istream& ifs)
 	m_headerinfo.keyspeclen=0;
 	m_headerinfo.keycount=0;
 	m_headerinfo.keysize=0;
-	memcpy(m_headerinfo.type,"unknown",sizeof(m_headerinfo.type));
+	m_headerinfo.type=key_t::KEY_TYPE_UNKNOWN;
 
 	ifs.read((char*)&verinfo,sizeof(verinfo));
 	if (!ifs.good())
@@ -165,7 +220,7 @@ void Index::readMeta(istream& ifs)
 			m_headerinfo.keyspeclen=0;
 			m_headerinfo.keycount=0;
 			m_headerinfo.keysize=0;
-			memcpy(m_headerinfo.type,"unknown",sizeof(m_headerinfo.type));
+			m_headerinfo.type=key_t::KEY_TYPE_UNKNOWN;
 		}
 		else
 		{
@@ -191,20 +246,7 @@ void Index::readMeta(istream& ifs)
 
 Index::key_t* Index::createKey() const
 {
-	     if (!strcasecmp(keyType(),"int8"))    { return new   int8key_t(this); }
-	else if (!strcasecmp(keyType(),"int16"))   { return new  int16key_t(this); }
-	else if (!strcasecmp(keyType(),"int32"))   { return new  int32key_t(this); }
-	else if (!strcasecmp(keyType(),"int64"))   { return new  int64key_t(this); }
-	else if (!strcasecmp(keyType(),"uint8"))   { return new  uint8key_t(this); }
-	else if (!strcasecmp(keyType(),"uint16"))  { return new uint16key_t(this); }
-	else if (!strcasecmp(keyType(),"uint32"))  { return new uint32key_t(this); }
-	else if (!strcasecmp(keyType(),"uint64"))  { return new uint64key_t(this); }
-	else if (!strcasecmp(keyType(),"dbl"))     { return new doublekey_t(this); }
-	else if (!strcasecmp(keyType(),"char8"))   { return new  char8key_t(this); }
-	else
-	{
-		throw Exception(__FILE__,__LINE__);
-	}
+	return new key_t(keyType());
 }
 
 void Index::put(const key_t& key, docid_t docid)
@@ -291,11 +333,13 @@ void Index::load_data(istream& ifs)
 			// else if (m_headerinfo.type!=INDEX_TYPE_UINT32)
 			// 	throw Exception(__FILE__,__LINE__);
 
+			key_t::key_type basekt=baseKeyType();
+			
 			for (uint32_t i=0;i<m_headerinfo.keycount;++i)
 			{
 				// Read key
-				key_t key(this);
-				ifs.read(key,key.size());
+				Index::key_t key(basekt);
+				key.inputBinary(ifs);
 
 				if (!ifs.good())
 					throw Exception(__FILE__,__LINE__);
@@ -326,7 +370,8 @@ void Index::save_data(ostream& ofs) const
 	{
 		// Write key
 		key_t key=itr->first;
-		ofs.write(key,key.size());
+		key.outputBinary(ofs);
+		
 		if (!ofs.good())
 			throw Exception(__FILE__,__LINE__);
 
@@ -357,53 +402,7 @@ void Index::output(ostream& os) const
 	
 	delete itr_end;
 	delete itr;
-	
 }
-
-// void DateKey::output(ostream& os) const
-// {
-// 	struct tm* ptm=localtime((time_t*)&m_val.uint32);
-// 	os << ptm->tm_year << '-' << ptm->tm_mon << '-' << ptm->tm_mday;
-// }
-// 
-// void TimeKey::output(ostream& os) const
-// {
-// 	struct tm* ptm=localtime((time_t*)&m_val.uint32);
-// 	os << ptm->tm_year << '-' << ptm->tm_mon << '-' << ptm->tm_mday << ' ' << ptm->tm_hour << ':' << ptm->tm_min << ':' << ptm->tm_sec;
-// }
-// 
-// void FloatKey::output(ostream& os) const
-// {
-// 	os << m_val.dbl;
-// }
-// 
-// void StringKey::output(ostream& os) const
-// {
-// 	os << m_s;
-// }
-
-// ostream& operator<<(ostream& os, const Index::index_type t)
-// {
-// 	switch (t)
-// 	{
-// 		case Index::INDEX_TYPE_UNKNOWN: os << "unknown"; break;
-// 		case Index::INDEX_TYPE_STRING:	os << "string";  break;
-// 		case Index::INDEX_TYPE_UINT8:   os << "uint8";   break;
-// 		case Index::INDEX_TYPE_UINT16:  os << "uint16";  break;
-// 		case Index::INDEX_TYPE_UINT32:  os << "uint32";  break;
-// 		case Index::INDEX_TYPE_FLOAT:   os << "float";   break;
-// 		case Index::INDEX_TYPE_DATE:    os << "date";    break;
-// 		case Index::INDEX_TYPE_TIME:    os << "time";    break;
-// 		case Index::INDEX_TYPE_SINT8:   os << "sint8";   break;
-// 		case Index::INDEX_TYPE_SINT16:  os << "sint16";  break;
-// 		case Index::INDEX_TYPE_SINT32:  os << "sint32";  break;
-// 		default:
-// 			os << "???" << endl; // Shouldn't ever happen
-// 	}
-// 	
-// 	return os;
-// }
-
 
 ostream& operator<<(ostream& os, const Index& idx)
 {

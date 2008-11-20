@@ -20,14 +20,36 @@ namespace Ouzo
 	class Index
 	{
 	public:
-		typedef char key_type[32];
 		
 		class key_t
 		{
+		public:
+			typedef enum 
+			{
+				KEY_TYPE_UNKNOWN =0,
+				KEY_TYPE_INT8,
+				KEY_TYPE_INT16,
+				KEY_TYPE_INT32,
+				KEY_TYPE_INT64,
+				KEY_TYPE_UINT8,
+				KEY_TYPE_UINT16,
+				KEY_TYPE_UINT32, // 7
+				KEY_TYPE_UINT64,
+				KEY_TYPE_DBL,
+				KEY_TYPE_CHAR8,
+				KEY_TYPE_PTR,
+				KEY_TYPE_DATE,
+				KEY_TYPE_TIME,
+				KEY_TYPE_FLOAT,
+				KEY_TYPE_STRING, // 15
+				KEY_TYPE_LASTSTD=100
+			} key_type;
+
 		protected:
-			const Index* m_idx;
+			key_type m_type;
 			
 		public:
+			static key_type getKeyType(const char* kt);
 			
 			union
 			{
@@ -44,36 +66,38 @@ namespace Ouzo
 				void*	 ptr;
 			} m_val;
 			
-			key_t() : m_idx(0) { m_val.ptr=0; }
-			key_t(const Index* idx) : m_idx(idx) { m_val.ptr=0; }
+			key_t() : m_type(KEY_TYPE_UNKNOWN) { m_val.ptr=0; }
+			key_t(key_type t) : m_type(t) { m_val.ptr=0; }
 			key_t(const Index::key_t& k);
 			
 			virtual ~key_t() {}
 			
-			virtual key_t& operator=(const key_t& key) { m_idx=key.m_idx; m_val=key.m_val; return *this; }
-			virtual void assign(int8_t   x) { m_val.int8  =x; }
-			virtual void assign(int16_t  x) { m_val.int16 =x; }
-			virtual void assign(int32_t  x) { m_val.int32 =x; }
-			virtual void assign(int64_t  x) { m_val.int64 =x; }
-			virtual void assign(uint8_t  x) { m_val.uint8 =x; }
-			virtual void assign(uint16_t x) { m_val.uint16=x; }
-			virtual void assign(uint32_t x) { m_val.uint32=x; }
-			virtual void assign(uint64_t x) { m_val.uint64=x; }
-			virtual void assign(double   x) { m_val.dbl   =x; }
-			virtual void assign(const char* x) { memcpy(m_val.ch,x,sizeof(m_val.ch)); }
-			virtual void assign(void*	x)  { m_val.ptr=x; }
+			virtual key_t& operator=(const key_t& key) { m_type=key.m_type; m_val=key.m_val; return *this; }
+			virtual void assign(int8_t   x) { m_type=KEY_TYPE_INT8  ; m_val.int8  =x; }
+			virtual void assign(int16_t  x) { m_type=KEY_TYPE_INT16 ; m_val.int16 =x; }
+			virtual void assign(int32_t  x) { m_type=KEY_TYPE_INT32 ; m_val.int32 =x; }
+			virtual void assign(int64_t  x) { m_type=KEY_TYPE_INT64 ; m_val.int64 =x; }
+			virtual void assign(uint8_t  x) { m_type=KEY_TYPE_UINT8 ; m_val.uint8 =x; }
+			virtual void assign(uint16_t x) { m_type=KEY_TYPE_UINT16; m_val.uint16=x; }
+			virtual void assign(uint32_t x) { m_type=KEY_TYPE_UINT32; m_val.uint32=x; }
+			virtual void assign(uint64_t x) { m_type=KEY_TYPE_UINT64; m_val.uint64=x; }
+			virtual void assign(double   x) { m_type=KEY_TYPE_DBL   ; m_val.dbl   =x; }
+			virtual void assign(void*	 x) { m_type=KEY_TYPE_PTR   ; m_val.ptr   =x; }
+			virtual void assign(const char* x) { m_type=KEY_TYPE_CHAR8; memcpy(m_val.ch,x,sizeof(m_val.ch)); }
 
 			virtual bool operator==(const key_t& k) const;
 			virtual bool operator!=(const key_t& k) const { return !operator==(k); };
 			
 			virtual bool operator< (const key_t& key) const;
 
-			virtual operator char*() { return (char*)&m_val.ptr; }
-			virtual size_t size() const { return sizeof(m_val); }
+			// virtual operator char*() { return (char*)&m_val.ptr; }
+			// virtual size_t size() const { return sizeof(m_val); }
 			
-			const Index* getIndex() const { return m_idx; }
+			const key_type getType() const { return m_type; }
 			
 			virtual void output(ostream&) const;
+			virtual void outputBinary(ostream&) const;
+			virtual void inputBinary(istream&);
 		};
 		
 	
@@ -92,7 +116,7 @@ namespace Ouzo
 			uint16_t keyspeclen;
 			uint32_t keycount;
 			uint32_t keysize;
-			char     type[32];
+			key_t::key_type type;
 		};
 
 		typedef std::map< key_t, DocSet > map_type;
@@ -134,27 +158,28 @@ namespace Ouzo
 			Iterator(const Iterator& itr) : m_idx(itr.m_idx), m_itr(itr.m_itr) {}
 			Iterator& operator=(const Iterator& itr) { m_idx=itr.m_idx; m_itr=itr.m_itr; return *this; }
 			Iterator(Index* idx, Index::map_type::iterator itr) : m_idx(idx), m_itr(itr) {}
-			~Iterator() {}
+			virtual ~Iterator() {}
 			
-			bool operator==(const Iterator& itr) { return m_itr==itr.m_itr; }
-			bool operator!=(const Iterator& itr) { return m_itr!=itr.m_itr; }
+			virtual bool operator==(const Iterator& itr) { return m_itr==itr.m_itr; }
+			virtual bool operator!=(const Iterator& itr) { return m_itr!=itr.m_itr; }
 			
-			Iterator& operator++()    { m_itr++; return *this; }
-			Iterator& operator++(int) { m_itr++; return *this; }
+			virtual Iterator& operator++()    { m_itr++; return *this; }
+			virtual Iterator& operator++(int) { m_itr++; return *this; }
 			
-			Index::key_t key() const  { return Index::key_t(m_itr->first); }
-			DocSet& docset() { return m_itr->second; }
+			virtual const Index::key_t& key() const  { return m_itr->first; }
+			virtual DocSet& docset() { return m_itr->second; }
 		};
 		
 	
-		Index(const std::string& name, const key_type kt, const std::string& keyspec, uint32_t doccapacity);
+		Index(const std::string& name, key_t::key_type kt, const std::string& keyspec, uint32_t doccapacity);
 		virtual ~Index();
 		
 		uint32_t version() const { return m_version; };
 		virtual size_t documentCount() const { return m_headerinfo.doccount; }
 		virtual size_t documentCapacity() const { return m_headerinfo.doccapacity; }
 		virtual size_t keyCount() const { return m_map.size(); }
-		virtual const char* keyType() const { return m_headerinfo.type; }
+		virtual key_t::key_type keyType() const { return m_headerinfo.type; }
+		virtual key_t::key_type baseKeyType() const { return m_headerinfo.type; }
 
 		const std::string& name() const 				{ return m_name; }
 		const bfs::path&   filename() const 			{ return m_filename; }
@@ -179,8 +204,6 @@ namespace Ouzo
 		virtual Iterator* lower_bound(const key_t& key) 		 { return new Iterator(this,m_map.lower_bound(key)); }
 		
 		void setFilename(bfs::path fname) { m_filename=bfs::change_extension(fname,".index");  }
-		
-		virtual int compareKeys(const key_t& key1, const key_t& key2) const;
 		
 		virtual void output(ostream&) const;
 		

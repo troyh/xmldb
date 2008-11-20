@@ -7,10 +7,51 @@ namespace Ouzo
 
 bool StringIndex::stringkey_t::operator< (const key_t& key) const
 {
-	if (m_idx!=key.getIndex())
+	if (m_type!=key.getType())
 		return false;
 
-	return m_idx->compareKeys(*this,key) < 0;
+	const stringkey_t& skey=dynamic_cast<const stringkey_t&>(key);
+	return m_s < skey.m_s;
+}
+
+void StringIndex::stringkey_t::output(ostream& os) const
+{
+	os << m_s;
+}
+
+void StringIndex::stringkey_t::outputBinary(ostream& os) const
+{
+	size_t len=m_s.size()+1;
+	os.write((char*)&len,sizeof(len));
+	if (!os.good())
+		throw Exception(__FILE__,__LINE__);
+	os << m_s << '\0';
+	if (!os.good())
+		throw Exception(__FILE__,__LINE__);
+}
+
+void StringIndex::stringkey_t::inputBinary(istream& is)
+{
+	size_t len;
+	is.read((char*)&len,sizeof(len));
+
+	if (!is.good())
+		throw Exception(__FILE__,__LINE__);
+		
+	m_s.resize(len);
+	std::getline(is,m_s,'\0');
+	if (!is.good())
+		throw Exception(__FILE__,__LINE__);
+}
+
+Index* StringIndex::createIndex(key_t::key_type kt, const char* name, const char* keyspec, uint32_t capacity)
+{
+	return new StringIndex(name,keyspec,capacity);
+}
+
+Index::key_t::key_type StringIndex::baseKeyType() const
+{
+	return key_t::KEY_TYPE_UINT32;
 }
 
 Index::Iterator* StringIndex::begin()
@@ -25,39 +66,43 @@ Index::Iterator* StringIndex::end()
 
 Index::Iterator* StringIndex::lower_bound(const char* key)
 {
-	return new StringIterator(this,m_lookup_table.lower_bound(key));
+	stringkey_t skey(key);
+	return new StringIterator(this,m_lookup_table.lower_bound(skey));
 }
 
 Index::Iterator* StringIndex::lower_bound(const std::string& key)
 {
-	return new StringIterator(this,m_lookup_table.lower_bound(key));
+	stringkey_t skey(key);
+	return new StringIterator(this,m_lookup_table.lower_bound(skey));
 }
 
 
 void StringIndex::put(const key_t& key, docid_t docid)
 {
-	if (key.getIndex()!=this)
+	if (key.getType()!=Index::key_t::KEY_TYPE_STRING)
 		throw Exception(__FILE__,__LINE__);
 		
-	std::string* s=(std::string*)key.m_val.ptr;
-	if (!s)
-		throw Exception(__FILE__,__LINE__);
+	const stringkey_t& skey=dynamic_cast<const stringkey_t&>(key);
+		
+	// std::string* s=(std::string*)key.m_val.ptr;
+	// if (!s)
+	// 	throw Exception(__FILE__,__LINE__);
 	
-	const_iterator itr=m_lookup_table.find(*s);
+	const_iterator itr=m_lookup_table.find(skey);
 	if (itr==m_lookup_table.end())
 	{ // Doesn't yet exist in index
 	
 		// Add it to the m_lookup_table by creating a lookupid
 		// TODO: lock m_lookup_table
 
-		uint32key_t idxkey(this,m_lookup_table.size());
+		key_t idxkey(baseKeyType());
+		idxkey.assign((uint32_t)m_lookup_table.size());
+		// uint32key_t idxkey();
 
-		m_lookup_table.insert(make_pair(*s,idxkey));
+		m_lookup_table.insert(make_pair(skey,idxkey));
 		// TODO: unlock m_lookup_table
 		
 		Index::put(idxkey,docid);
-		
-		delete idxkey;
 	}
 	else
 	{ // Update existing docset in index
@@ -71,14 +116,9 @@ void StringIndex::put(const key_t& key, docid_t docid)
 	
 }
 
-DocSet& StringIndex::get(const key_t& key)
+DocSet& StringIndex::get(const stringkey_t& key)
 {
-	const stringkey_t* skey=dynamic_cast<const stringkey_t*>(&key);
-	if (!skey)
-		throw Exception(__FILE__,__LINE__);
-		
-	const std::string* s=skey->string();
-	const_iterator itr=m_lookup_table.find(*s);
+	const_iterator itr=m_lookup_table.find(key);
 	if (itr==m_lookup_table.end())
 	{
 		return Index::nil_docset;
@@ -87,7 +127,7 @@ DocSet& StringIndex::get(const key_t& key)
 	return Index::get(itr->second);
 }
 
-const DocSet& StringIndex::get(const key_t& key) const
+const DocSet& StringIndex::get(const stringkey_t& key) const
 {
 	return ((StringIndex*)(this))->get(key); // Cast away const-ness and use the non-const version
 }
@@ -152,15 +192,16 @@ void StringIndex::load()
 				throw Exception(__FILE__,__LINE__);
 
 			buf[len]='\0';
-			std::string key=buf;
+			std::string s=buf;
+			stringkey_t skey(s);
 			
-			key_t idxkey(this);
-			ifs.read(idxkey,sizeof(idxkey));
+			Index::key_t idxkey(baseKeyType());
+			idxkey.inputBinary(ifs);
 			if (!ifs.good())
 				throw Exception(__FILE__,__LINE__);
 
 			// Put into index
-			m_lookup_table.insert(make_pair(key,idxkey));
+			m_lookup_table.insert(make_pair(skey,idxkey));
 		}
 	}
 	
@@ -180,17 +221,17 @@ void StringIndex::save() const
 	lookup_table_type::const_iterator itr_end=m_lookup_table.end();
 	for (lookup_table_type::const_iterator itr=m_lookup_table.begin(); itr!=itr_end; ++itr)
 	{
-		size_t len=itr->first.length();
+		size_t len=itr->first.string().length();
 		ofs.write((char*)&len, sizeof(len));
 		if (!ofs.good())
 			throw Exception(__FILE__,__LINE__);
 		
-		ofs.write(itr->first.c_str(),len);
+		ofs.write(itr->first.string().c_str(),len);
 		if (!ofs.good())
 			throw Exception(__FILE__,__LINE__);
 		
 		key_t key=itr->second;
-		ofs.write(key, key.size());
+		key.outputBinary(ofs);
 		if (!ofs.good())
 			throw Exception(__FILE__,__LINE__);
 			
@@ -203,17 +244,16 @@ void StringIndex::save() const
 }
 
 
-void StringIndex::output(ostream& os) const
-{
-	// TODO: output m_lookup_table
-	Index::output(os);
-	lookup_table_type::const_iterator itr_end=m_lookup_table.end();
-	for (lookup_table_type::const_iterator itr=m_lookup_table.begin(); itr!=itr_end; ++itr)
-	{
-		os << itr->first << ':';
-		itr->second.output(os);
-		os << endl;
-	}
-}
+// void StringIndex::output(ostream& os) const
+// {
+// 	Index::output(os);
+// 	lookup_table_type::const_iterator itr_end=m_lookup_table.end();
+// 	for (lookup_table_type::const_iterator itr=m_lookup_table.begin(); itr!=itr_end; ++itr)
+// 	{
+// 		os << itr->first << ':';
+// 		itr->second.output(os);
+// 		os << endl;
+// 	}
+// }
 
 }

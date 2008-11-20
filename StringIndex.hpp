@@ -6,7 +6,7 @@
 
 #include <boost/filesystem.hpp>
 
-#include "UIntIndex.hpp"
+#include "Index.hpp"
 #include "Keys.hpp"
 
 namespace Ouzo
@@ -16,7 +16,24 @@ namespace Ouzo
 	{
 		// static Index::key_type STRING_TYPENAME;
 	public:
-		typedef std::map<std::string, Index::key_t> 				  lookup_table_type;
+		class stringkey_t : public Index::key_t
+		{
+			std::string m_s;
+		public:
+			stringkey_t(const char* s="") : Index::key_t(KEY_TYPE_STRING) { m_s=s; }
+			stringkey_t(const std::string& s) : Index::key_t(KEY_TYPE_STRING) { m_s=s; }
+			bool operator< (const Index::key_t& key) const;
+			
+			void assign(const char* s) { m_s=s; }
+
+			const std::string& string() const { return m_s; }
+			
+			void output(ostream&) const;
+			void outputBinary(ostream&) const;
+			void inputBinary(istream&);
+		};
+
+		typedef std::map<stringkey_t, Index::key_t>		  lookup_table_type;
 		typedef lookup_table_type::size_type			  size_type;
 
 		typedef lookup_table_type::iterator 	  iterator;
@@ -25,16 +42,8 @@ namespace Ouzo
 	private:
 		lookup_table_type m_lookup_table;
 	public:
+		static Index* createIndex(key_t::key_type kt, const char* name, const char* keyspec, uint32_t capacity);
 		
-		class stringkey_t : public Index::key_t
-		{
-		public:
-			stringkey_t(const Index* idx, const char* s="") : Index::key_t(idx) { m_val.ptr=new std::string(s); }
-			stringkey_t(const Index* idx, const std::string& s) : Index::key_t(idx) { m_val.ptr=new std::string(s); }
-			bool operator< (const Index::key_t& key) const;
-
-			const std::string* string() const { return (std::string*)m_val.ptr; }
-		};
 	
 		class StringIterator : public Index::Iterator
 		{
@@ -47,21 +56,26 @@ namespace Ouzo
 			
 			StringIterator& operator=(const StringIterator& itr) { Index::Iterator::operator=(itr); m_itr=itr.m_itr; return *this; }
 			
+			bool operator==(const Iterator& itr) { return operator==((StringIterator&)itr); }
+			bool operator!=(const Iterator& itr) { return operator!=((StringIterator&)itr); }
 			bool operator==(const StringIterator& itr) { return m_itr==itr.m_itr; }
 			bool operator!=(const StringIterator& itr) { return m_itr!=itr.m_itr; }
 			
 			StringIterator& operator++()    { m_itr++; return *this; }
 			StringIterator& operator++(int) { m_itr++; return *this; }
 			
-			stringkey_t key() const  { return stringkey_t(m_idx,m_itr->first.c_str()); }
+			const Index::key_t& key() const  { return m_itr->first; }
 			DocSet& docset() { return m_idx->get(m_itr->second); }
 		};
 		
 	
-		StringIndex(const std::string& name, const key_type kt, const std::string& keyspec, uint32_t doccapacity) 
-			: Index(name, kt, keyspec, doccapacity) {}
+		StringIndex(const std::string& name, const std::string& keyspec, uint32_t doccapacity) 
+			: Index(name, Index::key_t::KEY_TYPE_STRING, keyspec, doccapacity) {}
 			
-		key_t* createKey() const { return new stringkey_t(this); }
+		key_t::key_type baseKeyType() const;
+			
+			
+		key_t* createKey() const { return new stringkey_t(); }
 	
 		Iterator* begin();
 		Iterator* end();
@@ -71,8 +85,8 @@ namespace Ouzo
 
 		void put(const key_t& key,docid_t docid);
 		
-		      DocSet& get(const key_t& key);
-		const DocSet& get(const key_t& key) const;
+		      DocSet& get(const stringkey_t& key);
+		const DocSet& get(const stringkey_t& key) const;
 		
 		void del(docid_t docid);
 
@@ -82,7 +96,7 @@ namespace Ouzo
 		void load();
 		void save() const;
 
-		void output(ostream&) const;
+		// void output(ostream&) const;
 		
 	};
 

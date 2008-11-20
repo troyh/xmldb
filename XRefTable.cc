@@ -27,10 +27,10 @@ Index::key_t XRefTable::getCell(docid_t row, Index* col) const
 {
 	table_type::const_iterator itr=m_table.find(row);
 	if (itr==m_table.end())
-		return Index::key_t(col);
+		return Index::key_t(Index::key_t::KEY_TYPE_UNKNOWN);
 	columns_type::const_iterator itr2=itr->second.find(col);
 	if (itr2==itr->second.end())
-		return Index::key_t(col);
+		return Index::key_t(Index::key_t::KEY_TYPE_UNKNOWN);
 	return Index::key_t(itr2->second);
 }
 
