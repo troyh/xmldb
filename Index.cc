@@ -246,7 +246,21 @@ void Index::readMeta(istream& ifs)
 
 Index::key_t* Index::createKey() const
 {
-	return new key_t(keyType());
+	switch (keyType())
+	{
+		case key_t::KEY_TYPE_INT8  : return new int8key_t();   break;
+		case key_t::KEY_TYPE_INT16 : return new int16key_t();  break;
+		case key_t::KEY_TYPE_INT32 : return new int32key_t();  break;
+		case key_t::KEY_TYPE_INT64 : return new int64key_t();  break;
+		case key_t::KEY_TYPE_UINT8 : return new uint8key_t();  break;
+		case key_t::KEY_TYPE_UINT16: return new uint16key_t(); break;
+		case key_t::KEY_TYPE_UINT32: return new uint32key_t(); break;
+		case key_t::KEY_TYPE_UINT64: return new uint64key_t(); break;
+		case key_t::KEY_TYPE_DBL   : return new doublekey_t(); break;
+		case key_t::KEY_TYPE_CHAR8 : return new char8key_t();  break;
+		default:
+			throw new Exception(__FILE__,__LINE__);
+	}
 }
 
 void Index::put(const key_t& key, docid_t docid)
