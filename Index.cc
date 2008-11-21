@@ -57,15 +57,15 @@ bool Index::key_t::operator==(const key_t& k) const
 
 void Index::key_t::output(ostream& os) const
 {
-	     if (m_type==KEY_TYPE_INT8  )  { os << m_val.int8  << " (int8  )"; }
-	else if (m_type==KEY_TYPE_INT16 )  { os << m_val.int16 << " (int16 )"; }
-	else if (m_type==KEY_TYPE_INT32 )  { os << m_val.int32 << " (int32 )"; }
-	else if (m_type==KEY_TYPE_INT64 )  { os << m_val.int64 << " (int64 )"; }
-	else if (m_type==KEY_TYPE_UINT8 )  { os << m_val.uint8 << " (uint8 )"; }
-	else if (m_type==KEY_TYPE_UINT16)  { os << m_val.uint16<< " (uint16)"; }
-	else if (m_type==KEY_TYPE_UINT32)  { os << m_val.uint32<< " (uint32)"; }
-	else if (m_type==KEY_TYPE_UINT64)  { os << m_val.uint64<< " (uint64)"; }
-	else if (m_type==KEY_TYPE_DBL   )  { os << m_val.dbl   << " (dbl   )"; }
+	     if (m_type==KEY_TYPE_INT8  )  { os << m_val.int8  ; }
+	else if (m_type==KEY_TYPE_INT16 )  { os << m_val.int16 ; }
+	else if (m_type==KEY_TYPE_INT32 )  { os << m_val.int32 ; }
+	else if (m_type==KEY_TYPE_INT64 )  { os << m_val.int64 ; }
+	else if (m_type==KEY_TYPE_UINT8 )  { os << m_val.uint8 ; }
+	else if (m_type==KEY_TYPE_UINT16)  { os << m_val.uint16; }
+	else if (m_type==KEY_TYPE_UINT32)  { os << m_val.uint32; }
+	else if (m_type==KEY_TYPE_UINT64)  { os << m_val.uint64; }
+	else if (m_type==KEY_TYPE_DBL   )  { os << m_val.dbl   ; }
 	else if (m_type==KEY_TYPE_CHAR8 )  { os.write(m_val.ch, sizeof(m_val.ch)); }
 	else
 	{
@@ -83,7 +83,33 @@ void Index::key_t::inputBinary(istream& os)
 	os.read((char*)&m_val, sizeof(m_val));
 }
 
+ostream& operator<<(ostream& os, Index::key_t::key_type t)
+{
+	switch (t)
+	{
+		case Index::key_t::KEY_TYPE_UNKNOWN:	os << "unknown"; break;
+		case Index::key_t::KEY_TYPE_INT8	 :	os << "int8"   ; break;
+		case Index::key_t::KEY_TYPE_INT16	 :	os << "int16"  ; break;
+		case Index::key_t::KEY_TYPE_INT32	 :	os << "int32"  ; break;
+		case Index::key_t::KEY_TYPE_INT64	 :	os << "int64"  ; break;
+		case Index::key_t::KEY_TYPE_UINT8	 :	os << "uint8"  ; break;
+		case Index::key_t::KEY_TYPE_UINT16 :	os << "uint16" ; break;
+		case Index::key_t::KEY_TYPE_UINT32 :	os << "uint32" ; break;
+		case Index::key_t::KEY_TYPE_UINT64 :	os << "uint64" ; break;
+		case Index::key_t::KEY_TYPE_DBL	 :	os << "dbl"    ; break;
+		case Index::key_t::KEY_TYPE_CHAR8	 :	os << "char8"  ; break;
+		case Index::key_t::KEY_TYPE_PTR	 :	os << "ptr"    ; break;
+		case Index::key_t::KEY_TYPE_DATE	 :	os << "date"   ; break;
+		case Index::key_t::KEY_TYPE_TIME	 :	os << "time"   ; break;
+		case Index::key_t::KEY_TYPE_FLOAT	 :	os << "float"  ; break;
+		case Index::key_t::KEY_TYPE_STRING :	os << "string" ; break;
+		default:
+			throw new Exception(__FILE__,__LINE__); 
+			break;
+	}
 
+	return os;
+}
 
 
 Index* Index::loadFromFile(bfs::path filename)
@@ -147,14 +173,6 @@ Index::key_t::key_type Index::key_t::getKeyType(const char* kt)
 Index::Index(const std::string& name, key_t::key_type kt, const std::string& keyspec, uint32_t doccapacity)
 	: m_name(name), m_keyspec(keyspec)
 {
-	setFilename(name);
-	if (!bfs::exists(m_filename))
-	{
-		ofstream f(m_filename.string().c_str()); // Create it
-		if (!f.good())
-			throw Exception(__FILE__,__LINE__);  // Unable to create it
-	}
-	
 	m_headerinfo.doccount=0;
 	m_headerinfo.keycount=0;
 	m_headerinfo.keysize=0;
@@ -310,18 +328,38 @@ void Index::del(docid_t docid)
 	}
 }
 
+void Index::setFilename(bfs::path fname)
+{
+	m_filename=bfs::change_extension(fname,".index");
+
+	if (!bfs::exists(m_filename))
+	{
+		ofstream f(m_filename.string().c_str(),ios::out);
+		if (!f.good())
+			throw Exception(__FILE__,__LINE__);  // Unable to create it
+	}
+}
 
 void Index::load()
 {
-	Mutex<boost::interprocess::file_lock> mutex(this->filename().string(),false);
+	if (bfs::exists(this->filename()))
+	{
+		Mutex<boost::interprocess::file_lock> mutex(this->filename().string(),false);
 	
-	std::ifstream ifs(m_filename.string().c_str());
+		std::ifstream ifs(m_filename.string().c_str());
 	
-	load_data(ifs);
+		load_data(ifs);
+	}
 }
 
 void Index::save() const
 {
+	if (!bfs::exists(this->filename()))
+	{
+		ofstream f(this->filename().string().c_str(),ios::out); // Make sure the file exists before trying to lock a mutex
+		if (!f.good())
+			throw Exception(__FILE__,__LINE__);  // Unable to create it
+	}
 	Mutex<boost::interprocess::file_lock> mutex(this->filename().string(),true);
 
 	std::ofstream ofs(m_filename.string().c_str());

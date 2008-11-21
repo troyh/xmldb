@@ -203,7 +203,7 @@ namespace Ouzo
 		virtual Iterator* end()   					 		 { return new Iterator(this,m_map.end());   }
 		virtual Iterator* lower_bound(const key_t& key) 		 { return new Iterator(this,m_map.lower_bound(key)); }
 		
-		void setFilename(bfs::path fname) { m_filename=bfs::change_extension(fname,".index");  }
+		void setFilename(bfs::path fname);
 		
 		virtual void output(ostream&) const;
 		
@@ -211,6 +211,7 @@ namespace Ouzo
 
 	ostream& operator<<(ostream& os, const Index& idx);
 	ostream& operator<<(ostream& os, const Index::key_t& key);
+	ostream& operator<<(ostream& os, Index::key_t::key_type t);
 
 }
 

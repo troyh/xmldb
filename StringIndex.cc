@@ -160,55 +160,63 @@ void StringIndex::del(docid_t docid)
 
 void StringIndex::load()
 {
-	Mutex<boost::interprocess::file_lock> mutex(this->filename().string(),false);
-	
-	std::ifstream ifs(m_filename.string().c_str());
-
-	Index::load_data(ifs);
-	
-	if (!m_lookup_table.empty())
-		m_lookup_table.clear();
-		
-	if (ifs.good())
+	if (bfs::exists(this->filename()))
 	{
-		// if (m_headerinfo.type==INDEX_TYPE_UNKNOWN && m_headerinfo.keycount==0)
-		// 	m_headerinfo.type=INDEX_TYPE_STRING;
-		// else if (m_headerinfo.type!=INDEX_TYPE_STRING)
-		// 	throw Exception(__FILE__,__LINE__);
+		Mutex<boost::interprocess::file_lock> mutex(this->filename().string(),false);
+	
+		std::ifstream ifs(m_filename.string().c_str());
 
-		for(uint32_t i = 0; i < m_headerinfo.keycount; ++i)
-		{
-			// Read key
-			char buf[256];
-			size_t len;
-			ifs.read((char*)&len,sizeof(len));
-			if (!ifs.good())
-				throw Exception(__FILE__,__LINE__);
-			if (len>=sizeof(buf))
-				throw Exception(__FILE__,__LINE__);
+		Index::load_data(ifs);
+	
+		if (!m_lookup_table.empty())
+			m_lookup_table.clear();
 		
-			ifs.read(buf,len);
-			if (!ifs.good())
-				throw Exception(__FILE__,__LINE__);
+		if (ifs.good())
+		{
+			// if (m_headerinfo.type==INDEX_TYPE_UNKNOWN && m_headerinfo.keycount==0)
+			// 	m_headerinfo.type=INDEX_TYPE_STRING;
+			// else if (m_headerinfo.type!=INDEX_TYPE_STRING)
+			// 	throw Exception(__FILE__,__LINE__);
 
-			buf[len]='\0';
-			std::string s=buf;
-			stringkey_t skey(s);
+			for(uint32_t i = 0; i < m_headerinfo.keycount; ++i)
+			{
+				// Read key
+				char buf[256];
+				size_t len;
+				ifs.read((char*)&len,sizeof(len));
+				if (!ifs.good())
+					throw Exception(__FILE__,__LINE__);
+				if (len>=sizeof(buf))
+					throw Exception(__FILE__,__LINE__);
+		
+				ifs.read(buf,len);
+				if (!ifs.good())
+					throw Exception(__FILE__,__LINE__);
+
+				buf[len]='\0';
+				std::string s=buf;
+				stringkey_t skey(s);
 			
-			Index::key_t idxkey(baseKeyType());
-			idxkey.inputBinary(ifs);
-			if (!ifs.good())
-				throw Exception(__FILE__,__LINE__);
+				Index::key_t idxkey(baseKeyType());
+				idxkey.inputBinary(ifs);
+				if (!ifs.good())
+					throw Exception(__FILE__,__LINE__);
 
-			// Put into index
-			m_lookup_table.insert(make_pair(skey,idxkey));
+				// Put into index
+				m_lookup_table.insert(make_pair(skey,idxkey));
+			}
 		}
 	}
-	
 }
 
 void StringIndex::save() const
 {
+	if (!bfs::exists(this->filename()))
+	{
+		ofstream f(this->filename().string().c_str(),ios::out); // Make sure the file exists before trying to lock a mutex
+		if (!f.good())
+			throw Exception(__FILE__,__LINE__);  // Unable to create it
+	}
 	Mutex<boost::interprocess::file_lock> mutex(this->filename().string(),true);
 
 	std::ofstream ofs(m_filename.string().c_str());

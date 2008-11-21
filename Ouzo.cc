@@ -12,8 +12,6 @@
 #include <xercesc/dom/DOM.hpp>
 #include <xercesc/framework/StdOutFormatTarget.hpp>
 
-#include <boost/interprocess/sync/file_lock.hpp>
-
 #include <xqilla/xqilla-dom3.hpp>
 
 
@@ -29,7 +27,6 @@ namespace Ouzo
 	// std::map<std::string,keyfactory_func> Ouzo::s_keyfactories;
 
 	using namespace xercesc;
-	using namespace boost::interprocess;
 	
 	// key_t* stdkey(Index* idx)
 	// {
@@ -180,7 +177,7 @@ namespace Ouzo
 						bfs::path idxpath(doctype.dataDirectory());
 						idxpath /= idxname_s;
 						p->setFilename(idxpath);
-						
+
 						doctype.addIndex(p);
 						
 						XMLString::release(&idxtype_s);

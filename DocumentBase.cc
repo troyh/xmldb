@@ -200,7 +200,7 @@ namespace Ouzo
 			for (std::vector<Index*>::size_type i=0; i< m_indexes.size(); ++i)
 			{
 				Index* idx=m_indexes[i];
-			
+
 				Mutex<boost::interprocess::file_lock> mutex(idx->filename().string(),true);
 				
 				idx->load();

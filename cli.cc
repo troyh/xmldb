@@ -51,6 +51,10 @@ int main(int argc,char* argv[])
 				uint32_t capacity=strtoul(argv[4], 0, 10);
 				
 				Ouzo::Index* idx=Ouzo::Ouzo::createIndex(Ouzo::Index::key_t::getKeyType(type.c_str()),argv[5],"",capacity);
+				
+				bfs::path fpath="./"; // Current dir is data dir
+				fpath /= argv[5];
+				idx->setFilename(fpath);
 				cout << *idx << endl;
 				idx->save();
 				delete idx;
