@@ -177,7 +177,11 @@ namespace Ouzo
 						bfs::path idxpath(doctype.dataDirectory());
 						idxpath /= idxname_s;
 						p->setFilename(idxpath);
-
+						if (!bfs::exists(p->filename()))
+						{
+							p->initFile();
+						}
+						
 						doctype.addIndex(p);
 						
 						XMLString::release(&idxtype_s);

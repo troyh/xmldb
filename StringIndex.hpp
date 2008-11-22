@@ -88,7 +88,7 @@ namespace Ouzo
 		      DocSet& get(const stringkey_t& key);
 		const DocSet& get(const stringkey_t& key) const;
 		
-		void del(docid_t docid);
+		bool del(docid_t docid, Index::key_t* pk=NULL);
 
 		// const DocSet& get(lookupid_t lookupid) const;
 		// lookupid_t getLookupID(const char* val) const;

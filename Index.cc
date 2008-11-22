@@ -121,7 +121,6 @@ Index* Index::loadFromFile(bfs::path filename)
 	verinfo.version=0;
 	verinfo.metasize=0;
 
-	headerinfo.doccount=0;
 	headerinfo.doccapacity=0;
 	headerinfo.keyspeclen=0;
 	headerinfo.keycount=0;
@@ -173,7 +172,6 @@ Index::key_t::key_type Index::key_t::getKeyType(const char* kt)
 Index::Index(const std::string& name, key_t::key_type kt, const std::string& keyspec, uint32_t doccapacity)
 	: m_name(name), m_keyspec(keyspec)
 {
-	m_headerinfo.doccount=0;
 	m_headerinfo.keycount=0;
 	m_headerinfo.keysize=0;
 	m_headerinfo.doccapacity=doccapacity;
@@ -215,7 +213,6 @@ void Index::readMeta(istream& ifs)
 	verinfo.version=0;
 	verinfo.metasize=0;
 
-	m_headerinfo.doccount=0;
 	m_headerinfo.doccapacity=0;
 	m_headerinfo.keyspeclen=0;
 	m_headerinfo.keycount=0;
@@ -233,7 +230,6 @@ void Index::readMeta(istream& ifs)
 		ifs.read((char*)&m_headerinfo,min(sizeof(m_headerinfo),verinfo.metasize));
 		if (!ifs.good())
 		{
-			m_headerinfo.doccount=0;
 			m_headerinfo.doccapacity=0;
 			m_headerinfo.keyspeclen=0;
 			m_headerinfo.keycount=0;
@@ -283,7 +279,6 @@ Index::key_t* Index::createKey() const
 
 void Index::put(const key_t& key, docid_t docid)
 {
-	// TODO: Force key to be the correct type
 	map_iterator itr=m_map.find(key);
 	if (itr==m_map.end())
 	{ // Doesn't yet exist in index
@@ -291,7 +286,6 @@ void Index::put(const key_t& key, docid_t docid)
 		docset.set(docid);
 
 		m_map.insert(make_pair(key,docset));
-		m_headerinfo.doccount++;
 		m_headerinfo.keycount++;
 	}
 	else
@@ -317,27 +311,42 @@ const DocSet& Index::get(const key_t& key) const
 	return itr->second;
 }
 
-void Index::del(docid_t docid)
+bool Index::del(docid_t docid, Index::key_t* k)
 {
 	// Iterate the keys
 	map_iterator itr_end=m_map.end();
 	for(map_iterator itr=m_map.begin(); itr!=itr_end; ++itr)
 	{
-		// Remove the docid from the DocSet
-		itr->second.clr(docid);
+		if (itr->second.test(docid))
+		{
+			// Remove the docid from the DocSet
+			itr->second.clr(docid);
+			if (itr->second.count()==0) // If that cleared the last docid bit, delete the key too
+			{
+				if (k)
+				{
+					*k=itr->first;
+				}
+				m_map.erase(itr);
+				--m_headerinfo.keycount;
+				return true;
+			}
+		}
 	}
+	return false;
 }
 
 void Index::setFilename(bfs::path fname)
 {
 	m_filename=bfs::change_extension(fname,".index");
+}
 
-	if (!bfs::exists(m_filename))
-	{
-		ofstream f(m_filename.string().c_str(),ios::out);
-		if (!f.good())
-			throw Exception(__FILE__,__LINE__);  // Unable to create it
-	}
+void Index::initFile()
+{
+	ofstream f(m_filename.string().c_str(),ios::out);
+	if (!f.good())
+		throw Exception(__FILE__,__LINE__);  // Unable to create it
+	save();
 }
 
 void Index::load()
@@ -354,12 +363,6 @@ void Index::load()
 
 void Index::save() const
 {
-	if (!bfs::exists(this->filename()))
-	{
-		ofstream f(this->filename().string().c_str(),ios::out); // Make sure the file exists before trying to lock a mutex
-		if (!f.good())
-			throw Exception(__FILE__,__LINE__);  // Unable to create it
-	}
 	Mutex<boost::interprocess::file_lock> mutex(this->filename().string(),true);
 
 	std::ofstream ofs(m_filename.string().c_str());
@@ -386,7 +389,7 @@ void Index::load_data(istream& ifs)
 			// 	throw Exception(__FILE__,__LINE__);
 
 			key_t::key_type basekt=baseKeyType();
-			
+
 			for (uint32_t i=0;i<m_headerinfo.keycount;++i)
 			{
 				// Read key
@@ -405,6 +408,10 @@ void Index::load_data(istream& ifs)
 				// Put into index
 				m_map.insert(make_pair(key,ds));
 			}
+
+			if (m_map.size()!=m_headerinfo.keycount)
+				throw Exception(__FILE__,__LINE__);
+				
 		}
 	}
 }
@@ -418,6 +425,7 @@ void Index::save_data(ostream& ofs) const
 	writeMeta(ofs);
 
 	const_map_iterator itr_end=m_map.end();
+	size_t ckeys=0;
 	for(const_map_iterator itr = m_map.begin(); itr != itr_end; ++itr)
 	{
 		// Write key
@@ -429,14 +437,19 @@ void Index::save_data(ostream& ofs) const
 
 		// Write DocSet
 		itr->second.save(ofs);
+		
+		++ckeys;
 	}
+	
+	if (ckeys!=m_headerinfo.keycount)
+		throw Exception(__FILE__,__LINE__);
+		
 }
 
 void Index::output(ostream& os) const
 {
 	os	<< "Version  : " << version() << endl
 		<< "Filename : " << m_filename << endl
-		<< "Documents: " << documentCount() << endl
 		<< "Capacity : " << documentCapacity() << endl
 		<< "Key Type : " << m_headerinfo.type << endl
 		<< "Key Spec : " << m_keyspec << endl

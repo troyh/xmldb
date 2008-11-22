@@ -111,7 +111,6 @@ namespace Ouzo
 		
 		struct HeaderInfo
 		{
-			uint32_t doccount;
 			uint32_t doccapacity;
 			uint16_t keyspeclen;
 			uint32_t keycount;
@@ -175,7 +174,6 @@ namespace Ouzo
 		virtual ~Index();
 		
 		uint32_t version() const { return m_version; };
-		virtual size_t documentCount() const { return m_headerinfo.doccount; }
 		virtual size_t documentCapacity() const { return m_headerinfo.doccapacity; }
 		virtual size_t keyCount() const { return m_map.size(); }
 		virtual key_t::key_type keyType() const { return m_headerinfo.type; }
@@ -197,13 +195,15 @@ namespace Ouzo
 		virtual       DocSet& get(const key_t& key);
 		virtual const DocSet& get(const key_t& key) const;
 		
-		virtual void del(docid_t docid);
+		virtual bool del(docid_t docid, Index::key_t* k=NULL);
 		
 		virtual Iterator* begin() 					 		 { return new Iterator(this,m_map.begin()); }
 		virtual Iterator* end()   					 		 { return new Iterator(this,m_map.end());   }
 		virtual Iterator* lower_bound(const key_t& key) 		 { return new Iterator(this,m_map.lower_bound(key)); }
 		
 		void setFilename(bfs::path fname);
+		
+		void initFile();
 		
 		virtual void output(ostream&) const;
 		

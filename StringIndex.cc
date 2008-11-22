@@ -96,8 +96,7 @@ void StringIndex::put(const key_t& key, docid_t docid)
 		// TODO: lock m_lookup_table
 
 		key_t idxkey(baseKeyType());
-		idxkey.assign((uint32_t)m_lookup_table.size());
-		// uint32key_t idxkey();
+		idxkey.assign((uint32_t)strtoul(skey.string().c_str(),0,10));
 
 		m_lookup_table.insert(make_pair(skey,idxkey));
 		// TODO: unlock m_lookup_table
@@ -106,11 +105,10 @@ void StringIndex::put(const key_t& key, docid_t docid)
 	}
 	else
 	{ // Update existing docset in index
-		DocSet ds=Index::get(itr->second);
+		DocSet& ds=Index::get(itr->second);
 		if (ds.isNil())
 			throw Exception(__FILE__,__LINE__);
 			
-		// DocSet& docset(itr2->second);
 		ds.set(docid);
 	}
 	
@@ -132,30 +130,54 @@ const DocSet& StringIndex::get(const stringkey_t& key) const
 	return ((StringIndex*)(this))->get(key); // Cast away const-ness and use the non-const version
 }
 
-void StringIndex::del(docid_t docid)
+bool StringIndex::del(docid_t docid, Index::key_t* pk)
 {
-	// Iterate the keys
-	Iterator* itr    =Index::begin();
-	Iterator* itr_end=Index::end();
-	for(; *itr!=*itr_end; ++(*itr))
+	bool deleted=false;
+	
+	Index::key_t k;
+	if (Index::del(docid,&k))
 	{
-		// Remove the docid from the DocSet
-		if (itr->docset().test(docid)) // If the bit is set
+		// Remove it from m_lookup_table
+		lookup_table_type::iterator itr2_end=m_lookup_table.end();
+		for (lookup_table_type::iterator itr2=m_lookup_table.begin(); itr2!=itr2_end; ++itr2)
 		{
-			itr->docset().clr(docid);
-			
-			// Remove it from m_lookup_table
-			lookup_table_type::const_iterator itr2_end=m_lookup_table.end();
-			for (lookup_table_type::const_iterator itr2=m_lookup_table.begin(); itr2!=itr2_end; ++itr2)
+			if (itr2->second==k)
 			{
-				if (itr2->second==itr->key())
-					m_lookup_table.erase(itr2->first);
+				m_lookup_table.erase(itr2);
+				if (pk)
+				{
+					*pk=itr2->first;
+				}
+				deleted=true;
 			}
 		}
 	}
 	
-	delete itr_end;
-	delete itr;
+	return deleted;
+	
+	// // Iterate the keys
+	// Iterator* itr    =Index::begin();
+	// Iterator* itr_end=Index::end();
+	// for(; *itr!=*itr_end; ++(*itr))
+	// {
+	// 	// Remove the docid from the DocSet
+	// 	if (itr->docset().test(docid)) // If the bit is set
+	// 	{
+	// 		itr->docset().clr(docid);
+	// 
+	// 		// Remove it from m_lookup_table
+	// 		lookup_table_type::const_iterator itr2_end=m_lookup_table.end();
+	// 		cout << "del:" << m_lookup_table.size() << endl;
+	// 		for (lookup_table_type::const_iterator itr2=m_lookup_table.begin(); itr2!=itr2_end; ++itr2)
+	// 		{
+	// 			if (itr2->second==itr->key())
+	// 				m_lookup_table.erase(itr2->first);
+	// 		}
+	// 	}
+	// }
+	// 
+	// delete itr_end;
+	// delete itr;
 }
 
 void StringIndex::load()
@@ -207,6 +229,9 @@ void StringIndex::load()
 			}
 		}
 	}
+	
+	if (m_lookup_table.size()!=m_headerinfo.keycount)
+		throw Exception(__FILE__,__LINE__);
 }
 
 void StringIndex::save() const
@@ -245,7 +270,7 @@ void StringIndex::save() const
 			
 		++ckeys;
 	}
-	
+
 	if (ckeys!=m_headerinfo.keycount)
 		throw Exception(__FILE__,__LINE__);
 	

@@ -55,6 +55,7 @@ int main(int argc,char* argv[])
 				bfs::path fpath="./"; // Current dir is data dir
 				fpath /= argv[5];
 				idx->setFilename(fpath);
+				idx->initFile();
 				cout << *idx << endl;
 				idx->save();
 				delete idx;
