@@ -319,15 +319,15 @@ namespace Ouzo
 			Query::Results gt_results(results.docbase());
 
 			q.val();
-			Index::Iterator* itr=idx->lower_bound(q.val());
-			Index::Iterator* itr_end=idx->end();
-			for ((*itr)++; *itr!=*itr_end; (*itr)++)
+			Index::const_map_iterator itr=idx->lower_bound(q.val());
+			Index::const_map_iterator itr_end=idx->end();
+			for (itr++; itr!=itr_end; itr++)
 			{
-				gt_results|=itr->docset();
+				gt_results|=itr->second;
 			}
 
-			delete itr_end;
-			delete itr;
+			// delete itr_end;
+			// delete itr;
 			
 			if (q.eqop()==Query::TermNode::gt)
 			{

@@ -13,6 +13,7 @@ Index::key_t::key_t(const key_t& k)
 	m_val=k.m_val;
 }
 
+
 bool   Index::key_t::operator< (const key_t& key) const
 {
 	if (m_type!=key.m_type)
@@ -28,6 +29,8 @@ bool   Index::key_t::operator< (const key_t& key) const
 	else if (m_type==KEY_TYPE_UINT64)  { return m_val.uint64 < key.m_val.uint64; }
 	else if (m_type==KEY_TYPE_DBL)     { return m_val.dbl    < key.m_val.dbl   ; }
 	else if (m_type==KEY_TYPE_CHAR8)   { return strncmp(m_val.ch, key.m_val.ch, sizeof(m_val.ch)) < 0; }
+	else if (m_type==KEY_TYPE_PTR)     { return m_val.ptr    < key.m_val.ptr; }
+	else if (m_type==KEY_TYPE_OBJECT)  { return m_val.object->operator<(*key.m_val.object); }
 	else
 	{
 		throw Exception(__FILE__,__LINE__);
@@ -49,6 +52,8 @@ bool Index::key_t::operator==(const key_t& k) const
 	else if (m_type==KEY_TYPE_UINT64)  { return m_val.uint64==k.m_val.uint64; }
 	else if (m_type==KEY_TYPE_DBL   )  { return m_val.dbl   ==k.m_val.dbl   ; }
 	else if (m_type==KEY_TYPE_CHAR8 )  { return strncmp(m_val.ch, k.m_val.ch, sizeof(m_val.ch))==0; }
+	else if (m_type==KEY_TYPE_PTR)     { return m_val.ptr   ==k.m_val.ptr   ; }
+	else if (m_type==KEY_TYPE_OBJECT)  { return *m_val.object==*k.m_val.object; }
 	else
 	{
 		throw Exception(__FILE__,__LINE__);
@@ -67,20 +72,28 @@ void Index::key_t::output(ostream& os) const
 	else if (m_type==KEY_TYPE_UINT64)  { os << m_val.uint64; }
 	else if (m_type==KEY_TYPE_DBL   )  { os << m_val.dbl   ; }
 	else if (m_type==KEY_TYPE_CHAR8 )  { os.write(m_val.ch, sizeof(m_val.ch)); }
+	else if (m_type==KEY_TYPE_PTR)     { os << m_val.ptr   ; }
+	else if (m_type==KEY_TYPE_OBJECT)  { return m_val.object->output(os); }
 	else
 	{
 		throw Exception(__FILE__,__LINE__);
 	}
 }
 
-void Index::key_t::outputBinary(ostream& os) const
+void Index::key_t::outputBinary(ostream& os,uint32_t n) const
 {
-	os.write((char*)&m_val, sizeof(m_val));
+	if (m_type==KEY_TYPE_OBJECT)
+		m_val.object->outputBinary(os,n);
+	else
+		os.write((char*)&m_val, sizeof(m_val));
 }
 
 void Index::key_t::inputBinary(istream& os)
 {
-	os.read((char*)&m_val, sizeof(m_val));
+	if (m_type==KEY_TYPE_OBJECT)
+		m_val.object->inputBinary(os);
+	else
+		os.read((char*)&m_val, sizeof(m_val));
 }
 
 ostream& operator<<(ostream& os, Index::key_t::key_type t)
@@ -103,8 +116,9 @@ ostream& operator<<(ostream& os, Index::key_t::key_type t)
 		case Index::key_t::KEY_TYPE_TIME	 :	os << "time"   ; break;
 		case Index::key_t::KEY_TYPE_FLOAT	 :	os << "float"  ; break;
 		case Index::key_t::KEY_TYPE_STRING :	os << "string" ; break;
+		case Index::key_t::KEY_TYPE_OBJECT :	os << "object" ; break;
 		default:
-			throw new Exception(__FILE__,__LINE__); 
+			throw Exception(__FILE__,__LINE__); 
 			break;
 	}
 
@@ -172,6 +186,9 @@ Index::key_t::key_type Index::key_t::getKeyType(const char* kt)
 Index::Index(const std::string& name, key_t::key_type kt, const std::string& keyspec, uint32_t doccapacity)
 	: m_name(name), m_keyspec(keyspec)
 {
+	m_verinfo.version=FILEVERSION;
+	m_verinfo.metasize=0;
+	
 	m_headerinfo.keycount=0;
 	m_headerinfo.keysize=0;
 	m_headerinfo.doccapacity=doccapacity;
@@ -207,11 +224,9 @@ void Index::readMeta(istream& ifs)
 	HeaderInfo config_info=m_headerinfo;
 	std::string orig_keyspec=m_keyspec;
 	
-	VersionInfo verinfo;
-
 	// Init meta info
-	verinfo.version=0;
-	verinfo.metasize=0;
+	m_verinfo.version=FILEVERSION;
+	m_verinfo.metasize=0;
 
 	m_headerinfo.doccapacity=0;
 	m_headerinfo.keyspeclen=0;
@@ -219,15 +234,15 @@ void Index::readMeta(istream& ifs)
 	m_headerinfo.keysize=0;
 	m_headerinfo.type=key_t::KEY_TYPE_UNKNOWN;
 
-	ifs.read((char*)&verinfo,sizeof(verinfo));
+	ifs.read((char*)&m_verinfo,sizeof(m_verinfo));
 	if (!ifs.good())
 	{
-		verinfo.version=0;
-		verinfo.metasize=0;
+		m_verinfo.version=FILEVERSION;
+		m_verinfo.metasize=0;
 	}
 	else
 	{
-		ifs.read((char*)&m_headerinfo,min(sizeof(m_headerinfo),verinfo.metasize));
+		ifs.read((char*)&m_headerinfo,min(sizeof(m_headerinfo),m_verinfo.metasize));
 		if (!ifs.good())
 		{
 			m_headerinfo.doccapacity=0;
@@ -238,14 +253,13 @@ void Index::readMeta(istream& ifs)
 		}
 		else
 		{
-			if (verinfo.version >= 1)
+			if (m_verinfo.version >= 1)
 			{
 				getline(ifs,m_keyspec,'\0');
 			}
 		}
 	}
 	
-	m_version=verinfo.version;
 	// m_headerinfo.doccapacity=config_info.doccapacity; // Always ignore the capacity specified in the file and use the one specified at run-time
 
 	// if (m_headerinfo.type==INDEX_TYPE_UNKNOWN)	// If the file doesn't have a type, take the type we're configured to have
@@ -273,7 +287,7 @@ Index::key_t* Index::createKey() const
 		case key_t::KEY_TYPE_DBL   : return new doublekey_t(); break;
 		case key_t::KEY_TYPE_CHAR8 : return new char8key_t();  break;
 		default:
-			throw new Exception(__FILE__,__LINE__);
+			throw Exception(__FILE__,__LINE__);
 	}
 }
 
@@ -382,18 +396,16 @@ void Index::load_data(istream& ifs)
 		
 		if (ifs.good())
 		{
-			// if (m_headerinfo.type==INDEX_TYPE_UNKNOWN && m_headerinfo.keycount==0)
-			// 	m_headerinfo.type=INDEX_TYPE_UINT32;
-			// Note: we can't expect INDEX_TYPE_UINT32, because this is a base for many similar types
-			// else if (m_headerinfo.type!=INDEX_TYPE_UINT32)
-			// 	throw Exception(__FILE__,__LINE__);
-
 			key_t::key_type basekt=baseKeyType();
 
 			for (uint32_t i=0;i<m_headerinfo.keycount;++i)
 			{
 				// Read key
 				Index::key_t key(basekt);
+				if (basekt==key_t::KEY_TYPE_OBJECT)
+				{
+					key.m_val.object=createKey();
+				}
 				key.inputBinary(ifs);
 
 				if (!ifs.good())
@@ -430,7 +442,7 @@ void Index::save_data(ostream& ofs) const
 	{
 		// Write key
 		key_t key=itr->first;
-		key.outputBinary(ofs);
+		key.outputBinary(ofs,ckeys+1);
 		
 		if (!ofs.good())
 			throw Exception(__FILE__,__LINE__);
@@ -458,15 +470,15 @@ void Index::output(ostream& os) const
 		<< endl;
 		
 	// Output keys
-	Iterator* itr    =((Index*)this)->begin();
-	Iterator* itr_end=((Index*)this)->end();
-	for (; *itr!=*itr_end; ++(*itr))
+	map_type::const_iterator itr    =begin();
+	map_type::const_iterator itr_end=end();
+	for (; itr!=itr_end; ++itr)
 	{
-		os << itr->key() << ':' << itr->docset() << endl;
+		os << itr->first << ':' << itr->second << endl;
 	}
 	
-	delete itr_end;
-	delete itr;
+	// delete itr_end;
+	// delete itr;
 }
 
 ostream& operator<<(ostream& os, const Index& idx)

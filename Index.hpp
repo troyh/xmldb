@@ -41,7 +41,8 @@ namespace Ouzo
 				KEY_TYPE_DATE,
 				KEY_TYPE_TIME,
 				KEY_TYPE_FLOAT,
-				KEY_TYPE_STRING, // 15
+				KEY_TYPE_STRING,
+				KEY_TYPE_OBJECT, // 16
 				KEY_TYPE_LASTSTD=100
 			} key_type;
 
@@ -64,6 +65,7 @@ namespace Ouzo
 				double   dbl;
 				char     ch[8];
 				void*	 ptr;
+				key_t*	 object;
 			} m_val;
 			
 			key_t() : m_type(KEY_TYPE_UNKNOWN) { m_val.ptr=0; }
@@ -73,6 +75,7 @@ namespace Ouzo
 			virtual ~key_t() {}
 			
 			virtual key_t& operator=(const key_t& key) { m_type=key.m_type; m_val=key.m_val; return *this; }
+			
 			virtual void assign(int8_t   x) { m_type=KEY_TYPE_INT8  ; m_val.int8  =x; }
 			virtual void assign(int16_t  x) { m_type=KEY_TYPE_INT16 ; m_val.int16 =x; }
 			virtual void assign(int32_t  x) { m_type=KEY_TYPE_INT32 ; m_val.int32 =x; }
@@ -83,6 +86,7 @@ namespace Ouzo
 			virtual void assign(uint64_t x) { m_type=KEY_TYPE_UINT64; m_val.uint64=x; }
 			virtual void assign(double   x) { m_type=KEY_TYPE_DBL   ; m_val.dbl   =x; }
 			virtual void assign(void*	 x) { m_type=KEY_TYPE_PTR   ; m_val.ptr   =x; }
+			virtual void assign(key_t*   x) { m_type=KEY_TYPE_OBJECT; m_val.object=x; }
 			virtual void assign(const char* x) { m_type=KEY_TYPE_CHAR8; memcpy(m_val.ch,x,sizeof(m_val.ch)); }
 
 			virtual bool operator==(const key_t& k) const;
@@ -96,7 +100,7 @@ namespace Ouzo
 			const key_type getType() const { return m_type; }
 			
 			virtual void output(ostream&) const;
-			virtual void outputBinary(ostream&) const;
+			virtual void outputBinary(ostream&,uint32_t n) const;
 			virtual void inputBinary(istream&);
 		};
 		
@@ -118,7 +122,6 @@ namespace Ouzo
 			key_t::key_type type;
 		};
 
-		typedef std::map< key_t, DocSet > map_type;
 
 		void writeMeta(ostream& ofs) const;
 		void readMeta(istream& ifs);
@@ -126,11 +129,14 @@ namespace Ouzo
 	protected:
 		static std::map<std::string, Index*> m_indexes;
 
+	public:
+		typedef std::map< key_t, DocSet > map_type;
 		typedef map_type::iterator map_iterator;
 		typedef map_type::const_iterator const_map_iterator;
+	protected:
 		
 		map_type m_map;
-		uint32_t m_version;
+		VersionInfo m_verinfo;
 		HeaderInfo m_headerinfo;
 		bfs::path m_filename;
 		std::string m_keyspec;
@@ -145,35 +151,11 @@ namespace Ouzo
 		
 		static Index* loadFromFile(bfs::path filename);
 
-		class Iterator
-		{
-		protected:
-			Index* m_idx;
-		private:
-			Index::map_type::iterator m_itr;
-			
-		public:
-			Iterator(Index* idx) : m_idx(idx) {}
-			Iterator(const Iterator& itr) : m_idx(itr.m_idx), m_itr(itr.m_itr) {}
-			Iterator& operator=(const Iterator& itr) { m_idx=itr.m_idx; m_itr=itr.m_itr; return *this; }
-			Iterator(Index* idx, Index::map_type::iterator itr) : m_idx(idx), m_itr(itr) {}
-			virtual ~Iterator() {}
-			
-			virtual bool operator==(const Iterator& itr) { return m_itr==itr.m_itr; }
-			virtual bool operator!=(const Iterator& itr) { return m_itr!=itr.m_itr; }
-			
-			virtual Iterator& operator++()    { m_itr++; return *this; }
-			virtual Iterator& operator++(int) { m_itr++; return *this; }
-			
-			virtual const Index::key_t& key() const  { return m_itr->first; }
-			virtual DocSet& docset() { return m_itr->second; }
-		};
-		
-	
+
 		Index(const std::string& name, key_t::key_type kt, const std::string& keyspec, uint32_t doccapacity);
 		virtual ~Index();
 		
-		uint32_t version() const { return m_version; };
+		uint32_t version() const { return m_verinfo.version; };
 		virtual size_t documentCapacity() const { return m_headerinfo.doccapacity; }
 		virtual size_t keyCount() const { return m_map.size(); }
 		virtual key_t::key_type keyType() const { return m_headerinfo.type; }
@@ -196,10 +178,22 @@ namespace Ouzo
 		virtual const DocSet& get(const key_t& key) const;
 		
 		virtual bool del(docid_t docid, Index::key_t* k=NULL);
+
+		virtual map_type::iterator begin() 					 		 { return m_map.begin(); }
+		virtual map_type::iterator end()   					 		 { return m_map.end();   }
+		virtual map_type::iterator lower_bound(const key_t& key) 		 { return m_map.lower_bound(key); }
+
+		virtual map_type::const_iterator begin() const					 		 { return m_map.begin(); }
+		virtual map_type::const_iterator end()   const					 		 { return m_map.end();   }
+		virtual map_type::const_iterator lower_bound(const key_t& key) const		 { return m_map.lower_bound(key); }
 		
-		virtual Iterator* begin() 					 		 { return new Iterator(this,m_map.begin()); }
-		virtual Iterator* end()   					 		 { return new Iterator(this,m_map.end());   }
-		virtual Iterator* lower_bound(const key_t& key) 		 { return new Iterator(this,m_map.lower_bound(key)); }
+		// virtual Iterator* begin() 					 		 { return new Iterator(this,m_map.begin()); }
+		// virtual Iterator* end()   					 		 { return new Iterator(this,m_map.end());   }
+		// virtual Iterator* lower_bound(const key_t& key) 		 { return new Iterator(this,m_map.lower_bound(key)); }
+		// 
+		// virtual ConstIterator* begin() const					 		 { return new ConstIterator(this,m_map.begin()); }
+		// virtual ConstIterator* end() const  					 		 { return new ConstIterator(this,m_map.end());   }
+		// virtual ConstIterator* lower_bound(const key_t& key) const		 { return new ConstIterator(this,m_map.lower_bound(key)); }
 		
 		void setFilename(bfs::path fname);
 		
