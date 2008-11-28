@@ -6,6 +6,11 @@
 #include "Ouzo.hpp"
 #include "Index.hpp"
 
+extern "C"
+{
+#include "cli.h"
+}
+
 // TODO: support reindex command
 
 using namespace std;
@@ -37,14 +42,99 @@ void ouzo_new_index(const char* name, const char* type, size_t capacity)
 	// cout << *idx << endl;
 	idx->save();
 	delete idx;
-
 }
+
+extern "C"
+void ouzo_show_index(const char* name)
+{
+	Ouzo::Index* idx=Ouzo::Index::loadFromFile(name);
+	cout << *idx << endl;
+	delete idx;
+}
+
+extern "C"
+void ouzo_index_get(const char* name, STRING_LIST* list)
+{ 
+	while  (list)
+	{
+		size_t i;
+		for (i=0;i<list->count;++i)
+		{
+			printf("GET:%s:%s\n",name,list->list[i]);
+			free(list->list[i]);
+		}
+
+		STRING_LIST* freelist=list;
+		list=list->next;
+		
+		free(freelist);
+	}
+}
+
+extern "C"
+void ouzo_index_put(const char* name, KEY_DOCID_LIST* list)
+{ 
+	Ouzo::Index* idx=Ouzo::Index::loadFromFile(name);
+	
+	while (list)
+	{
+		Ouzo::Index::key_t* k=idx->createKey();
+		k->assign(list->key);
+
+		NUMBER_LIST* p=list->docids;
+		for (; p; p=p->next)
+		{
+			size_t i;
+			for (i=0;i<p->count;++i)
+			{
+				Ouzo::docid_t docid=p->list[i];
+				idx->put(*k,docid);
+			}
+		}
+		
+		delete k;
+		
+		// Free them as we go, and move to the next one
+		KEY_DOCID_LIST* freelist=list;
+		list=list->next;
+		free(freelist);
+	}
+	
+	idx->save();
+
+	delete idx;
+}
+
+extern "C"
+void ouzo_index_unput(const char* name, KEY_DOCID_LIST* list)
+{ 
+	while (list)
+	{
+		printf("UNPUT:%s:%s:",name,list->key);
+		NUMBER_LIST* p=list->docids;
+		for (; p; p=p->next)
+		{
+			size_t i;
+			for (i=0;i<p->count;++i)
+			{
+				printf("%c%d",(i?',':' '),p->list[i]);
+			}
+		}
+		printf("\n");
+	
+		KEY_DOCID_LIST* freelist=list;
+	
+		list=list->next;
+	
+		free(freelist);
+	}
+}
+
+
+
 
 int main(int argc,char* argv[])
 {
-	Ouzo::Ouzo ouzo("ouzo.conf");
-
-	yyparse();
 	
 	// if (argc<2)
 	// {
@@ -54,48 +144,14 @@ int main(int argc,char* argv[])
 	
 	try
 	{
+		Ouzo::Ouzo ouzo("ouzo.conf");
+
+		yyparse();
 		
 		string cmd(argv[1]);
 		to_lower(cmd);
 	
-		if (cmd=="put")
-		{
-			/*
-			Syntax: put <name> <key> <docid>
-			*/
-			string name=argv[2];
-			Ouzo::docid_t docid=strtoul(argv[4],0,10);
-			
-			Ouzo::Index* idx=Ouzo::Index::loadFromFile(name);
-			
-			Ouzo::Index::key_t* k=idx->createKey();
-			k->assign(argv[3]);
-			idx->put(*k,docid);
-			
-			cout << *idx << endl;
-			
-			idx->save();
-			
-			delete k;
-			delete idx;
-		}
-		else if (cmd=="show")
-		{
-			/*
-			Syntax: show index <name>
-			*/
-			string obj=argv[2];
-			if (obj=="index")
-			{
-				string name=argv[3];
-				
-				Ouzo::Index* idx=Ouzo::Index::loadFromFile(name);
-				cout << *idx << endl;
-				delete idx;
-			}
-			
-		}
-		else if (cmd=="add")
+		if (cmd=="add")
 		{
 			if (argc<3)
 			{

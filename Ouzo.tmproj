@@ -3,7 +3,7 @@
 <plist version="1.0">
 <dict>
 	<key>currentDocument</key>
-	<string>StringIndex.cc</string>
+	<string>cli.y</string>
 	<key>documents</key>
 	<array>
 		<dict>
@@ -16,9 +16,7 @@
 							<key>filename</key>
 							<string>StringIndex.cc</string>
 							<key>lastUsed</key>
-							<date>2008-11-25T01:26:16Z</date>
-							<key>selected</key>
-							<true/>
+							<date>2008-11-28T20:59:19Z</date>
 						</dict>
 						<dict>
 							<key>filename</key>
@@ -36,19 +34,19 @@
 							<key>filename</key>
 							<string>DocumentBase.cc</string>
 							<key>lastUsed</key>
-							<date>2008-11-25T01:06:22Z</date>
+							<date>2008-11-28T20:59:18Z</date>
 						</dict>
 						<dict>
 							<key>filename</key>
 							<string>Ouzo.cc</string>
 							<key>lastUsed</key>
-							<date>2008-11-25T00:52:27Z</date>
+							<date>2008-11-28T20:59:17Z</date>
 						</dict>
 						<dict>
 							<key>filename</key>
 							<string>Index.cc</string>
 							<key>lastUsed</key>
-							<date>2008-11-25T01:24:54Z</date>
+							<date>2008-11-28T20:59:17Z</date>
 						</dict>
 						<dict>
 							<key>filename</key>
@@ -119,7 +117,7 @@
 							<key>filename</key>
 							<string>Index.hpp</string>
 							<key>lastUsed</key>
-							<date>2008-11-25T01:25:06Z</date>
+							<date>2008-11-28T20:59:16Z</date>
 						</dict>
 						<dict>
 							<key>filename</key>
@@ -149,7 +147,7 @@
 							<key>filename</key>
 							<string>StringIndex.hpp</string>
 							<key>lastUsed</key>
-							<date>2008-11-25T01:26:16Z</date>
+							<date>2008-11-28T20:59:20Z</date>
 						</dict>
 						<dict>
 							<key>filename</key>
@@ -214,7 +212,21 @@
 					<key>filename</key>
 					<string>cli.cc</string>
 					<key>lastUsed</key>
-					<date>2008-11-23T01:38:16Z</date>
+					<date>2008-11-28T22:13:25Z</date>
+				</dict>
+				<dict>
+					<key>filename</key>
+					<string>cli.l</string>
+					<key>lastUsed</key>
+					<date>2008-11-28T22:13:27Z</date>
+				</dict>
+				<dict>
+					<key>filename</key>
+					<string>cli.y</string>
+					<key>lastUsed</key>
+					<date>2008-11-28T22:13:27Z</date>
+					<key>selected</key>
+					<true/>
 				</dict>
 			</array>
 			<key>expanded</key>
@@ -226,7 +238,7 @@
 			<key>filename</key>
 			<string>Makefile</string>
 			<key>lastUsed</key>
-			<date>2008-11-20T23:21:58Z</date>
+			<date>2008-11-28T20:59:12Z</date>
 		</dict>
 		<dict>
 			<key>filename</key>
@@ -260,135 +272,43 @@
 	<integer>200</integer>
 	<key>metaData</key>
 	<dict>
-		<key>DocumentBase.cc</key>
+		<key>cli.cc</key>
 		<dict>
 			<key>caret</key>
-			<dict>
-				<key>column</key>
-				<integer>24</integer>
-				<key>line</key>
-				<integer>269</integer>
-			</dict>
-			<key>firstVisibleColumn</key>
-			<integer>0</integer>
-			<key>firstVisibleLine</key>
-			<integer>215</integer>
-		</dict>
-		<key>Index.cc</key>
-		<dict>
-			<key>caret</key>
-			<dict>
-				<key>column</key>
-				<integer>31</integer>
-				<key>line</key>
-				<integer>81</integer>
-			</dict>
-			<key>columnSelection</key>
-			<false/>
-			<key>firstVisibleColumn</key>
-			<integer>0</integer>
-			<key>firstVisibleLine</key>
-			<integer>40</integer>
-			<key>selectFrom</key>
 			<dict>
 				<key>column</key>
 				<integer>19</integer>
 				<key>line</key>
-				<integer>81</integer>
-			</dict>
-			<key>selectTo</key>
-			<dict>
-				<key>column</key>
-				<integer>31</integer>
-				<key>line</key>
-				<integer>81</integer>
-			</dict>
-		</dict>
-		<key>Index.hpp</key>
-		<dict>
-			<key>caret</key>
-			<dict>
-				<key>column</key>
-				<integer>32</integer>
-				<key>line</key>
-				<integer>87</integer>
-			</dict>
-			<key>firstVisibleColumn</key>
-			<integer>0</integer>
-			<key>firstVisibleLine</key>
-			<integer>136</integer>
-		</dict>
-		<key>Ouzo.cc</key>
-		<dict>
-			<key>caret</key>
-			<dict>
-				<key>column</key>
-				<integer>24</integer>
-				<key>line</key>
-				<integer>51</integer>
-			</dict>
-			<key>columnSelection</key>
-			<false/>
-			<key>firstVisibleColumn</key>
-			<integer>0</integer>
-			<key>firstVisibleLine</key>
-			<integer>10</integer>
-			<key>selectFrom</key>
-			<dict>
-				<key>column</key>
-				<integer>15</integer>
-				<key>line</key>
-				<integer>51</integer>
-			</dict>
-			<key>selectTo</key>
-			<dict>
-				<key>column</key>
-				<integer>24</integer>
-				<key>line</key>
-				<integer>51</integer>
-			</dict>
-		</dict>
-		<key>StringIndex.cc</key>
-		<dict>
-			<key>caret</key>
-			<dict>
-				<key>column</key>
-				<integer>0</integer>
-				<key>line</key>
-				<integer>242</integer>
-			</dict>
-			<key>firstVisibleColumn</key>
-			<integer>0</integer>
-			<key>firstVisibleLine</key>
-			<integer>188</integer>
-		</dict>
-		<key>StringIndex.hpp</key>
-		<dict>
-			<key>caret</key>
-			<dict>
-				<key>column</key>
-				<integer>0</integer>
-				<key>line</key>
-				<integer>37</integer>
+				<integer>5</integer>
 			</dict>
 			<key>firstVisibleColumn</key>
 			<integer>0</integer>
 			<key>firstVisibleLine</key>
 			<integer>0</integer>
+		</dict>
+		<key>cli.y</key>
+		<dict>
+			<key>caret</key>
+			<dict>
+				<key>column</key>
+				<integer>73</integer>
+				<key>line</key>
+				<integer>5</integer>
+			</dict>
+			<key>firstVisibleColumn</key>
+			<integer>0</integer>
+			<key>firstVisibleLine</key>
+			<integer>24</integer>
 		</dict>
 	</dict>
 	<key>openDocuments</key>
 	<array>
-		<string>Index.hpp</string>
-		<string>Index.cc</string>
-		<string>Ouzo.cc</string>
-		<string>DocumentBase.cc</string>
-		<string>StringIndex.cc</string>
-		<string>StringIndex.hpp</string>
+		<string>cli.cc</string>
+		<string>cli.y</string>
 	</array>
 	<key>showFileHierarchyDrawer</key>
 	<true/>
 	<key>windowFrame</key>
-	<string>{{856, 425}, {1040, 1153}}</string>
+	<string>{{712, 100}, {1062, 1478}}</string>
 </dict>
 </plist>
