@@ -23,45 +23,42 @@ void usage()
 		<< endl;
 }
 
+extern "C" int yyparse();
+
+extern "C"
+void ouzo_new_index(const char* name, const char* type, size_t capacity)
+{
+	Ouzo::Index* idx=Ouzo::Ouzo::createIndex(Ouzo::Index::key_t::getKeyType(type),name,"",capacity);
+
+	bfs::path fpath="./"; // Current dir is data dir
+	fpath /= name;
+	idx->setFilename(fpath);
+	idx->initFile();
+	// cout << *idx << endl;
+	idx->save();
+	delete idx;
+
+}
+
 int main(int argc,char* argv[])
 {
-	if (argc<2)
-	{
-		usage();
-		return -1;
-	}
+	Ouzo::Ouzo ouzo("ouzo.conf");
+
+	yyparse();
+	
+	// if (argc<2)
+	// {
+	// 	usage();
+	// 	return -1;
+	// }
 	
 	try
 	{
-		Ouzo::Ouzo ouzo("ouzo.conf");
 		
 		string cmd(argv[1]);
 		to_lower(cmd);
 	
-		if (cmd=="create")
-		{
-			/*
-			Syntax: create index <type> <capacity> <name>
-			*/
-			string obj=argv[2];
-			
-			if (obj=="index")
-			{
-				string type=argv[3];
-				uint32_t capacity=strtoul(argv[4], 0, 10);
-				
-				Ouzo::Index* idx=Ouzo::Ouzo::createIndex(Ouzo::Index::key_t::getKeyType(type.c_str()),argv[5],"",capacity);
-				
-				bfs::path fpath="./"; // Current dir is data dir
-				fpath /= argv[5];
-				idx->setFilename(fpath);
-				idx->initFile();
-				cout << *idx << endl;
-				idx->save();
-				delete idx;
-			}
-		}
-		else if (cmd=="put")
+		if (cmd=="put")
 		{
 			/*
 			Syntax: put <name> <key> <docid>
@@ -285,23 +282,6 @@ int main(int argc,char* argv[])
 	{
 		std::cerr << "std::exception" << std::endl;
 	}
-	// catch (...)
-	// {
-	//        void *array[10];
-	//        size_t size;
-	//        char **strings;
-	//        size_t i;
-	// 
-	//        size = backtrace (array, 10);
-	//        strings = backtrace_symbols (array, size);
-	// 
-	//        printf ("Obtained %zd stack frames.\n", size);
-	// 
-	//        for (i = 0; i < size; i++)
-	//           printf ("%s\n", strings[i]);
-	// 
-	//        free (strings);
-	// }
 	
 	return 0;
 }

@@ -11,7 +11,7 @@ all: odeps.mk ouzo index kvpairs split query
 odeps.mk: *.cc *.hpp
 	$(CC) -MM *.cc > $@
 
-ouzo: cli.o libouzo.a
+ouzo: cli.o libouzo.a cli.yy.c cli.tab.c
 	$(CC) -g -rdynamic -o $@ $^ -lxml++-2.6 -lxml2 -lxqilla -lboost_filesystem-gcc43-mt -lboost_serialization-gcc43-mt -L. -louzo -liberty
 
 index: index.o XMLDoc.o
@@ -29,6 +29,12 @@ query: query.o
 libouzo.a: Ouzo.o DocSet.o Index.o StringIndex.o UIntIndex.o Config.o DocumentBase.o Exception.o QueryTree.o XRefTable.o Keys.o
 	rm -f $@
 	ar rcs $@ $^
+
+cli.yy.c: cli.l
+	flex -o $@ $^
+	
+cli.tab.c: cli.y
+	bison -o $@ -d $^ 
 
 include odeps.mk
 
