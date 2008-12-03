@@ -11,11 +11,11 @@ $(OBJS)/%.o : %.cc
 
 all: odeps.mk indexes 
 
-odeps.mk: *.cc ../*.cc ../*.hpp
+odeps.mk: *.cc
 	gcc -MM -I.. $^ | sed -e "s/^\\(.*\\).o:/objs\/\\1.o:/" > $@
 
-indexes: $(OBJS)/indexes.o $(OBJS)/DocSet.o $(OBJS)/Exception.o $(OBJS)/Index.o $(OBJS)/StringIndex.o
-	$(CC) -o $@ $^ -lxml++-2.6 -lxml2 -lxqilla -lboost_filesystem-gcc43-mt -lboost_serialization-gcc43-mt -L. 
+indexes: $(OBJS)/indexes.o
+	$(CC) -o $@ $^ -lxml++-2.6 -lxml2 -lxqilla -lboost_filesystem-gcc43-mt -lboost_serialization-gcc43-mt -L.. -louzo -liberty
 
 include odeps.mk
 

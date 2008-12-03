@@ -1,222 +1,190 @@
+#include <getopt.h>
+#include <math.h>
 #include <string>
+#include <sstream>
 #include <boost/filesystem.hpp>
 
-#include "StringIndex.hpp"
+#include "Ouzo.hpp"
 
 using namespace std;
 using namespace Ouzo;
 using namespace boost;
 
-const size_t NUM_DOCS=1000;
+Index::key_t::key_type possible_types[]={
+	Index::key_t::KEY_TYPE_INT8,
+	Index::key_t::KEY_TYPE_INT16,
+	Index::key_t::KEY_TYPE_INT32,
+	Index::key_t::KEY_TYPE_INT64,
+	Index::key_t::KEY_TYPE_UINT8,
+	Index::key_t::KEY_TYPE_UINT16,
+	Index::key_t::KEY_TYPE_UINT32,
+	Index::key_t::KEY_TYPE_UINT64,
+	Index::key_t::KEY_TYPE_DBL,
+	Index::key_t::KEY_TYPE_CHAR8,
+	Index::key_t::KEY_TYPE_DATE,
+	Index::key_t::KEY_TYPE_TIME,
+	Index::key_t::KEY_TYPE_FLOAT,
+	Index::key_t::KEY_TYPE_STRING
+};
+
+Index::key_t::key_type types[sizeof(possible_types)/sizeof(possible_types[0])];
 
 void usage()
 {
 	cout << "Usage: indexes <string|uint32|uint16|...>" << endl;
 }
 
-template<typename T>
-void addkeys(UIntIndex<T>* idx)
-{
-	idx->load();
-
-	size_t n=idx->documentCapacity();
-	for(docid_t docid = 1; docid <= n; ++docid)
-	{
-		T randomkey=rand();
-		idx->put(randomkey,docid);
-	}
-	
-	idx->save();
-}
-
-template<typename T>
-void showkeys(UIntIndex<T>* idx)
-{
-	cout << "Keys:" << endl;
-	typename UIntIndex<T>::const_iterator_type itr_end=idx->end();
-	for (typename UIntIndex<T>::const_iterator_type itr=idx->begin(); itr!=itr_end; ++itr)
-	{
-		cout << itr->first << ':' << itr->second.count() << endl;
-	}
-}
-
-void showkeys(DateIndex* idx)
-{
-	cout << "Keys:" << endl;
-	DateIndex::const_iterator_type itr_end=idx->end();
-	for (DateIndex::const_iterator_type itr=idx->begin(); itr!=itr_end; ++itr)
-	{
-		time_t t=itr->first;
-		struct tm* ptm=localtime(&t);
-		cout << (ptm->tm_year+1900) << '-' << (ptm->tm_mon+1) << '-' << ptm->tm_mday << ':' << itr->second.count() << endl;
-	}
-}
-
-void showkeys(TimeIndex* idx)
-{
-	cout << "Keys:" << endl;
-	TimeIndex::const_iterator_type itr_end=idx->end();
-	for (TimeIndex::const_iterator_type itr=idx->begin(); itr!=itr_end; ++itr)
-	{
-		time_t t=itr->first;
-		struct tm* ptm=localtime(&t);
-		cout << (ptm->tm_year+1900) << '-' << (ptm->tm_mon+1) << '-' << ptm->tm_mday << ' ' << ptm->tm_hour << ':' << ptm->tm_min << ':' << ptm->tm_sec << " :" << itr->second.count() << endl;
-	}
-}
-
-void showkeys(StringIndex* idx)
-{
-	cout << "Keys:" << endl;
-	StringIndex::const_iterator_type itr_end=idx->end();
-	for (StringIndex::const_iterator_type itr=idx->begin(); itr!=itr_end; ++itr)
-	{
-		const DocSet& ds=idx->get(itr->first.c_str());
-		cout << itr->first << ':' << ds.count() << endl;
-	}
-}
-
-
-void readFromFile(Index* idx, filesystem::path fname)
-{
-	ifstream f(fname.string().c_str());
-	while (f.good())
-	{
-		string key;
-		docid_t docid;
-		f >> key >> docid;
-		idx->put(key,docid);
-	}
-}
-
-
 int main(int argc, char* argv[])
 {
-	if (argc<2)
-	{
-		usage();
-		return -1;
-	}
+	int bDoAllTypes=false;
+	Index::key_t::key_type type=Index::key_t::KEY_TYPE_UNKNOWN;
+	size_t capacity=10000;
+	size_t max_keys=100;
+	size_t types_to_do=0;
 	
-	// srand(time(0));
-	
-	string cmd=argv[1];
-	
-	if (cmd=="list")
+	static struct option long_options[]=
 	{
-		Index* idx=Index::loadIndexFromFile(argv[2]);
-		cout << *idx << endl;
-	}
-	else if (cmd=="create")
+		{ "all"     , optional_argument, &bDoAllTypes, true },
+		{ "type"    , required_argument, NULL, 't' },
+		{ "capacity", required_argument, NULL, 'c' },
+		{ "maxkeys" , required_argument, NULL, 'k' },
+		{ 0, 0, 0, 0 }
+	};
+	
+	int option_index=0;
+	int c;
+	while ((c=getopt_long_only(argc,argv,"at:ck",long_options,&option_index))!=-1)
 	{
-		string type=argv[2];
-		string index_name=argv[3];
-		
-		Index* idx;
-
-		if (type=="string")
+		switch(c)
 		{
-			idx=new StringIndex(index_name, index_name, "foobar", NUM_DOCS);
-			readFromFile(idx,argv[3]);
-			idx->save();
-
-			// idx->put("zzxqqqoksu",42);
+		case 0:
+			break;
+		case 'a':
+			break;
+		case 't':
+			type=Index::key_t::getKeyType(optarg);
+			if (type==Index::key_t::KEY_TYPE_UNKNOWN)
+			{
+				cerr << "Unknown index type: " << optarg << endl;
+			}
+			break;
+		case 'c':
+			capacity=strtoul(optarg,0,10);
+			break;
+		case 'k':
+			max_keys=strtoul(optarg,0,10);
+			break;
+		case '?':
+			if (optopt=='t')
+			{
+				// cerr << "-t type not specified" << endl;
+			}
+			break;
+		default:
+			abort();
+			break;
+		}
+	}
 	
-			// for(docid_t docid = 1; docid <= NUM_DOCS; ++docid)
-			// {
-			// 	string randomkey;
-			// 	for(size_t i = 0; i < 10; ++i)
-			// 	{
-			// 		randomkey.push_back('a'+(rand()%26));
-			// 	}
-			// 	idx->put(randomkey.c_str(),docid);
-			// }
+	
+	if (optind<argc)
+	{
+		for (;optind<argc;++optind)
+			cerr << "Ignored argument: " << argv[optind] << endl;
+		return -4;
+	}
+
+	if (bDoAllTypes)
+	{
+		if (type!=Index::key_t::KEY_TYPE_UNKNOWN)
+		{
+			cerr << "Mutually-exclusive options: --all and --type. Please specify one or the other." << endl;
+			return -1;
+		}
+		
+		for(size_t i = 0; i < (sizeof(possible_types)/sizeof(possible_types[0])); ++i)
+		{
+			types[i]=possible_types[i];
+		}
+		types_to_do=sizeof(possible_types)/sizeof(possible_types[0]);
+	}
+	else if (type==Index::key_t::KEY_TYPE_UNKNOWN)
+	{
+		cerr << "Either --all or --type must be specified." << endl;
+		return -2;
+	}
+	else
+	{
+		types_to_do=1;
+		types[0]=type;
+	}
+	
+	
+	// Create each type of index
+	srand(time(0));
+	srand48(time(0));
+	
+	for (size_t i=0; i < types_to_do; ++i)
+	{
+		cout << "new " << types[i] << "_test " << types[i] << ' ' << capacity << ';' << endl;
+		
+		// Randomly put keys and docids
+		
+		size_t nkeys_count=(rand()%max_keys)+1;
+		for(size_t nkeys = 0; nkeys < nkeys_count; ++nkeys)
+		{
+			ostringstream ss;
+
+			if (types[i]==Index::key_t::KEY_TYPE_STRING || types[i]==Index::key_t::KEY_TYPE_CHAR8)
+			{
+				// Create a random key of letters and digits
+		
+				size_t nj=(rand()%31)+1;
+				if (types[i]==Index::key_t::KEY_TYPE_CHAR8)
+					nj=(rand()%8)+1;
+					
+				for(size_t j = 0; j < nj; ++j)
+				{
+					int n=rand()%36;
+					if (n>25)
+						ss << (char)('0'+(n-26));
+					else
+						ss << (char)('a'+n);
+				}
+			}
+			else if (types[i]==Index::key_t::KEY_TYPE_INT8)  { ss << (int     )(rand()%255-(128)); }
+			else if (types[i]==Index::key_t::KEY_TYPE_INT16) { ss << (int16_t )mrand48(); }
+			else if (types[i]==Index::key_t::KEY_TYPE_INT32) { ss << (int32_t )mrand48(); }
+			else if (types[i]==Index::key_t::KEY_TYPE_INT64) { ss << (int64_t )((((int64_t)mrand48())<<32)|rand()); }
+			else if (types[i]==Index::key_t::KEY_TYPE_UINT8) { ss << (uint16_t)(rand()%255); }
+			else if (types[i]==Index::key_t::KEY_TYPE_UINT16){ ss << (uint16_t)lrand48(); }
+			else if (types[i]==Index::key_t::KEY_TYPE_UINT32){ ss << (uint32_t)(lrand48()<<1); }
+			else if (types[i]==Index::key_t::KEY_TYPE_UINT64){ ss << (uint64_t)((((uint64_t)lrand48())<<32)|rand()); }
+			else if (types[i]==Index::key_t::KEY_TYPE_DBL)   { ss << (double  )(drand48()*mrand48()); }
+			else if (types[i]==Index::key_t::KEY_TYPE_FLOAT) { ss << (float   )(drand48()*mrand48()); }
+			else if (types[i]==Index::key_t::KEY_TYPE_DATE)  { ss << (((rand()%200+1900)*10000)+((rand()%12+1)*100)+(rand()%31+1)); }
+			else if (types[i]==Index::key_t::KEY_TYPE_TIME)  { ss << lrand48(); }
 			
-		}
-		else if (type=="date")
-		{
-			idx=new DateIndex(index_name, index_name, "foobar", NUM_DOCS);
+			string key=ss.str();
 		
-			// idx->load();
-			// 		
-			// for(docid_t docid = 1; docid <= NUM_DOCS; ++docid)
-			// {
-			// 	time_t randomkey=time(0)+(rand()-(.5*rand()));
-			// 	idx->put(randomkey,docid);
-			// }
-			// 		
-			// idx->save();
-			// 		
-			// showkeys(idx);
-		}
-		else if (type=="time")
-		{
-			idx=new TimeIndex(index_name, index_name, "foobar", NUM_DOCS);
-			// idx->load();
-			// 		
-			// for(docid_t docid = 1; docid <= NUM_DOCS; ++docid)
-			// {
-			// 	time_t randomkey=time(0)+(rand()-(.5*rand()));
-			// 	idx->put(randomkey,docid);
-			// }
-			// 		
-			// idx->save();
-			// 
-			// showkeys(idx);
-		}
-		else if (type=="float")
-		{
-			idx=new FloatIndex(index_name, index_name, "foobar", NUM_DOCS);
-			// idx->load();
-			// 		
-			// for(docid_t docid = 1; docid <= NUM_DOCS; ++docid)
-			// {
-			// 	double randomkey=((double)rand())/rand();
-			// 	idx->put(randomkey,docid);
-			// }
-			// 		
-			// idx->save();
-			// 		
-			// showkeys(idx);
-		}
-		else if (type=="uint32")
-		{
-			idx=new UIntIndex<uint32_t>(index_name, index_name, "foobar", NUM_DOCS);
-			// addkeys(idx);
-			// showkeys(idx);
-		}
-		else if (type=="uint16")
-		{
-			idx=new UIntIndex<uint16_t>(index_name, index_name, "foobar", NUM_DOCS);
-			// addkeys(idx);
-			// showkeys(idx);
-		}
-		else if (type=="uint8")
-		{
-			idx=new UIntIndex<uint8_t>(index_name, index_name, "foobar", NUM_DOCS);
-			// addkeys(idx);
-			// showkeys(idx);
-		}
-		else if (type=="int32")
-		{
-			idx=new UIntIndex<int32_t>(index_name, index_name, "foobar", NUM_DOCS);
-			// addkeys(idx);
-			// showkeys(idx);
-		}
-		else if (type=="int16")
-		{
-			idx=new UIntIndex<int16_t>(index_name, index_name, "foobar", NUM_DOCS);
-			// addkeys(idx);
-			// showkeys(idx);
-		}
-		else if (type=="int8")
-		{
-			idx=new UIntIndex<int8_t>(index_name, index_name, "foobar", NUM_DOCS);
-			// addkeys(idx);
-			// showkeys(idx);
-		}
+			cout << "put " << types[i] << "_test";
 		
-		readFromFile(idx,argv[3]);
-		idx->save();
+			size_t nputs=10;
+			for(size_t put = 0; put < nputs; ++put)
+			{
+				cout << endl << '(' << key << ':';
+			
+				size_t ndocs=lrand48()%((uint32_t)((double)capacity*0.01)); // up to 1% of total possible docids will be set on each key
+				for (size_t d=0; d<ndocs; ++d)
+				{
+					docid_t docid=(lrand48()%capacity)+1;
+					cout << docid << ' ';
+				}
+		
+				cout << ')';
+			}
+			cout << ';' << endl;
+		}
 		
 	}
 	
