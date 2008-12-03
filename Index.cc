@@ -172,7 +172,7 @@ Index::key_t::key_type Index::key_t::getKeyType(const char* kt)
 	else if (!strcasecmp(kt,"uint16")) return KEY_TYPE_UINT16;
 	else if (!strcasecmp(kt,"uint32")) return KEY_TYPE_UINT32;
 	else if (!strcasecmp(kt,"uint64")) return KEY_TYPE_UINT64;
-	else if (!strcasecmp(kt,"dbl"   )) return KEY_TYPE_DBL   ;
+	else if (!strcasecmp(kt,"double")) return KEY_TYPE_DBL   ;
 	else if (!strcasecmp(kt,"char8" )) return KEY_TYPE_CHAR8 ;
 	else if (!strcasecmp(kt,"date"  )) return KEY_TYPE_DATE  ;
 	else if (!strcasecmp(kt,"time"  )) return KEY_TYPE_TIME  ;
