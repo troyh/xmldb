@@ -27,7 +27,7 @@ int my_yyinput(char* buf, int max_size)
 	if (lex_input->bad())
 		return 0;
 		
-	if (lex_input==&cin)
+	if (lex_input==&cin && isatty(0))
 		cout << "ouzo>";
 		
 	lex_input->getline(buf,max_size);
