@@ -3,6 +3,8 @@
 #include <boost/progress.hpp>
 #include <glob.h>
 
+#include <sstream>
+
 #include "Ouzo.hpp"
 #include "Index.hpp"
 
@@ -16,6 +18,39 @@ extern "C"
 using namespace std;
 using namespace boost::algorithm;
 namespace bfs=boost::filesystem;
+
+istream* lex_input=NULL;
+
+extern "C"
+int my_yyinput(char* buf, int max_size)
+{
+	if (lex_input->bad())
+		return 0;
+		
+	if (lex_input==&cin)
+		cout << "ouzo>";
+		
+	lex_input->getline(buf,max_size);
+	int n=lex_input->gcount();
+	
+	if (!n)
+		return 0;
+	return n-1;
+}
+
+extern "C" 
+void yyerror(const char *str)
+{
+	cerr << "error: " << str << endl;
+}
+
+extern "C" 
+int yywrap()
+{
+	return lex_input->good()?0:1;
+} 
+
+
 
 void usage()
 {
@@ -55,13 +90,21 @@ void ouzo_show_index(const char* name)
 extern "C"
 void ouzo_index_get(const char* name, STRING_LIST* list)
 { 
-	while  (list)
+	Ouzo::Index* idx=Ouzo::Index::loadFromFile(name);
+
+	while (list)
 	{
 		size_t i;
 		for (i=0;i<list->count;++i)
 		{
-			printf("GET:%s:%s\n",name,list->list[i]);
+			Ouzo::Index::key_t* key=idx->createKey();
+			key->assign(list->list[i]);
+			const Ouzo::DocSet& ds=idx->get(*key);
+			cout << ds << endl;
+			
 			free(list->list[i]);
+			
+			delete key;
 		}
 
 		STRING_LIST* freelist=list;
@@ -69,6 +112,10 @@ void ouzo_index_get(const char* name, STRING_LIST* list)
 		
 		free(freelist);
 	}
+	
+	idx->save();
+	
+	delete idx;
 }
 
 extern "C"
@@ -108,6 +155,8 @@ void ouzo_index_put(const char* name, KEY_DOCID_LIST* list)
 extern "C"
 void ouzo_index_unput(const char* name, KEY_DOCID_LIST* list)
 { 
+	Ouzo::Index* idx=Ouzo::Index::loadFromFile(name);
+
 	while (list)
 	{
 		printf("UNPUT:%s:%s:",name,list->key);
@@ -128,6 +177,10 @@ void ouzo_index_unput(const char* name, KEY_DOCID_LIST* list)
 	
 		free(freelist);
 	}
+	
+	idx->save();
+	
+	delete idx;
 }
 
 
@@ -146,9 +199,20 @@ int main(int argc,char* argv[])
 	{
 		Ouzo::Ouzo ouzo("ouzo.conf");
 
+		if (argc>1)
+		{
+			string s=argv[1];
+			s.append(";\n");
+			lex_input=new istringstream(s);
+		}
+		else
+		{
+			lex_input=&cin;
+		}
+		
 		yyparse();
 		
-		string cmd(argv[1]);
+		string cmd;
 		to_lower(cmd);
 	
 		if (cmd=="add")
@@ -320,11 +384,6 @@ int main(int argc,char* argv[])
 			{
 				throw;
 			}
-		}
-		else
-		{
-			usage();
-			return -1;
 		}
 	
 	}

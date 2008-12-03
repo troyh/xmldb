@@ -4,16 +4,6 @@
 #include <string.h>
 #include "cli.h"
 
-void yyerror(const char *str)
-{
-        fprintf(stderr,"error: %s\n",str);
-}
- 
-int yywrap()
-{
-        return 1;
-} 
-
 STRING_LIST* start_string_list(char* s)
 {
 	STRING_LIST* new=(STRING_LIST*)calloc(1,sizeof(STRING_LIST));
@@ -110,13 +100,19 @@ NUMBER_LIST* append_number_list(NUMBER_LIST* p, int n)
 	return p;
 }
 
+char* make_string_from_number(int n)
+{
+	char buf[64];
+	sprintf(buf,"%d",n);
+	return strdup(buf);
+}
 
 %}
 
 
 %union
 {
-	int number;
+	long number;
 	char* string;
 	void* vptr;
 }
@@ -150,11 +146,10 @@ show index <name> [<name>]
 
 */
 
-commands:			  command
-					| command ';'
-					| commands command
-					| commands command ';'
-					;
+commands:			  /* empty */
+					| commands ';'
+					| commands command ';'								
+
 			
 command:   			   NEW_TOK   name index_type capacity 				{ ouzo_new_index($2,$3,$4); }
 					 | SHOW_TOK name 									{ ouzo_show_index($2); }
@@ -177,6 +172,7 @@ docid_list: 		  NUMBER											{ $$=start_number_list($1); }
 index_type: 		INDEX_TYPE 											{ $$=$1; }
 capacity: 			NUMBER 												{ $$=$1; }
 key: 				STRING 												{ $$=$1; }
+ 					| NUMBER											{ $$=make_string_from_number($1); }
 name: 				STRING 												{ $$=$1; }
 
 %%		 
