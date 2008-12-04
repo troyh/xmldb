@@ -3,7 +3,7 @@
 <plist version="1.0">
 <dict>
 	<key>currentDocument</key>
-	<string>cli.y</string>
+	<string>Index.cc</string>
 	<key>documents</key>
 	<array>
 		<dict>
@@ -16,7 +16,7 @@
 							<key>filename</key>
 							<string>StringIndex.cc</string>
 							<key>lastUsed</key>
-							<date>2008-11-28T20:59:19Z</date>
+							<date>2008-12-03T17:29:54Z</date>
 						</dict>
 						<dict>
 							<key>filename</key>
@@ -40,13 +40,15 @@
 							<key>filename</key>
 							<string>Ouzo.cc</string>
 							<key>lastUsed</key>
-							<date>2008-11-28T20:59:17Z</date>
+							<date>2008-12-04T00:55:27Z</date>
 						</dict>
 						<dict>
 							<key>filename</key>
 							<string>Index.cc</string>
 							<key>lastUsed</key>
-							<date>2008-11-28T20:59:17Z</date>
+							<date>2008-12-04T00:58:37Z</date>
+							<key>selected</key>
+							<true/>
 						</dict>
 						<dict>
 							<key>filename</key>
@@ -111,19 +113,19 @@
 							<key>filename</key>
 							<string>Ouzo.hpp</string>
 							<key>lastUsed</key>
-							<date>2008-11-20T23:22:00Z</date>
+							<date>2008-12-01T23:44:26Z</date>
 						</dict>
 						<dict>
 							<key>filename</key>
 							<string>Index.hpp</string>
 							<key>lastUsed</key>
-							<date>2008-11-28T20:59:16Z</date>
+							<date>2008-12-03T22:43:27Z</date>
 						</dict>
 						<dict>
 							<key>filename</key>
 							<string>DocSet.hpp</string>
 							<key>lastUsed</key>
-							<date>2008-11-22T19:18:53Z</date>
+							<date>2008-12-02T22:37:54Z</date>
 						</dict>
 						<dict>
 							<key>filename</key>
@@ -212,21 +214,25 @@
 					<key>filename</key>
 					<string>cli.cc</string>
 					<key>lastUsed</key>
-					<date>2008-11-28T22:13:25Z</date>
+					<date>2008-12-04T00:58:37Z</date>
 				</dict>
 				<dict>
 					<key>filename</key>
 					<string>cli.l</string>
 					<key>lastUsed</key>
-					<date>2008-11-28T22:13:27Z</date>
+					<date>2008-12-04T00:57:47Z</date>
 				</dict>
 				<dict>
 					<key>filename</key>
 					<string>cli.y</string>
 					<key>lastUsed</key>
-					<date>2008-11-28T22:13:27Z</date>
-					<key>selected</key>
-					<true/>
+					<date>2008-12-04T00:51:33Z</date>
+				</dict>
+				<dict>
+					<key>filename</key>
+					<string>cli.h</string>
+					<key>lastUsed</key>
+					<date>2008-12-04T00:58:18Z</date>
 				</dict>
 			</array>
 			<key>expanded</key>
@@ -253,13 +259,19 @@
 					<key>filename</key>
 					<string>test/Makefile</string>
 					<key>lastUsed</key>
-					<date>2008-11-11T21:24:25Z</date>
+					<date>2008-12-01T23:50:17Z</date>
 				</dict>
 				<dict>
 					<key>filename</key>
 					<string>test/indexes.cc</string>
 					<key>lastUsed</key>
-					<date>2008-11-11T21:27:56Z</date>
+					<date>2008-12-04T00:57:48Z</date>
+				</dict>
+				<dict>
+					<key>filename</key>
+					<string>test/runtest.sh</string>
+					<key>lastUsed</key>
+					<date>2008-12-04T00:57:54Z</date>
 				</dict>
 			</array>
 			<key>expanded</key>
@@ -272,14 +284,70 @@
 	<integer>200</integer>
 	<key>metaData</key>
 	<dict>
+		<key>Index.cc</key>
+		<dict>
+			<key>caret</key>
+			<dict>
+				<key>column</key>
+				<integer>33</integer>
+				<key>line</key>
+				<integer>174</integer>
+			</dict>
+			<key>firstVisibleColumn</key>
+			<integer>0</integer>
+			<key>firstVisibleLine</key>
+			<integer>179</integer>
+		</dict>
+		<key>Index.hpp</key>
+		<dict>
+			<key>caret</key>
+			<dict>
+				<key>column</key>
+				<integer>0</integer>
+				<key>line</key>
+				<integer>212</integer>
+			</dict>
+			<key>firstVisibleColumn</key>
+			<integer>0</integer>
+			<key>firstVisibleLine</key>
+			<integer>105</integer>
+		</dict>
 		<key>cli.cc</key>
 		<dict>
 			<key>caret</key>
 			<dict>
 				<key>column</key>
-				<integer>19</integer>
+				<integer>0</integer>
 				<key>line</key>
-				<integer>5</integer>
+				<integer>138</integer>
+			</dict>
+			<key>firstVisibleColumn</key>
+			<integer>0</integer>
+			<key>firstVisibleLine</key>
+			<integer>76</integer>
+		</dict>
+		<key>cli.h</key>
+		<dict>
+			<key>caret</key>
+			<dict>
+				<key>column</key>
+				<integer>0</integer>
+				<key>line</key>
+				<integer>0</integer>
+			</dict>
+			<key>firstVisibleColumn</key>
+			<integer>0</integer>
+			<key>firstVisibleLine</key>
+			<integer>0</integer>
+		</dict>
+		<key>cli.l</key>
+		<dict>
+			<key>caret</key>
+			<dict>
+				<key>column</key>
+				<integer>8</integer>
+				<key>line</key>
+				<integer>19</integer>
 			</dict>
 			<key>firstVisibleColumn</key>
 			<integer>0</integer>
@@ -291,20 +359,70 @@
 			<key>caret</key>
 			<dict>
 				<key>column</key>
-				<integer>73</integer>
+				<integer>8</integer>
+				<key>line</key>
+				<integer>112</integer>
+			</dict>
+			<key>columnSelection</key>
+			<false/>
+			<key>firstVisibleColumn</key>
+			<integer>0</integer>
+			<key>firstVisibleLine</key>
+			<integer>58</integer>
+			<key>selectFrom</key>
+			<dict>
+				<key>column</key>
+				<integer>2</integer>
+				<key>line</key>
+				<integer>112</integer>
+			</dict>
+			<key>selectTo</key>
+			<dict>
+				<key>column</key>
+				<integer>8</integer>
+				<key>line</key>
+				<integer>112</integer>
+			</dict>
+		</dict>
+		<key>test/indexes.cc</key>
+		<dict>
+			<key>caret</key>
+			<dict>
+				<key>column</key>
+				<integer>0</integer>
+				<key>line</key>
+				<integer>25</integer>
+			</dict>
+			<key>firstVisibleColumn</key>
+			<integer>0</integer>
+			<key>firstVisibleLine</key>
+			<integer>85</integer>
+		</dict>
+		<key>test/runtest.sh</key>
+		<dict>
+			<key>caret</key>
+			<dict>
+				<key>column</key>
+				<integer>0</integer>
 				<key>line</key>
 				<integer>5</integer>
 			</dict>
 			<key>firstVisibleColumn</key>
 			<integer>0</integer>
 			<key>firstVisibleLine</key>
-			<integer>24</integer>
+			<integer>0</integer>
 		</dict>
 	</dict>
 	<key>openDocuments</key>
 	<array>
 		<string>cli.cc</string>
+		<string>Index.cc</string>
+		<string>cli.h</string>
 		<string>cli.y</string>
+		<string>cli.l</string>
+		<string>test/indexes.cc</string>
+		<string>test/runtest.sh</string>
+		<string>Index.hpp</string>
 	</array>
 	<key>showFileHierarchyDrawer</key>
 	<true/>

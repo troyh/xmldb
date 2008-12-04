@@ -17,7 +17,8 @@ show return SHOW_TOK;
 int8|int16|int32|int64|uint8|uint16|uint32|uint64|double|char8	yylval.string=strdup(yytext);return INDEX_TYPE;
 
 
--?[0-9]+		yylval.number=strtol(yytext,0,10);return NUMBER;
+-[0-9]+		yylval.signed_number=strtol(yytext,0,10);return NEG_NUMBER;
+[0-9]+		yylval.unsigned_number=strtoul(yytext,0,10);return POS_NUMBER;
 [a-zA-Z0-9_]+	yylval.string=strdup(yytext);return STRING;
 [ \t\n]+		/* ignore */
 .				return (int)yytext[0];

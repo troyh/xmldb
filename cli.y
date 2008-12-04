@@ -18,7 +18,9 @@ STRING_LIST* start_string_list(char* s)
 
 STRING_LIST* append_string_list(STRING_LIST* p, char* s)
 {
-	while (p->next && p->count<(sizeof(p->list)/sizeof(p->list[0])))
+	STRING_LIST* origp=p;
+	
+	while (p->next && p->count>=(sizeof(p->list)/sizeof(p->list[0])))
 	{
 		p=p->next;
 	}
@@ -34,18 +36,20 @@ STRING_LIST* append_string_list(STRING_LIST* p, char* s)
 	}
 	
 	p->list[p->count++]=s;
-	return p;
+	return origp;
 }
 
 KEY_DOCID_LIST* connect_number_list(KEY_DOCID_LIST* p, KEY_DOCID_LIST* list)
 {
+	KEY_DOCID_LIST* origp=p;
+	
 	/* Find end of chain */
 	for (; p->next; p=p->next)
 	{
 	}
 	
 	p->next=list;
-	return p;
+	return origp;
 }
 
 KEY_DOCID_LIST* make_key_docid_list(char* key, NUMBER_LIST* nl)
@@ -71,8 +75,10 @@ NUMBER_LIST* start_number_list(int n)
 
 NUMBER_LIST* append_number_list(NUMBER_LIST* p, int n)
 { 
+	NUMBER_LIST* origp=p;
+	
 	// Find the next empty slot
-	while (p && p->next && (p->count<(sizeof(p->list)/sizeof(p->list[0]))))
+	while (p && p->next && (p->count>=(sizeof(p->list)/sizeof(p->list[0]))))
 	{
 		p=p->next;
 	}
@@ -97,13 +103,21 @@ NUMBER_LIST* append_number_list(NUMBER_LIST* p, int n)
 	}
 
 	p->list[p->count++]=n;
-	return p;
+
+	return origp;
 }
 
-char* make_string_from_number(int n)
+char* make_string_from_unsigned_number(unsigned long n)
 {
 	char buf[64];
-	sprintf(buf,"%d",n);
+	sprintf(buf,"%ul",n);
+	return strdup(buf);
+}
+
+char* make_string_from_signed_number(long n)
+{
+	char buf[64];
+	sprintf(buf,"%l",n);
 	return strdup(buf);
 }
 
@@ -112,12 +126,14 @@ char* make_string_from_number(int n)
 
 %union
 {
-	long number;
+	unsigned long unsigned_number;
+	long signed_number;
 	char* string;
 	void* vptr;
 }
 
-%token <number> NUMBER 
+%token <unsigned_number> POS_NUMBER 
+%token <signed_number> NEG_NUMBER 
 %token <string> STRING 
 %token <string> NEW_TOK 
 %token <string> SHOW_TOK 
@@ -129,7 +145,8 @@ char* make_string_from_number(int n)
 %type <string> key 
 %type <string> name 
 %type <string> index_type 
-%type <number> capacity 
+%type <unsigned_number> number 
+%type <unsigned_number> capacity 
 %type <vptr> docid_list 
 %type <vptr> key_docid_list
 %type <vptr> key_docid_list_set
@@ -165,14 +182,18 @@ key_docid_list_set:   key_docid_list									{ $$=$1; }
 		
 key_docid_list: 	'(' key ':' docid_list ')'							{ $$=make_key_docid_list($2,$4); }
 
-docid_list: 		  NUMBER											{ $$=start_number_list($1); }
-					| docid_list NUMBER 								{ $$=append_number_list($1,$2); }
-
+docid_list: 		  number											{ $$=start_number_list($1); }
+					| docid_list number 								{ $$=append_number_list($1,$2); }
 
 index_type: 		INDEX_TYPE 											{ $$=$1; }
-capacity: 			NUMBER 												{ $$=$1; }
+capacity: 			POS_NUMBER											{ $$=$1; }
 key: 				STRING 												{ $$=$1; }
- 					| NUMBER											{ $$=make_string_from_number($1); }
+ 					| POS_NUMBER										{ $$=make_string_from_unsigned_number($1); }
+ 					| NEG_NUMBER										{ $$=make_string_from_signed_number($1); }
+
+number: 			POS_NUMBER											{ $<unsigned_number>$=$1; }
+					| NEG_NUMBER 										{ $<signed_number>$=$1; }
+
 name: 				STRING 												{ $$=$1; }
 
 %%		 

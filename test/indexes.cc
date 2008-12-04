@@ -175,6 +175,8 @@ int main(int argc, char* argv[])
 				cout << endl << '(' << key << ':';
 			
 				size_t ndocs=lrand48()%((uint32_t)((double)capacity*0.01)); // up to 1% of total possible docids will be set on each key
+				if (ndocs==0)
+					ndocs=1;
 				for (size_t d=0; d<ndocs; ++d)
 				{
 					docid_t docid=(lrand48()%capacity)+1;
