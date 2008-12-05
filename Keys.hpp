@@ -77,7 +77,7 @@ public:
 class datekey_t : public Index::key_t
 {
 public:
-	datekey_t(uint32_t n) : Index::key_t(KEY_TYPE_UINT32) { m_val.uint32=n; }
+	datekey_t(uint32_t n=0) : Index::key_t(KEY_TYPE_DATE) { m_val.uint32=n; }
 	
 	void assign(time_t t);
 	void assign(const char* s);
@@ -86,7 +86,7 @@ public:
 class timekey_t : public Index::key_t
 {
 public:	
-	timekey_t(time_t t) : Index::key_t(KEY_TYPE_UINT32) { m_val.uint32=t; }
+	timekey_t(time_t t=0) : Index::key_t(KEY_TYPE_TIME) { m_val.uint32=t; }
 
 	void assign(time_t t);
 	void assign(const char* s);
@@ -95,8 +95,7 @@ public:
 class floatkey_t : public Index::key_t
 {
 public:
-	floatkey_t(float f) : Index::key_t(KEY_TYPE_DBL) { m_val.dbl=f; }
-	floatkey_t(double d) : Index::key_t(KEY_TYPE_DBL) { m_val.dbl=d; }
+	floatkey_t(float f=0) : Index::key_t(KEY_TYPE_DBL) { m_val.dbl=f; }
 	
 	void assign(const char* s);
 };

@@ -24,7 +24,8 @@ void datekey_t::assign(time_t t)
 
 void datekey_t::assign(const char* s)
 {
-	// TODO: implement this
+	// TODO: support other string formats like "Jan 1, 2009", etc.
+	m_val.uint32=strtoul(s,0,10);
 }
 
 void timekey_t::assign(time_t t)
@@ -34,7 +35,8 @@ void timekey_t::assign(time_t t)
 
 void timekey_t::assign(const char* s)
 {
-	// TODO: implement this
+	// TODO: support other string formats for time strings
+	m_val.uint32=strtoul(s,0,10);
 }
 
 void floatkey_t::assign(const char* s)

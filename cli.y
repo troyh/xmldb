@@ -134,6 +134,7 @@ char* make_string_from_signed_number(long n)
 
 %token <string> POS_NUMBER 
 %token <string> NEG_NUMBER 
+%token <string> FLOAT_NUMBER
 %token <string> STRING 
 %token <string> NEW_TOK 
 %token <string> SHOW_TOK 
@@ -190,6 +191,7 @@ capacity: 			POS_NUMBER											{ $$=strtoul($1,0,10); }
 key: 				STRING 												{ $$=$1; }
  					| POS_NUMBER										{ $$=$1; }
  					| NEG_NUMBER										{ $$=$1; }
+ 					| FLOAT_NUMBER										{ $$=$1; }
 
 number: 			POS_NUMBER											{ $<unsigned_number>$=strtoul($1,0,10); }
 					| NEG_NUMBER 										{ $<signed_number>$=strtol($1,0,10); }

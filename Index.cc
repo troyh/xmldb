@@ -17,7 +17,10 @@ Index::key_t::key_t(const key_t& k)
 bool   Index::key_t::operator< (const key_t& key) const
 {
 	if (m_type!=key.m_type)
+	{
+		cout << m_type << "!=" << key.m_type << endl;
 		throw Exception(__FILE__,__LINE__);
+	}
 
 	     if (m_type==KEY_TYPE_INT8)    { return m_val.int8   < key.m_val.int8; }
 	else if (m_type==KEY_TYPE_INT16)   { return m_val.int16  < key.m_val.int16; }
@@ -27,6 +30,8 @@ bool   Index::key_t::operator< (const key_t& key) const
 	else if (m_type==KEY_TYPE_UINT16)  { return m_val.uint16 < key.m_val.uint16; }
 	else if (m_type==KEY_TYPE_UINT32)  { return m_val.uint32 < key.m_val.uint32; }
 	else if (m_type==KEY_TYPE_UINT64)  { return m_val.uint64 < key.m_val.uint64; }
+	else if (m_type==KEY_TYPE_DATE)    { return m_val.uint32 < key.m_val.uint32; }
+	else if (m_type==KEY_TYPE_TIME)    { return m_val.uint32 < key.m_val.uint32; }
 	else if (m_type==KEY_TYPE_DBL)     { return m_val.dbl    < key.m_val.dbl   ; }
 	else if (m_type==KEY_TYPE_CHAR8)   { return strncmp(m_val.ch, key.m_val.ch, sizeof(m_val.ch)) < 0; }
 	else if (m_type==KEY_TYPE_PTR)     { return m_val.ptr    < key.m_val.ptr; }
@@ -50,6 +55,8 @@ bool Index::key_t::operator==(const key_t& k) const
 	else if (m_type==KEY_TYPE_UINT16)  { return m_val.uint16==k.m_val.uint16; }
 	else if (m_type==KEY_TYPE_UINT32)  { return m_val.uint32==k.m_val.uint32; }
 	else if (m_type==KEY_TYPE_UINT64)  { return m_val.uint64==k.m_val.uint64; }
+	else if (m_type==KEY_TYPE_DATE)    { return m_val.uint32==k.m_val.uint32; }
+	else if (m_type==KEY_TYPE_TIME)    { return m_val.uint32==k.m_val.uint32; }
 	else if (m_type==KEY_TYPE_DBL   )  { return m_val.dbl   ==k.m_val.dbl   ; }
 	else if (m_type==KEY_TYPE_CHAR8 )  { return strncmp(m_val.ch, k.m_val.ch, sizeof(m_val.ch))==0; }
 	else if (m_type==KEY_TYPE_PTR)     { return m_val.ptr   ==k.m_val.ptr   ; }
@@ -62,14 +69,16 @@ bool Index::key_t::operator==(const key_t& k) const
 
 void Index::key_t::output(ostream& os) const
 {
-	     if (m_type==KEY_TYPE_INT8  )  { os << m_val.int8  ; }
+	     if (m_type==KEY_TYPE_INT8  )  { os << (int)m_val.int8  ; }
 	else if (m_type==KEY_TYPE_INT16 )  { os << m_val.int16 ; }
 	else if (m_type==KEY_TYPE_INT32 )  { os << m_val.int32 ; }
 	else if (m_type==KEY_TYPE_INT64 )  { os << m_val.int64 ; }
-	else if (m_type==KEY_TYPE_UINT8 )  { os << m_val.uint8 ; }
+	else if (m_type==KEY_TYPE_UINT8 )  { os << (unsigned int)m_val.uint8 ; }
 	else if (m_type==KEY_TYPE_UINT16)  { os << m_val.uint16; }
 	else if (m_type==KEY_TYPE_UINT32)  { os << m_val.uint32; }
 	else if (m_type==KEY_TYPE_UINT64)  { os << m_val.uint64; }
+	else if (m_type==KEY_TYPE_DATE)    { os << m_val.uint32; }
+	else if (m_type==KEY_TYPE_TIME)    { os << m_val.uint32; }
 	else if (m_type==KEY_TYPE_DBL   )  { os << m_val.dbl   ; }
 	else if (m_type==KEY_TYPE_CHAR8 )  { os.write(m_val.ch, min(sizeof(m_val.ch),strlen(m_val.ch))); }
 	else if (m_type==KEY_TYPE_PTR)     { os << m_val.ptr   ; }
@@ -284,8 +293,11 @@ Index::key_t* Index::createKey() const
 		case key_t::KEY_TYPE_UINT16: return new uint16key_t(); break;
 		case key_t::KEY_TYPE_UINT32: return new uint32key_t(); break;
 		case key_t::KEY_TYPE_UINT64: return new uint64key_t(); break;
+		case key_t::KEY_TYPE_FLOAT : return new floatkey_t();   break;
 		case key_t::KEY_TYPE_DBL   : return new doublekey_t(); break;
 		case key_t::KEY_TYPE_CHAR8 : return new char8key_t();  break;
+		case key_t::KEY_TYPE_DATE  : return new datekey_t();   break;
+		case key_t::KEY_TYPE_TIME  : return new timekey_t();   break;
 		default:
 			throw Exception(__FILE__,__LINE__);
 	}

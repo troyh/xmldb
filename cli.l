@@ -18,13 +18,20 @@ get 	{ tokenpos+=yyleng; return GET_TOK; }
 unput 	{ tokenpos+=yyleng; return UNPUT_TOK; }
 show 	{ tokenpos+=yyleng; return SHOW_TOK; }
 
-int8|int16|int32|int64|uint8|uint16|uint32|uint64|double|char8|string	{
+int8|int16|int32|int64|uint8|uint16|uint32|uint64|double|char8|string|date|time	{
 																	yylval.string=strdup(yytext);
 																	tokenpos+=yyleng;
 																	return INDEX_TYPE;
 																}
 
-
+\n.*		{
+				strncpy(linebuf,yytext+1,sizeof(linebuf));
+				lineno++;
+				printf("Line #%d\n",lineno);
+				tokenpos=0;
+				yyless(1);
+				/* ignore */
+			}
 -[0-9]+		{
 				yylval.string=strdup(yytext);
 				tokenpos+=yyleng;
@@ -35,6 +42,16 @@ int8|int16|int32|int64|uint8|uint16|uint32|uint64|double|char8|string	{
 				tokenpos+=yyleng;
 				return POS_NUMBER;
 			}
+-?[0-9]+[0-9\.]+e\+[0-9]+ 	{	/* e syntax */
+								yylval.string=strdup(yytext);
+								tokenpos+=yyleng;
+								return FLOAT_NUMBER;
+							}
+-?[0-9]+\.[0-9]+ 			{
+								yylval.string=strdup(yytext);
+								tokenpos+=yyleng;
+								return FLOAT_NUMBER;
+							}
 [a-zA-Z0-9_]+	{
 					yylval.string=strdup(yytext);
 					tokenpos+=yyleng;
@@ -42,13 +59,6 @@ int8|int16|int32|int64|uint8|uint16|uint32|uint64|double|char8|string	{
 				}
 [ \t]+		{
 				tokenpos+=yyleng;
-				/* ignore */
-			}
-\n.*		{
-				strncpy(linebuf,yytext+1,sizeof(linebuf));
-				lineno++;
-				tokenpos=0;
-				yyless(1);
 				/* ignore */
 			}
 .			{
