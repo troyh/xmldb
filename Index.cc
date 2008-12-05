@@ -71,7 +71,7 @@ void Index::key_t::output(ostream& os) const
 	else if (m_type==KEY_TYPE_UINT32)  { os << m_val.uint32; }
 	else if (m_type==KEY_TYPE_UINT64)  { os << m_val.uint64; }
 	else if (m_type==KEY_TYPE_DBL   )  { os << m_val.dbl   ; }
-	else if (m_type==KEY_TYPE_CHAR8 )  { os.write(m_val.ch, sizeof(m_val.ch)); }
+	else if (m_type==KEY_TYPE_CHAR8 )  { os.write(m_val.ch, min(sizeof(m_val.ch),strlen(m_val.ch))); }
 	else if (m_type==KEY_TYPE_PTR)     { os << m_val.ptr   ; }
 	else if (m_type==KEY_TYPE_OBJECT)  { return m_val.object->output(os); }
 	else
@@ -100,23 +100,23 @@ ostream& operator<<(ostream& os, Index::key_t::key_type t)
 {
 	switch (t)
 	{
-		case Index::key_t::KEY_TYPE_UNKNOWN:	os << "unknown"; break;
-		case Index::key_t::KEY_TYPE_INT8	 :	os << "int8"   ; break;
-		case Index::key_t::KEY_TYPE_INT16	 :	os << "int16"  ; break;
-		case Index::key_t::KEY_TYPE_INT32	 :	os << "int32"  ; break;
-		case Index::key_t::KEY_TYPE_INT64	 :	os << "int64"  ; break;
-		case Index::key_t::KEY_TYPE_UINT8	 :	os << "uint8"  ; break;
-		case Index::key_t::KEY_TYPE_UINT16 :	os << "uint16" ; break;
-		case Index::key_t::KEY_TYPE_UINT32 :	os << "uint32" ; break;
-		case Index::key_t::KEY_TYPE_UINT64 :	os << "uint64" ; break;
-		case Index::key_t::KEY_TYPE_DBL	 :	os << "dbl"    ; break;
-		case Index::key_t::KEY_TYPE_CHAR8	 :	os << "char8"  ; break;
-		case Index::key_t::KEY_TYPE_PTR	 :	os << "ptr"    ; break;
-		case Index::key_t::KEY_TYPE_DATE	 :	os << "date"   ; break;
-		case Index::key_t::KEY_TYPE_TIME	 :	os << "time"   ; break;
-		case Index::key_t::KEY_TYPE_FLOAT	 :	os << "float"  ; break;
-		case Index::key_t::KEY_TYPE_STRING :	os << "string" ; break;
-		case Index::key_t::KEY_TYPE_OBJECT :	os << "object" ; break;
+		case Index::key_t::KEY_TYPE_UNKNOWN	:	os << "unknown"; break;
+		case Index::key_t::KEY_TYPE_INT8	:	os << "int8"   ; break;
+		case Index::key_t::KEY_TYPE_INT16	:	os << "int16"  ; break;
+		case Index::key_t::KEY_TYPE_INT32	:	os << "int32"  ; break;
+		case Index::key_t::KEY_TYPE_INT64	:	os << "int64"  ; break;
+		case Index::key_t::KEY_TYPE_UINT8	:	os << "uint8"  ; break;
+		case Index::key_t::KEY_TYPE_UINT16	:	os << "uint16" ; break;
+		case Index::key_t::KEY_TYPE_UINT32	:	os << "uint32" ; break;
+		case Index::key_t::KEY_TYPE_UINT64	:	os << "uint64" ; break;
+		case Index::key_t::KEY_TYPE_DBL	 	:	os << "double" ; break;
+		case Index::key_t::KEY_TYPE_CHAR8	:	os << "char8"  ; break;
+		case Index::key_t::KEY_TYPE_PTR		:	os << "ptr"    ; break;
+		case Index::key_t::KEY_TYPE_DATE	:	os << "date"   ; break;
+		case Index::key_t::KEY_TYPE_TIME	:	os << "time"   ; break;
+		case Index::key_t::KEY_TYPE_FLOAT	:	os << "float"  ; break;
+		case Index::key_t::KEY_TYPE_STRING	:	os << "string" ; break;
+		case Index::key_t::KEY_TYPE_OBJECT	:	os << "object" ; break;
 		default:
 			throw Exception(__FILE__,__LINE__); 
 			break;

@@ -68,8 +68,8 @@ namespace Ouzo
 				key_t*	 object;
 			} m_val;
 			
-			key_t() : m_type(KEY_TYPE_UNKNOWN) { m_val.ptr=0; }
-			key_t(key_type t) : m_type(t) { m_val.ptr=0; }
+			key_t() : m_type(KEY_TYPE_UNKNOWN) { memset((char*)&m_val,0,sizeof(m_val)); }
+			key_t(key_type t) : m_type(t) { memset((char*)&m_val,0,sizeof(m_val)); }
 			key_t(const Index::key_t& k);
 			
 			virtual ~key_t() {}
@@ -87,7 +87,7 @@ namespace Ouzo
 			virtual void assign(double   x) { m_type=KEY_TYPE_DBL   ; m_val.dbl   =x; }
 			virtual void assign(void*	 x) { m_type=KEY_TYPE_PTR   ; m_val.ptr   =x; }
 			virtual void assign(key_t*   x) { m_type=KEY_TYPE_OBJECT; m_val.object=x; }
-			virtual void assign(const char* x) { m_type=KEY_TYPE_CHAR8; memcpy(m_val.ch,x,sizeof(m_val.ch)); }
+			virtual void assign(const char* x) { m_type=KEY_TYPE_CHAR8; strncpy(m_val.ch,x,sizeof(m_val.ch)); }
 
 			virtual bool operator==(const key_t& k) const;
 			virtual bool operator!=(const key_t& k) const { return !operator==(k); };
