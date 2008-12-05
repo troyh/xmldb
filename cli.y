@@ -110,7 +110,7 @@ NUMBER_LIST* append_number_list(NUMBER_LIST* p, int n)
 char* make_string_from_unsigned_number(unsigned long n)
 {
 	char buf[64];
-	sprintf(buf,"%ul",n);
+	sprintf(buf,"%lu",n);
 	return strdup(buf);
 }
 
