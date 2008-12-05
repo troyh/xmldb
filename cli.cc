@@ -15,6 +15,11 @@ extern "C"
 
 // TODO: support reindex command
 
+extern char* linebuf;
+extern unsigned int lineno;
+extern unsigned int tokenpos;
+
+
 using namespace std;
 using namespace boost::algorithm;
 namespace bfs=boost::filesystem;
@@ -41,7 +46,9 @@ int my_yyinput(char* buf, int max_size)
 extern "C" 
 void yyerror(const char *str)
 {
-	cerr << "error: " << str << endl;
+	cerr << "Error on line " << lineno << " column " << tokenpos << ": " << str << endl
+	 	 << linebuf << endl;
+	fprintf(stderr,"%*s\n",1+tokenpos,"^");
 }
 
 extern "C" 
@@ -127,6 +134,7 @@ void ouzo_index_put(const char* name, KEY_DOCID_LIST* list)
 	{
 		Ouzo::Index::key_t* k=idx->createKey();
 		k->assign(list->key);
+		// cout << "ouzo_index_put:" << list->key << endl;
 
 		NUMBER_LIST* p=list->docids;
 		for (; p; p=p->next)
@@ -197,7 +205,6 @@ int main(int argc,char* argv[])
 	
 	try
 	{
-		Ouzo::Ouzo ouzo("ouzo.conf");
 
 		if (argc>1)
 		{
@@ -225,6 +232,7 @@ int main(int argc,char* argv[])
 			
 			try
 			{
+				Ouzo::Ouzo ouzo("ouzo.conf");
 				// std::cout << "Before:" << std::endl << ouzo << std::endl;
 
 				// This is kinda dumb to do the glob-ing twice, but I want to get a count of
@@ -278,6 +286,7 @@ int main(int argc,char* argv[])
 		{
 			try
 			{
+				Ouzo::Ouzo ouzo("ouzo.conf");
 				std::cout << "Before:" << std::endl << ouzo << std::endl;
 				ouzo.delDocument(argv[2]);
 				std::cout << "After:" << std::endl << ouzo << std::endl;
@@ -291,6 +300,7 @@ int main(int argc,char* argv[])
 		{
 			try
 			{
+				Ouzo::Ouzo ouzo("ouzo.conf");
 				Ouzo::DocumentBase* pDB=ouzo.getDocBase("recipe_reviews");
 				Ouzo::Query::Results results(pDB);
 				
@@ -345,6 +355,7 @@ int main(int argc,char* argv[])
 		{
 			try
 			{
+				Ouzo::Ouzo ouzo("ouzo.conf");
 				if (argc>2)
 				{
 					string subcmd(argv[2]);

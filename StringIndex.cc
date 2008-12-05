@@ -28,6 +28,18 @@ StringIndex::stringkey_t::stringkey_t(const std::string& s)
 	strcpy((char*)m_val.ptr,s.c_str());
 }
 
+StringIndex::stringkey_t::stringkey_t(const stringkey_t& k)
+	: Index::key_t(Index::key_t::KEY_TYPE_STRING) 
+{
+	if (!k.m_val.ptr)
+		throw Exception(__FILE__,__LINE__);
+	m_val.ptr=new char[strlen((char*)k.m_val.ptr)+1];
+	if (!m_val.ptr)
+		throw Exception(__FILE__,__LINE__);
+
+	strcpy((char*)m_val.ptr,(char*)k.m_val.ptr);
+}
+
 void StringIndex::stringkey_t::assign(const char* s)
 {
 	m_type=Index::key_t::KEY_TYPE_STRING;
@@ -102,9 +114,13 @@ void StringIndex::put(const key_t& key, docid_t docid)
 	const stringkey_t* skey=dynamic_cast<const stringkey_t*>(&key);
 	if (!skey)
 		throw Exception(__FILE__,__LINE__);
+		
+	// Copy the stringkey_t so the caller to this can destroy the one passed in
+	stringkey_t* copyskey=new stringkey_t(*skey);
+	// TODO: implement ref-counting in stringkey_t so we don't have to do this and the caller is free to destroy the key or not
 	
 	Index::key_t basekey(baseKeyType());
-	basekey.assign((Index::key_t*)skey);
+	basekey.assign((Index::key_t*)copyskey);
 	Index::put(basekey,docid);
 }
 

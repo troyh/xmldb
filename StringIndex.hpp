@@ -22,6 +22,7 @@ namespace Ouzo
 			stringkey_t() : Index::key_t(Index::key_t::KEY_TYPE_STRING) {}
 			stringkey_t(const char* s);
 			stringkey_t(const std::string& s);
+			stringkey_t(const stringkey_t& k);
 			~stringkey_t() { delete (char*)(m_val.ptr); }
 
 			bool operator< (const Index::key_t& key) const;

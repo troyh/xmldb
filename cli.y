@@ -117,7 +117,7 @@ char* make_string_from_unsigned_number(unsigned long n)
 char* make_string_from_signed_number(long n)
 {
 	char buf[64];
-	sprintf(buf,"%l",n);
+	sprintf(buf,"%ld",n);
 	return strdup(buf);
 }
 
