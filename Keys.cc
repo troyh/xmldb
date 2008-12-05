@@ -9,11 +9,11 @@ namespace Ouzo
 void int8key_t::assign(const char* s){m_val.int8=strtoul(s,0,10);}
 void int16key_t::assign(const char* s){m_val.int16=strtoul(s,0,10);}
 void int32key_t::assign(const char* s){m_val.int32=strtoul(s,0,10);}
-void int64key_t::assign(const char* s){m_val.int64=strtoul(s,0,10);}
+void int64key_t::assign(const char* s){m_val.int64=strtoull(s,0,10);}
 void uint8key_t::assign(const char* s){m_val.uint8=strtol(s,0,10);}
 void uint16key_t::assign(const char* s){m_val.uint16=strtoul(s,0,10);}
 void uint32key_t::assign(const char* s){m_val.uint32=strtoul(s,0,10);}
-void uint64key_t::assign(const char* s){m_val.uint64=strtoul(s,0,10);}
+void uint64key_t::assign(const char* s){m_val.uint64=strtoull(s,0,10);}
 void doublekey_t::assign(const char* s){m_val.dbl=strtod(s,0);}
 
 void datekey_t::assign(time_t t)
