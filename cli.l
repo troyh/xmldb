@@ -26,12 +26,12 @@ int8|int16|int32|int64|uint8|uint16|uint32|uint64|double|char8|string	{
 
 
 -[0-9]+		{
-				yylval.signed_number=strtol(yytext,0,10);
+				yylval.string=strdup(yytext);
 				tokenpos+=yyleng;
 				return NEG_NUMBER;
 			}
 [0-9]+		{
-				yylval.unsigned_number=strtoul(yytext,0,10);
+				yylval.string=strdup(yytext);
 				tokenpos+=yyleng;
 				return POS_NUMBER;
 			}
