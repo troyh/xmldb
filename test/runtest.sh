@@ -1,14 +1,14 @@
 #!/bin/bash
 
 # INDEX_TYPE="int64"
-MAXKEYS="100"
+MAXKEYS="1000"
 
 OUZO_PROG="../ouzo"
 
 function runtest {
 	INDEX_TYPE=$1
 
-	echo "Running $INDEX_TYPE test...";
+	echo -n "Running $INDEX_TYPE test...";
 	
 	# Create Ouzo script
 	./indexes --type $INDEX_TYPE -maxkeys $MAXKEYS > test.ouzo
@@ -16,7 +16,7 @@ function runtest {
 	$OUZO_PROG < test.ouzo
 	
 	# Get results from Ouzo and format it for comparison
-	$OUZO_PROG "show $INDEX_TYPE""_test" | sed -e '1,/^\s*$/d' -e '/^\s*$/d' | perl -n -e 'chomp;($k,$d)=split(/:/);@d=split(/\s+/,$d);foreach $n (@d) { print "$k:$n\n";}'|sort > actual.out
+	$OUZO_PROG -e "show $INDEX_TYPE""_test" | sed -e '1,/^\s*$/d' -e '/^\s*$/d' | perl -n -e 'chomp;($k,$d)=split(/:/);@d=split(/\s+/,$d);foreach $n (@d) { print "$k:$n\n";}'|sort > actual.out
 	# Format test script's output
 	grep "^(" test.ouzo | sed -e 's/(//' -e 's/)//' -e 's/;//' | perl -n -e 'chomp;($k,$d)=split(/:/);@d=split(/\s+/,$d);foreach $n (@d) { print "$k:$n\n";}'|sort -u > expected.out
 	
@@ -26,6 +26,7 @@ function runtest {
 		EXTRA=`egrep -c "^\+" runtest.diff`
 		echo "$INDEX_TYPE test failed: $MISSING missing, $EXTRA extra keys";
 	else
+		echo "OK";
 		rm -f runtest.diff actual.out expected.out *.index test.ouzo
 	fi
 }

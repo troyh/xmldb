@@ -2,6 +2,7 @@
 #include <boost/filesystem.hpp>
 #include <boost/progress.hpp>
 #include <glob.h>
+#include <getopt.h>
 
 #include <sstream>
 
@@ -39,7 +40,12 @@ int my_yyinput(char* buf, int max_size)
 	int n=lex_input->gcount();
 	
 	if (!n)
+	{
+		if (lex_input==&cin && isatty(0))
+			cout << endl << "Arf!" << endl;
 		return 0;
+	}
+	
 	return n-1;
 }
 
@@ -61,12 +67,11 @@ int yywrap()
 
 void usage()
 {
-	cout << "ouzo <command> [arguments]" << endl
+	cout << "ouzo [options]" << endl
 		 << endl
-		<< "where <command> is one of the following:" << endl
-		<< "add\tAdd document(s) to Ouzo" << endl
-		<< "del\tDelete document from Ouzo" << endl
-		<< "info\tOuzo info report" << endl
+		<< "where [options] is one or more of the following:" << endl
+		<< "-e,--expression	      Specify an Ouzo expression to be run non-interactively." << endl
+		<< "-h,--help             Print this." << endl
 		<< endl;
 }
 
@@ -196,25 +201,46 @@ void ouzo_index_unput(const char* name, KEY_DOCID_LIST* list)
 
 int main(int argc,char* argv[])
 {
-	
-	// if (argc<2)
-	// {
-	// 	usage();
-	// 	return -1;
-	// }
-	
 	try
 	{
+		lex_input=&cin;
 
-		if (argc>1)
+		static struct option long_options[]=
 		{
-			string s=argv[1];
-			s.append(";\n");
-			lex_input=new istringstream(s);
+			{ "expression", required_argument, NULL, 'e' },
+			{ "help"      , no_argument      , NULL, 'h' },
+			{ 0, 0, 0, 0 }
+		};
+
+		int option_index=0;
+		int c;
+		while ((c=getopt_long_only(argc,argv,"e:h",long_options,&option_index))!=-1)
+		{
+			switch(c)
+			{
+			case 0:
+				break;
+			case 'e':
+			{
+				string s=optarg;
+				s.append(";\n");
+				lex_input=new istringstream(s);
+				break;
+			}
+			case 'h':
+				usage();
+				return 0;
+				break;
+			}
 		}
-		else
+		
+		if (optind<argc)
 		{
-			lex_input=&cin;
+			for (size_t i=optind; i<argc; ++i)
+			{
+				cerr << "Unnecessary argument:" << argv[i] << endl;
+			}
+			return -1;
 		}
 		
 		yyparse();
