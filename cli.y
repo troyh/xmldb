@@ -141,6 +141,7 @@ char* make_string_from_signed_number(long n)
 %token <string> PUT_TOK
 %token <string> GET_TOK
 %token <string> UNPUT_TOK
+%token <string> QUIT_TOK
 %token <string> INDEX_TYPE
 
 %type <string> key 
@@ -174,6 +175,7 @@ command:   			   NEW_TOK   name index_type capacity 				{ ouzo_new_index($2,$3,$
 			         | PUT_TOK   name key_docid_list_set				{ ouzo_index_put($2,$3); }
 					 | UNPUT_TOK name key_docid_list_set				{ ouzo_index_unput($2,$3); }
 					 | GET_TOK   name key_list							{ ouzo_index_get($2,$3); }
+					 | QUIT_TOK											{ cli_quit(); }
 
 key_list: 	  		  key 												{ $$=start_string_list($1); }
 					| key_list key										{ $$=append_string_list($1,$2); }

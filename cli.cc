@@ -26,6 +26,7 @@ using namespace boost::algorithm;
 namespace bfs=boost::filesystem;
 
 istream* lex_input=NULL;
+bool bQuit=false;
 
 extern "C"
 int my_yyinput(char* buf, int max_size)
@@ -33,16 +34,28 @@ int my_yyinput(char* buf, int max_size)
 	if (lex_input->bad())
 		return 0;
 		
-	if (lex_input==&cin && isatty(0))
-		cout << "ouzo>";
+	int n;
+	
+	if (bQuit)
+	{
+		n=0;
+	}
+	else
+	{
+		if (lex_input==&cin && isatty(0))
+			cout << "ouzo>";
 		
-	lex_input->getline(buf,max_size);
-	int n=lex_input->gcount();
+		lex_input->getline(buf,max_size);
+		n=lex_input->gcount();
+	}
 	
 	if (!n)
 	{
 		if (lex_input==&cin && isatty(0))
+		{
 			cout << endl << "Arf!" << endl;
+			bQuit=true;
+		}
 		return 0;
 	}
 	
@@ -60,6 +73,8 @@ void yyerror(const char *str)
 extern "C" 
 int yywrap()
 {
+	if (bQuit)
+		return 1;
 	return lex_input->good()?0:1;
 } 
 
@@ -196,7 +211,11 @@ void ouzo_index_unput(const char* name, KEY_DOCID_LIST* list)
 	delete idx;
 }
 
-
+extern "C"
+void cli_quit()
+{
+	bQuit=true;
+}
 
 
 int main(int argc,char* argv[])
@@ -243,7 +262,11 @@ int main(int argc,char* argv[])
 			return -1;
 		}
 		
-		yyparse();
+		while (bQuit==false)
+		{
+			cout << "calling yyparse():" << bQuit << endl;
+			yyparse();
+		}
 		
 		string cmd;
 		to_lower(cmd);
