@@ -14,9 +14,12 @@ unsigned int tokenpos=0;
 %%
 new		{ tokenpos+=yyleng; return NEW_TOK; }
 put 	{ tokenpos+=yyleng; return PUT_TOK; }
+putdoc 	{ tokenpos+=yyleng; return PUTDOC_TOK; }
+deldoc 	{ tokenpos+=yyleng; return DELDOC_TOK; }
 get 	{ tokenpos+=yyleng; return GET_TOK; }
 unput 	{ tokenpos+=yyleng; return UNPUT_TOK; }
 show 	{ tokenpos+=yyleng; return SHOW_TOK; }
+info 	{ tokenpos+=yyleng; return INFO_TOK; }
 quit|exit 	{ tokenpos+=yyleng; return QUIT_TOK; }
 
 int8|int16|int32|int64|uint8|uint16|uint32|uint64|double|char8|string|date|time	{
@@ -53,7 +56,7 @@ int8|int16|int32|int64|uint8|uint16|uint32|uint64|double|char8|string|date|time	
 								tokenpos+=yyleng;
 								return FLOAT_NUMBER;
 							}
-[a-zA-Z0-9_]+	{
+[a-zA-Z0-9_\./\?-]+	{
 					yylval.string=strdup(yytext);
 					tokenpos+=yyleng;
 					return STRING;

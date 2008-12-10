@@ -138,7 +138,10 @@ char* make_string_from_signed_number(long n)
 %token <string> STRING 
 %token <string> NEW_TOK 
 %token <string> SHOW_TOK 
+%token <string> INFO_TOK 
 %token <string> PUT_TOK
+%token <string> PUTDOC_TOK
+%token <string> DELDOC_TOK
 %token <string> GET_TOK
 %token <string> UNPUT_TOK
 %token <string> QUIT_TOK
@@ -147,6 +150,7 @@ char* make_string_from_signed_number(long n)
 %type <string> key 
 %type <string> name 
 %type <string> index_type 
+%type <string> filename
 %type <unsigned_number> number 
 %type <unsigned_number> capacity 
 %type <vptr> docid_list 
@@ -170,11 +174,14 @@ commands:			  /* empty */
 					| commands command ';'								
 
 			
-command:   			   NEW_TOK   name index_type capacity 				{ ouzo_new_index($2,$3,$4); }
-					 | SHOW_TOK name 									{ ouzo_show_index($2); }
-			         | PUT_TOK   name key_docid_list_set				{ ouzo_index_put($2,$3); }
-					 | UNPUT_TOK name key_docid_list_set				{ ouzo_index_unput($2,$3); }
-					 | GET_TOK   name key_list							{ ouzo_index_get($2,$3); }
+command:   			   NEW_TOK    name index_type capacity 				{ ouzo_new_index($2,$3,$4); }
+					 | SHOW_TOK   name 									{ ouzo_show_index($2); }
+			         | PUT_TOK    name key_docid_list_set				{ ouzo_index_put($2,$3); }
+			         | PUTDOC_TOK filename								{ ouzo_docbase_put($2); }
+			         | DELDOC_TOK filename								{ ouzo_docbase_del($2); }
+					 | UNPUT_TOK  name key_docid_list_set				{ ouzo_index_unput($2,$3); }
+					 | GET_TOK    name key_list							{ ouzo_index_get($2,$3); }
+					 | INFO_TOK											{ ouzo_info(); }
 					 | QUIT_TOK											{ cli_quit(); }
 
 key_list: 	  		  key 												{ $$=start_string_list($1); }
@@ -194,6 +201,8 @@ key: 				STRING 												{ $$=$1; }
  					| POS_NUMBER										{ $$=$1; }
  					| NEG_NUMBER										{ $$=$1; }
  					| FLOAT_NUMBER										{ $$=$1; }
+
+filename:           STRING												{ $$=$1; }
 
 number: 			POS_NUMBER											{ $<unsigned_number>$=strtoul($1,0,10); }
 					| NEG_NUMBER 										{ $<signed_number>$=strtol($1,0,10); }

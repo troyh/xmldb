@@ -54,8 +54,8 @@ int my_yyinput(char* buf, int max_size)
 		if (lex_input==&cin && isatty(0))
 		{
 			cout << endl << "Arf!" << endl;
-			bQuit=true;
 		}
+		bQuit=true;
 		return 0;
 	}
 	
@@ -109,9 +109,20 @@ void ouzo_new_index(const char* name, const char* type, size_t capacity)
 extern "C"
 void ouzo_show_index(const char* name)
 {
-	Ouzo::Index* idx=Ouzo::Index::loadFromFile(name);
-	cout << *idx << endl;
-	delete idx;
+	try
+	{
+		Ouzo::Index* idx=Ouzo::Index::loadFromFile(name);
+		cout << *idx << endl;
+		delete idx;
+	}
+	catch (Ouzo::Exception& x)
+	{
+		cerr << x << endl;
+	}
+	catch (...)
+	{
+		cerr << "Unknown exception." << endl;
+	}
 }
 
 extern "C"
@@ -217,6 +228,139 @@ void cli_quit()
 	bQuit=true;
 }
 
+extern "C"
+void ouzo_docbase_put(const char* filename)
+{ 
+	try
+	{
+		Ouzo::Ouzo ouzo("ouzo.conf");
+		// std::cout << "Before:" << std::endl << ouzo << std::endl;
+
+		// This is kinda dumb to do the glob-ing twice, but I want to get a count of
+		// the number of files for all the args to display a progress meter.
+						
+		size_t count=0;
+		// Do file-globbing
+		glob_t globbuf;
+		if (!glob(filename,GLOB_TILDE_CHECK,NULL,&globbuf))
+		{
+			count+=globbuf.gl_pathc;
+			globfree(&globbuf);
+		}
+		
+		std::cout << "Adding " << count << " documents" << std::endl;
+		boost::progress_display progress(count);
+		
+		// Do file-globbing
+		if (!glob(filename,GLOB_TILDE_CHECK,NULL,&globbuf))
+		{
+			for (size_t i=0;i<globbuf.gl_pathc;++i)
+			{
+				// Make the filepath absolute
+				bfs::path fpath(globbuf.gl_pathv[i]);
+				if (!fpath.has_root_path())
+				{
+					// Use the cwd
+					fpath=bfs::initial_path() / fpath;
+				}
+
+				// std::cout << fpath << endl;
+				ouzo.addDocument(fpath);
+				++progress;
+			}
+			globfree(&globbuf);
+		}
+		// std::cout << "After:" << std::endl << ouzo << std::endl;
+	}
+	catch (Ouzo::Exception& x)
+	{
+		std::cerr << x << std::endl;
+	}
+	catch (...)
+	{
+		throw;
+	}
+}
+
+extern "C"
+void ouzo_docbase_del(const char* filename)
+{
+	try
+	{
+		Ouzo::Ouzo ouzo("ouzo.conf");
+		
+		// Add CWD to filename if it's not there
+		bfs::path f(filename);
+		if (!f.has_root_path())
+		{
+			// Use the cwd
+			f=bfs::initial_path() / filename;
+		}
+		
+		ouzo.delDocument(f);
+	}
+	catch (Ouzo::Exception& x)
+	{
+		std::cerr << x << std::endl;
+	}
+	catch (...)
+	{
+		throw;
+	}
+	
+}
+
+extern "C"
+void ouzo_info()
+{
+	// try
+	// {
+	// 	Ouzo::Ouzo ouzo("ouzo.conf");
+	// 	if (argc>2)
+	// 	{
+	// 		string subcmd(argv[2]);
+	// 		if (subcmd=="index")
+	// 		{
+	// 			if (argc>3)
+	// 			{
+	// 				string docbase(argv[3]);
+	// 				Ouzo::DocumentBase* pDB=ouzo.getDocBase(docbase);
+	// 				if (pDB)
+	// 				{
+	// 					if (argc>4)
+	// 					{
+	// 						string idxname(argv[4]);
+	// 						Ouzo::Index* pIdx=pDB->getIndex(idxname);
+	// 						if (pIdx)
+	// 						{
+	// 							pIdx->load();
+	// 							std::cout << *pIdx << std::endl;
+	// 						}
+	// 					}
+	// 					else
+	// 					{
+	// 						std::cout << "DocumentBase:" << std::endl;
+	// 						std::cout << *pDB << std::endl;
+	// 					}
+	// 				}
+	// 			}
+	// 		}
+	// 	}
+	// 	else
+	// 	{
+	// 		std::cout << ouzo << std::endl;
+	// 	}
+	// }
+	// catch (Ouzo::Exception& x)
+	// {
+	// 	cerr << x << endl;
+	// }
+	// catch (...)
+	// {
+	// 	throw;
+	// }
+	
+}
 
 int main(int argc,char* argv[])
 {
@@ -264,88 +408,13 @@ int main(int argc,char* argv[])
 		
 		while (bQuit==false)
 		{
-			cout << "calling yyparse():" << bQuit << endl;
 			yyparse();
 		}
 		
 		string cmd;
 		to_lower(cmd);
 	
-		if (cmd=="add")
-		{
-			if (argc<3)
-			{
-				usage();
-				return -1;
-			}
-			
-			try
-			{
-				Ouzo::Ouzo ouzo("ouzo.conf");
-				// std::cout << "Before:" << std::endl << ouzo << std::endl;
-
-				// This is kinda dumb to do the glob-ing twice, but I want to get a count of
-				// the number of files for all the args to display a progress meter.
-								
-				size_t count=0;
-				for(size_t arg = 2; arg < argc; ++arg)
-				{
-					// Do file-globbing
-					glob_t globbuf;
-					if (!glob(argv[arg],GLOB_TILDE_CHECK,NULL,&globbuf))
-					{
-						count+=globbuf.gl_pathc;
-					}
-				}
-				
-				std::cout << "Adding " << count << " documents" << std::endl;
-				boost::progress_display progress(count	);
-				
-				for(size_t arg = 2; arg < argc; ++arg)
-				{
-					// Do file-globbing
-					glob_t globbuf;
-					if (!glob(argv[arg],GLOB_TILDE_CHECK,NULL,&globbuf))
-					{
-						for (size_t i=0;i<globbuf.gl_pathc;++i)
-						{
-							// Make the filepath absolute
-							bfs::path fpath(globbuf.gl_pathv[i]);
-							if (!fpath.has_root_path())
-							{
-								// Use the cwd
-								fpath=bfs::initial_path() / fpath;
-							}
-
-							// std::cout << fpath << endl;
-							ouzo.addDocument(fpath);
-							++progress;
-						}
-						globfree(&globbuf);
-					}
-				}
-				// std::cout << "After:" << std::endl << ouzo << std::endl;
-			}
-			catch (...)
-			{
-				throw;
-			}
-		}
-		else if (cmd=="del")
-		{
-			try
-			{
-				Ouzo::Ouzo ouzo("ouzo.conf");
-				std::cout << "Before:" << std::endl << ouzo << std::endl;
-				ouzo.delDocument(argv[2]);
-				std::cout << "After:" << std::endl << ouzo << std::endl;
-			}
-			catch (...)
-			{
-				throw;
-			}
-		}
-		else if (cmd=="query")
+		if (cmd=="query")
 		{
 			try
 			{
@@ -394,51 +463,6 @@ int main(int argc,char* argv[])
 
 				delete boolop;
 				
-			}
-			catch (...)
-			{
-				throw;
-			}
-		}
-		else if (cmd=="info")
-		{
-			try
-			{
-				Ouzo::Ouzo ouzo("ouzo.conf");
-				if (argc>2)
-				{
-					string subcmd(argv[2]);
-					if (subcmd=="index")
-					{
-						if (argc>3)
-						{
-							string docbase(argv[3]);
-							Ouzo::DocumentBase* pDB=ouzo.getDocBase(docbase);
-							if (pDB)
-							{
-								if (argc>4)
-								{
-									string idxname(argv[4]);
-									Ouzo::Index* pIdx=pDB->getIndex(idxname);
-									if (pIdx)
-									{
-										pIdx->load();
-										std::cout << *pIdx << std::endl;
-									}
-								}
-								else
-								{
-									std::cout << "DocumentBase:" << std::endl;
-									std::cout << *pDB << std::endl;
-								}
-							}
-						}
-					}
-				}
-				else
-				{
-					std::cout << ouzo << std::endl;
-				}
 			}
 			catch (...)
 			{
