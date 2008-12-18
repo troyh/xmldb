@@ -145,6 +145,9 @@ char* make_string_from_signed_number(long n)
 %token <string> GET_TOK
 %token <string> UNPUT_TOK
 %token <string> QUIT_TOK
+%token <string> QUERY_TOK
+%token <string> AND_TOK
+%token <string> OR_TOK
 %token <string> INDEX_TYPE
 
 %type <string> key 
@@ -157,6 +160,17 @@ char* make_string_from_signed_number(long n)
 %type <vptr> key_docid_list
 %type <vptr> key_docid_list_set
 %type <vptr> key_list
+/*
+%type <vptr> query_expression
+%type <vptr> query_clause
+%type <vptr> equality_expression
+%type <vptr> equality_clause
+%type <string> query_key
+%type <string> docbase_name
+%type <unsigned_number> boolean_oper
+%type <unsigned_number> equality_oper
+%type <string> equality_value
+*/
 
 %%
 
@@ -181,8 +195,42 @@ command:   			   NEW_TOK    name index_type capacity 				{ ouzo_new_index($2,$3,
 			         | DELDOC_TOK filename								{ ouzo_docbase_del($2); }
 					 | UNPUT_TOK  name key_docid_list_set				{ ouzo_index_unput($2,$3); }
 					 | GET_TOK    name key_list							{ ouzo_index_get($2,$3); }
+					 | QUERY_TOK  										{ ouzo_query(); }
+/*					 | QUERY_TOK  query_expression						{ ouzo_query($2); }*/
 					 | INFO_TOK											{ ouzo_info(); }
 					 | QUIT_TOK											{ cli_quit(); }
+/*					
+query_expression:     query_clause										{ $$=start_query_expression($1); }
+					| query_expression boolean_oper query_clause		{ $$=append_query_expression($1,$2,$3); }
+
+query_clause:		  docbase_name ':' equality_expression				{ $$=make_query_clause($1,$3); }
+
+equality_expression:  equality_clause
+					| equality_expression boolean_oper equality_clause
+
+equality_clause:      query_key equality_oper equality_value			{ $$=make_equality_expression($1,$2,$3); }
+					| '(' query_key equality_oper equality_value ')'  	{ $$=make_equality_expression($2,$3,$4); }
+
+query_key:			  docbase_name '.' index_name
+
+docbase_name:		  STRING
+
+index_name:		      STRING
+
+boolean_oper:         AND_TOK 		{ $$=1; }
+					| OR_TOK		{ $$=2; }
+
+equality_oper:       '<'			{ $$=1; }
+ 					| '>' 			{ $$=2; }
+					| '=' 			{ $$=3; }
+					| '<' '=' 		{ $$=4; }
+					| '>' '=' 		{ $$=5; }
+					| '!' '='		{ $$=6; }
+					
+equality_value:		  POS_NUMBER		{ $$=$1; }
+					| NEG_NUMBER		{ $$=$1; }
+					| '"' STRING '"' 	{ $$=$2; }
+*/
 
 key_list: 	  		  key 												{ $$=start_string_list($1); }
 					| key_list key										{ $$=append_string_list($1,$2); }

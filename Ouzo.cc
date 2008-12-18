@@ -363,10 +363,27 @@ namespace Ouzo
 	{
 	}
 	
-	void Ouzo::addDocument(bfs::path docfile)
+	void Ouzo::addDocument(std::vector<bfs::path> docfiles, void (*func)(void*), void* voidp)
 	{
-		DocumentBase& doctype=findDocType(docfile);
-		doctype.addDocument(docfile);
+		std::map< DocumentBase*, std::vector<bfs::path> > byDBs;
+		
+		std::vector<bfs::path>::const_iterator itr_end=docfiles.end();
+		for (std::vector<bfs::path>::const_iterator itr=docfiles.begin(); itr!=itr_end; ++itr)
+		{
+			const bfs::path& docfile=*itr;
+			DocumentBase& doctype=findDocType(docfile);
+			
+			byDBs[&doctype].push_back(docfile);
+		}
+		
+		std::map< DocumentBase*, std::vector<bfs::path> >::const_iterator itr2_end=byDBs.end();
+		for (std::map< DocumentBase*, std::vector<bfs::path> >::const_iterator itr2=byDBs.begin(); itr2!=itr2_end; ++itr2)
+		{
+			DocumentBase* doctype=itr2->first;
+			const std::vector<bfs::path>& files=itr2->second;
+			
+			doctype->addDocument(files, func, voidp);
+		}
 	}
 	
 	void Ouzo::delDocument(bfs::path docfile)
@@ -444,7 +461,6 @@ namespace Ouzo
 		{
 			std::string docbasename=q.getDocBaseName();
 			DocumentBase* pDB=getDocBase(docbasename);
-			pDB->load();
 			pDB->query(*termnode, results);
 		}
 		else if (boolnode)

@@ -228,6 +228,12 @@ void cli_quit()
 	bQuit=true;
 }
 
+void ouzo_docbase_put_progress(void* p)
+{
+	boost::progress_display* pd=(boost::progress_display*)p;
+	++(*pd);
+}
+
 extern "C"
 void ouzo_docbase_put(const char* filename)
 { 
@@ -236,22 +242,10 @@ void ouzo_docbase_put(const char* filename)
 		Ouzo::Ouzo ouzo("ouzo.conf");
 		// std::cout << "Before:" << std::endl << ouzo << std::endl;
 
-		// This is kinda dumb to do the glob-ing twice, but I want to get a count of
-		// the number of files for all the args to display a progress meter.
-						
-		size_t count=0;
+		std::vector<bfs::path> files;
+		
 		// Do file-globbing
 		glob_t globbuf;
-		if (!glob(filename,GLOB_TILDE_CHECK,NULL,&globbuf))
-		{
-			count+=globbuf.gl_pathc;
-			globfree(&globbuf);
-		}
-		
-		std::cout << "Adding " << count << " documents" << std::endl;
-		boost::progress_display progress(count);
-		
-		// Do file-globbing
 		if (!glob(filename,GLOB_TILDE_CHECK,NULL,&globbuf))
 		{
 			for (size_t i=0;i<globbuf.gl_pathc;++i)
@@ -263,14 +257,16 @@ void ouzo_docbase_put(const char* filename)
 					// Use the cwd
 					fpath=bfs::initial_path() / fpath;
 				}
-
-				// std::cout << fpath << endl;
-				ouzo.addDocument(fpath);
-				++progress;
+				
+				files.push_back(fpath);
 			}
 			globfree(&globbuf);
 		}
-		// std::cout << "After:" << std::endl << ouzo << std::endl;
+		
+		std::cout << "Adding " << files.size() << " documents" << std::endl;
+		
+		boost::progress_display progress(files.size());
+		ouzo.addDocument(files,&ouzo_docbase_put_progress,&progress);
 	}
 	catch (Ouzo::Exception& x)
 	{
@@ -361,6 +357,84 @@ void ouzo_info()
 	// }
 	
 }
+
+extern "C"
+void ouzo_query()
+{
+	try
+	{
+		boost::timer total_timer;
+		
+		Ouzo::Ouzo ouzo("ouzo.conf");
+		double init_time=total_timer.elapsed();
+		
+		Ouzo::DocumentBase* pDB=ouzo.getDocBase("recipes");
+		Ouzo::Query::Results results(pDB);
+		
+		std::string dbname("recipes");
+		
+		std::string idxname("chef_id");
+		Ouzo::Index* idx=pDB->getIndex(idxname);
+		// Ouzo::StringIndex::stringkey_t val;
+		// val.assign("1567");
+		// Ouzo::uint32key_t val(1533);
+		Ouzo::uint32key_t val(2312);
+		// val.assign(1567);
+		Ouzo::Query::TermNode* query=new Ouzo::Query::TermNode(dbname,idxname,Ouzo::Query::TermNode::eq,val);
+		
+		// Ouzo::DocSet& ds=idx->get(val);
+		// cout << "Hits:" << ds.count() << endl;
+		
+		// std::string idxname2("review_rating");
+		// idx=pDB->getIndex(idxname2);
+		// Ouzo::uint8key_t val2(5);
+		// Ouzo::Query::TermNode* query2=new Ouzo::Query::TermNode(dbname,idxname2,Ouzo::Query::TermNode::eq,val2);
+		// 
+		// Ouzo::Query::BooleanNode* boolop=new Ouzo::Query::BooleanNode(dbname,Ouzo::Query::BooleanNode::AND);
+		// boolop->left(query);
+		// boolop->right(query2);
+		
+		boost::timer query_timer;
+		ouzo.fetch(*query, results);
+		double query_time=query_timer.elapsed();
+		
+		std::vector<bfs::path> docs;
+		pDB->getDocFilenames(results, docs);
+
+		std::istream::fmtflags old_flags = std::cout.setf( std::istream::fixed,std::istream::floatfield );
+		std::streamsize old_prec = std::cout.precision( 10 );
+
+		std::cout << "<results count=\"" << docs.size() << "\" querytime=\"" << results.queryTime() << "\">" << std::endl;
+		
+		boost::timer readdoc_timer;
+		for(size_t i = 0; i < docs.size(); ++i)
+		{
+			bfs::path fname=pDB->docDirectory() / docs[i];
+			ifstream f(fname.string().c_str());
+			string buf;
+			while (getline(f,buf))
+				std::cout << buf << std::endl;
+		}
+		std::cout << "</results>" << std::endl;
+
+		std::cout << "<!-- Init time  : " << init_time << std::endl
+		          << "     Query time : " << query_time << std::endl
+		          << "     Output time: " << readdoc_timer.elapsed() << std::endl
+		          << "     Total time : " << total_timer.elapsed() << " -->" << std::endl;
+		
+		std::cout.precision( old_prec );
+		std::cout.flags( old_flags );
+	}
+	catch (Ouzo::Exception& x)
+	{
+		std::cerr << x << std::endl;
+	}
+	catch (...)
+	{
+		throw;
+	}
+}
+
 
 int main(int argc,char* argv[])
 {

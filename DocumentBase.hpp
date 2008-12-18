@@ -70,7 +70,7 @@ namespace Ouzo
 		
 		// Index* getIndex(uint32_t n);
 
-		void addDocument(bfs::path docfile);
+		void addDocument(std::vector<bfs::path> docfiles, void (*func)(void*)=0, void* voidp=0);
 		void delDocument(bfs::path docfile);
 		
 		void load();

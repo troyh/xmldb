@@ -20,7 +20,11 @@ get 	{ tokenpos+=yyleng; return GET_TOK; }
 unput 	{ tokenpos+=yyleng; return UNPUT_TOK; }
 show 	{ tokenpos+=yyleng; return SHOW_TOK; }
 info 	{ tokenpos+=yyleng; return INFO_TOK; }
+query 	{ tokenpos+=yyleng; return QUERY_TOK; }
 quit|exit 	{ tokenpos+=yyleng; return QUIT_TOK; }
+
+and|&	{ tokenpos+=yyleng; return AND_TOK; }
+or|\|	{ tokenpos+=yyleng; return OR_TOK; }
 
 int8|int16|int32|int64|uint8|uint16|uint32|uint64|double|char8|string|date|time	{
 																	yylval.string=strdup(yytext);

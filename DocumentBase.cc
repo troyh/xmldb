@@ -106,6 +106,14 @@ namespace Ouzo
 		{
 			cout << "Archive exception: " << x.what() << endl;
 		}
+		
+		// Load indexes
+		for(size_t i = 0; i < m_indexes.size(); ++i)
+		{
+			Index* idx=m_indexes[i];
+			idx->load();
+		}
+		
 	}
 	
 	void DocumentBase::persist()
@@ -143,42 +151,67 @@ namespace Ouzo
 		// TODO: unlock docid.map file
 	}
 
-	void DocumentBase::addDocument(bfs::path docfile)
+	void DocumentBase::addDocument(std::vector<bfs::path> docfiles, void (*func)(void*), void* voidp)
 	{
-		std::string fname=docfile.filename();
-		
-		docid_t docid;
-		// Find out if we already know about this document
-		if (m_docidmap.find(fname)==m_docidmap.end())
+		// Load all the indexes
+		for (std::vector<Index*>::size_type i=0; i< m_indexes.size(); ++i)
 		{
-			// Create a new unique docid
-			dynamic_bitset<>::size_type n=m_avail_docids.find_first(); // Find first on bit which represents the first available doc number
-			if (n==dynamic_bitset<>::npos) // No available docid
-			{
-				throw Exception(__FILE__,__LINE__);
-			}
+			Index* idx=m_indexes[i];
+			idx->load();
+		}
+		
+		std::vector<bfs::path>::const_iterator itr_end=docfiles.end();
+		for (std::vector<bfs::path>::const_iterator itr=docfiles.begin(); itr!=itr_end; ++itr)
+		{
+			const bfs::path& docfile=*itr;
 			
-			docid=n+1;
-		}
-		else
-		{ 
-			// Get the docid
-			docid=m_docidmap[fname];
+			std::string fname=docfile.filename();
+		
+			docid_t docid;
+			// Find out if we already know about this document
+			if (m_docidmap.find(fname)==m_docidmap.end())
+			{
+				// Create a new unique docid
+				dynamic_bitset<>::size_type n=m_avail_docids.find_first(); // Find first on bit which represents the first available doc number
+				if (n==dynamic_bitset<>::npos) // No available docid
+				{
+					throw Exception(__FILE__,__LINE__);
+				}
+			
+				docid=n+1;
+			}
+			else
+			{ 
+				// Get the docid
+				docid=m_docidmap[fname];
+			}
+		
+			switch (m_fileformat)
+			{
+				case XML:
+					addXMLDocument(docfile, docid);
+					break;
+				default:
+					break;
+			}
+		
+			m_docidmap[fname]=docid;
+			m_docidmap_reverse[docid]=fname;
+			m_avail_docids.set(docid-1,false);
+			
+			if (func)
+			{
+				func(voidp);
+			}
 		}
 		
-		switch (m_fileformat)
+		// Save all the indexes
+		for (std::vector<Index*>::size_type i=0; i< m_indexes.size(); ++i)
 		{
-			case XML:
-				addXMLDocument(docfile, docid);
-				break;
-			default:
-				break;
+			Index* idx=m_indexes[i];
+			idx->save();
 		}
-		
-		m_docidmap[fname]=docid;
-		m_docidmap_reverse[docid]=fname;
-		m_avail_docids.set(docid-1,false);
-		
+	
 		persist();
 	}
 
@@ -232,7 +265,7 @@ namespace Ouzo
 			builder->setFeature(X("namespaces"), true);
 			builder->setFeature(X("http://apache.org/xml/features/validation/schema"), true);
 			builder->setFeature(X("validation"), true);
-
+			
 			// Parse a DOMDocument
 			DOMDocument *document = builder->parseURI(X(docfile.string().c_str()));
 			if(document == 0)
@@ -248,11 +281,9 @@ namespace Ouzo
 
 				Mutex<boost::interprocess::file_lock> mutex(idx->filename().string(),true); // Make sure no one else can read/write the index
 
-				idx->load();
-		
 				// First remove any existing data in the index for this docid
 				idx->del(docid);
-		
+	
 				// Parse an XPath 2 expression
 		        const DOMXPathExpression* expression = document->createExpression(X(idx->keyspec().c_str()), 0);
 
@@ -263,10 +294,10 @@ namespace Ouzo
 		        while(result->iterateNext())
 				{
 					const char* val=XMLString::transcode(result->asNode()->getTextContent());
-					
+				
 					Index::key_t* k=idx->createKey();
 					k->assign(val);
-					
+				
 					idx->put(*k,docid);
 
 					// Add document to x-ref table
@@ -278,12 +309,10 @@ namespace Ouzo
 		        // Clean up all the objects we have created
 		        result->release();
 		        ((XQillaExpression*)expression)->release();
-			
-				idx->save();
+		
 			}
 
 			builder->release();
-
 		}
 		catch (...)
 		{
@@ -301,12 +330,12 @@ namespace Ouzo
 	{
 		string idxname=q.indexname();
 		Index* idx=getIndex(idxname);
-		idx->load();
-
 		boost::timer t;
+
 		if (q.eqop()==Query::TermNode::eq || q.eqop()==Query::TermNode::ne || q.eqop()==Query::TermNode::lt || q.eqop()==Query::TermNode::gte)
 		{
 			const DocSet& ds=idx->get(q.val());
+			// cout << "Hits for " << (char*)q.val().m_val.ptr << ":" << ds.count() << endl;
 			results=ds;
 		}
 
@@ -349,13 +378,14 @@ namespace Ouzo
 			}
 			
 		}
+		
 		results.queryTime(t.elapsed());
 		
 	}
 	
 	void DocumentBase::getDocFilenames(const Query::Results& results, std::vector<bfs::path>& docs)
 	{
-		for (DocSet::size_type n=results.find_first(); n!=DocSet::npos; n=results.find_next(n))
+		for (DocSet::size_type n=results.find_first(); n; n=results.find_next(n))
 		{
 			docs.push_back(m_docidmap_reverse[n]);
 		}

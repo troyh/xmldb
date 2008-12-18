@@ -18,8 +18,23 @@ bool   Index::key_t::operator< (const key_t& key) const
 {
 	if (m_type!=key.m_type)
 	{
-		cout << m_type << "!=" << key.m_type << endl;
-		throw Exception(__FILE__,__LINE__);
+		if (m_type==KEY_TYPE_OBJECT)
+		{
+			// cout << m_val.object->getType() << "!=" << key.m_type << endl;
+			if (m_val.object->getType()!=key.m_type)
+				throw Exception(__FILE__,__LINE__);
+		}
+		else if (key.m_type==KEY_TYPE_OBJECT)
+		{
+			// cout << m_type << "!=" << key.m_val.object->getType() << endl;
+			if (m_type!=key.m_val.object->getType())
+				throw Exception(__FILE__,__LINE__);
+		}
+		else
+		{
+			// cout << m_type << "!=" << key.m_type << endl;
+			throw Exception(__FILE__,__LINE__);
+		}
 	}
 
 	     if (m_type==KEY_TYPE_INT8)    { return m_val.int8   < key.m_val.int8; }
@@ -35,7 +50,23 @@ bool   Index::key_t::operator< (const key_t& key) const
 	else if (m_type==KEY_TYPE_DBL)     { return m_val.dbl    < key.m_val.dbl   ; }
 	else if (m_type==KEY_TYPE_CHAR8)   { return strncmp(m_val.ch, key.m_val.ch, sizeof(m_val.ch)) < 0; }
 	else if (m_type==KEY_TYPE_PTR)     { return m_val.ptr    < key.m_val.ptr; }
-	else if (m_type==KEY_TYPE_OBJECT)  { return m_val.object->operator<(*key.m_val.object); }
+	else if (m_type==KEY_TYPE_OBJECT)  
+	{ 
+		if (key.m_type==KEY_TYPE_OBJECT)
+		{
+			return m_val.object->operator<(*key.m_val.object); 
+		}
+		else
+		{
+			// cout << "comparing " << m_val.object->getType() << " to " << key.getType() << endl;
+			// cout << "comparing " << (char*)m_val.object->m_val.ptr << " to " << (char*)key.m_val.ptr << endl;
+			return m_val.object->operator<(key); 
+		}
+	}
+	else if (m_type==KEY_TYPE_STRING)
+	{
+		return strcmp((char*)m_val.ptr,(char*)key.m_val.ptr)<0;
+	}
 	else
 	{
 		throw Exception(__FILE__,__LINE__);
@@ -46,6 +77,7 @@ bool Index::key_t::operator==(const key_t& k) const
 {
 	if (m_type!=k.m_type)
 		return false;
+	// cout << "Index::key_t::operator==()" << endl;
 		
 	     if (m_type==KEY_TYPE_INT8  )  { return m_val.int8  ==k.m_val.int8  ; }
 	else if (m_type==KEY_TYPE_INT16 )  { return m_val.int16 ==k.m_val.int16 ; }
@@ -83,6 +115,7 @@ void Index::key_t::output(ostream& os) const
 	else if (m_type==KEY_TYPE_CHAR8 )  { os.write(m_val.ch, min(sizeof(m_val.ch),strlen(m_val.ch))); }
 	else if (m_type==KEY_TYPE_PTR)     { os << m_val.ptr   ; }
 	else if (m_type==KEY_TYPE_OBJECT)  { return m_val.object->output(os); }
+	else if (m_type==KEY_TYPE_STRING)  { os << m_val.ptr; }
 	else
 	{
 		throw Exception(__FILE__,__LINE__);
@@ -127,7 +160,8 @@ ostream& operator<<(ostream& os, Index::key_t::key_type t)
 		case Index::key_t::KEY_TYPE_STRING	:	os << "string" ; break;
 		case Index::key_t::KEY_TYPE_OBJECT	:	os << "object" ; break;
 		default:
-			throw Exception(__FILE__,__LINE__); 
+			os << "unknown (" << (int)t << ")"; 
+			// throw Exception(__FILE__,__LINE__); 
 			break;
 	}
 
@@ -380,9 +414,9 @@ void Index::load()
 	if (bfs::exists(this->filename()))
 	{
 		Mutex<boost::interprocess::file_lock> mutex(this->filename().string(),false);
-	
+
 		std::ifstream ifs(m_filename.string().c_str());
-	
+
 		load_data(ifs);
 	}
 }
@@ -392,7 +426,7 @@ void Index::save() const
 	Mutex<boost::interprocess::file_lock> mutex(this->filename().string(),true);
 
 	std::ofstream ofs(m_filename.string().c_str());
-	
+
 	save_data(ofs);
 }
 
