@@ -59,8 +59,31 @@ bool StringIndex::stringkey_t::operator< (const key_t& key) const
 	if (m_type!=key.getType())
 		return false;
 
-	const stringkey_t& skey=dynamic_cast<const stringkey_t&>(key);
-	return strcmp((char*)m_val.ptr,(char*)skey.m_val.ptr)<0;
+	const stringkey_t* skey=dynamic_cast<const stringkey_t*>(&key);
+	if (!skey)
+	{
+		if (key.getType()==KEY_TYPE_OBJECT)
+		{
+			if (key.m_val.object->getType()==KEY_TYPE_STRING)
+			{
+				skey=(stringkey_t*)key.m_val.object;
+			}
+			else
+				throw Exception(__FILE__,__LINE__);
+		}
+		else if (key.getType()==KEY_TYPE_STRING)
+		{
+			// cout << "strcmp " << (char*)m_val.ptr << " and " << (char*)key.m_val.ptr << " value:" << (strcmp((char*)m_val.ptr,(char*)key.m_val.ptr)<0) << endl;
+			return (strcmp((char*)m_val.ptr,(char*)key.m_val.ptr)<0)?true:false;
+		}
+		else
+			throw Exception(__FILE__,__LINE__);
+	}
+	if (!skey)
+		throw Exception(__FILE__,__LINE__);
+		
+	// cout << "StringIndex::stringkey_t::operator<() comparing " << (char*)m_val.ptr << " to " << (char*)skey->m_val.ptr << endl; 
+	return strcmp((char*)m_val.ptr,(char*)skey->m_val.ptr)<0;
 }
 
 void StringIndex::stringkey_t::output(ostream& os) const

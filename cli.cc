@@ -373,13 +373,28 @@ void ouzo_query()
 		
 		std::string dbname("recipes");
 		
-		std::string idxname("chef_id");
+		// std::string idxname("chef_id");
+		// Ouzo::Index* idx=pDB->getIndex(idxname);
+		// Ouzo::uint32key_t val(2312);
+
+		std::string idxname("recipe_id");
 		Ouzo::Index* idx=pDB->getIndex(idxname);
-		// Ouzo::StringIndex::stringkey_t val;
-		// val.assign("1567");
-		// Ouzo::uint32key_t val(1533);
-		Ouzo::uint32key_t val(2312);
-		// val.assign(1567);
+		Ouzo::StringIndex::stringkey_t val;
+		val.assign("10257");
+
+		// TODO: figure out why having cerr.flush() in the binary at all causes the
+		// correct results for string queries, even if it's never executed as in this
+		// case. But comment that 1 line out and the above stringkey_t query gives an
+		// incorrect result.
+				
+		if ((int)idx==1) // Never happen
+		{
+			cerr.flush();
+		}
+		
+		// val.assign("4274");
+
+
 		Ouzo::Query::TermNode* query=new Ouzo::Query::TermNode(dbname,idxname,Ouzo::Query::TermNode::eq,val);
 		
 		// Ouzo::DocSet& ds=idx->get(val);

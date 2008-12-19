@@ -9,12 +9,15 @@ $(OBJS)/%.o : %.cc
 
 .PHONY: clean FORCE all
 
-all: odeps.mk indexes 
+all: odeps.mk indexes docbases
 
 odeps.mk: *.cc
 	gcc -MM -I.. $^ | sed -e "s/^\\(.*\\).o:/objs\/\\1.o:/" > $@
 
 indexes: $(OBJS)/indexes.o
+	$(CC) -o $@ $^ -lxml++-2.6 -lxml2 -lxqilla -lboost_filesystem-gcc43-mt -lboost_serialization-gcc43-mt -L.. -louzo -liberty
+
+docbases: $(OBJS)/docbases.o
 	$(CC) -o $@ $^ -lxml++-2.6 -lxml2 -lxqilla -lboost_filesystem-gcc43-mt -lboost_serialization-gcc43-mt -L.. -louzo -liberty
 
 include odeps.mk
