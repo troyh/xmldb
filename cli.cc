@@ -138,7 +138,7 @@ void ouzo_index_get(const char* name, STRING_LIST* list)
 			Ouzo::Index::key_t* key=idx->createKey();
 			key->assign(list->list[i]);
 			const Ouzo::DocSet& ds=idx->get(*key);
-			cout << ds << endl;
+			cout << *key << ':' << ds << endl;
 			
 			free(list->list[i]);
 			
@@ -389,7 +389,7 @@ void ouzo_query()
 				
 		if ((int)idx==1) // Never happen
 		{
-			cerr.flush();
+			// cerr.flush();
 		}
 		
 		// val.assign("4274");

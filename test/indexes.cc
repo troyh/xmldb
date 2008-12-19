@@ -137,19 +137,30 @@ int main(int argc, char* argv[])
 
 			if (types[i]==Index::key_t::KEY_TYPE_STRING || types[i]==Index::key_t::KEY_TYPE_CHAR8)
 			{
-				// Create a random key of letters and digits
-		
 				size_t nj=(rand()%31)+1;
 				if (types[i]==Index::key_t::KEY_TYPE_CHAR8)
 					nj=(rand()%8)+1;
 					
-				for(size_t j = 0; j < nj; ++j)
+				if (rand()%2) // 50% chance
 				{
-					int n=rand()%36;
-					if (n>25)
-						ss << (char)('0'+(n-26));
-					else
-						ss << (char)('a'+n);
+					for(size_t j = 0; j < nj; ++j)
+					{
+						// Create a random key of letters and digits
+						int n=rand()%36;
+						if (n>25)
+							ss << (char)('0'+(n-26));
+						else
+							ss << (char)('a'+n);
+					}
+				}
+				else
+				{
+					for(size_t j = 0; j < nj; ++j)
+					{
+						// Create a random key of only digits
+						int n=rand()%10;
+						ss << (char)('0'+n);
+					}
 				}
 			}
 			else if (types[i]==Index::key_t::KEY_TYPE_INT8)  { ss << (int     )(rand()%255-(128)); }
