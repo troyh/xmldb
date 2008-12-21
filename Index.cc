@@ -65,7 +65,17 @@ bool   Index::key_t::operator< (const key_t& key) const
 	}
 	else if (m_type==KEY_TYPE_STRING)
 	{
-		return strcmp((char*)m_val.ptr,(char*)key.m_val.ptr)<0;
+		if (key.m_type==KEY_TYPE_STRING)
+		{
+			// cout << "Index::key_t::operator<():comparing char* ptrs: " << (char*)m_val.ptr << " and " << (char*)key.m_val.ptr << endl;
+			return strcmp((char*)m_val.ptr,(char*)key.m_val.ptr)<0;
+		}
+		else if (key.m_type==KEY_TYPE_OBJECT && key.m_val.object->getType()==KEY_TYPE_STRING)
+		{
+			return strcmp((char*)m_val.ptr,(char*)key.m_val.object->m_val.ptr)<0;
+		}
+		else
+			throw Exception(__FILE__,__LINE__);
 	}
 	else
 	{

@@ -379,8 +379,19 @@ void ouzo_query()
 
 		std::string idxname("recipe_id");
 		Ouzo::Index* idx=pDB->getIndex(idxname);
+		// Ouzo::Index::key_t* key=idx->createKey();
+		// key->assign("10022");
+		// key->assign("102570");
+		
+		// query index directly
+		// const Ouzo::DocSet& ds=idx->get(*key);
+		// cout << "Direct index query: "<< *key << ':' << ds << endl;
+		
 		Ouzo::StringIndex::stringkey_t val;
-		val.assign("10257");
+		val.assign("102570");
+		// val.assign("10010");
+		// val.assign("10022");
+		// val.assign("10043");
 
 		// TODO: figure out why having cerr.flush() in the binary at all causes the
 		// correct results for string queries, even if it's never executed as in this
@@ -392,8 +403,6 @@ void ouzo_query()
 			// cerr.flush();
 		}
 		
-		// val.assign("4274");
-
 
 		Ouzo::Query::TermNode* query=new Ouzo::Query::TermNode(dbname,idxname,Ouzo::Query::TermNode::eq,val);
 		

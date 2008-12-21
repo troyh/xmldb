@@ -56,9 +56,6 @@ void StringIndex::stringkey_t::assign(const char* s)
 
 bool StringIndex::stringkey_t::operator< (const key_t& key) const
 {
-	if (m_type!=key.getType())
-		return false;
-
 	const stringkey_t* skey=dynamic_cast<const stringkey_t*>(&key);
 	if (!skey)
 	{
@@ -74,7 +71,7 @@ bool StringIndex::stringkey_t::operator< (const key_t& key) const
 		else if (key.getType()==KEY_TYPE_STRING)
 		{
 			// cout << "strcmp " << (char*)m_val.ptr << " and " << (char*)key.m_val.ptr << " value:" << (strcmp((char*)m_val.ptr,(char*)key.m_val.ptr)<0) << endl;
-			return (strcmp((char*)m_val.ptr,(char*)key.m_val.ptr)<0)?true:false;
+			return strcmp((char*)m_val.ptr,(char*)key.m_val.ptr)<0;
 		}
 		else
 			throw Exception(__FILE__,__LINE__);
